@@ -2126,139 +2126,173 @@
           }
 
           uploadFileResumable(file, uploadState.uploadUrl, function(percent, xhr) {
-            uploadState.xhr = xhr || uploadState.xhr;
-            uploadState.progress = percent;
-            renderUploadBanner('Uploading ' + file.name + ' — ' + percent + '%', 'default', percent, true);
-          }).then(function(fileId) {
-            if (!uploadState.active) return;
-            uploadState.fileId = fileId;
-            uploadState.phase = 'finalizing';
-            renderUploadBanner('Finalizing message: ' + file.name, 'default', 100, false);
+  uploadState.xhr = xhr || uploadState.xhr;
+  uploadState.progress = percent;
+  renderUploadBanner('Uploading ' + file.name + ' — ' + percent + '%', 'default', percent, true);
+}).then(function(fileId) {
+  if (!uploadState.active) return;
 
-            google.script.run
-              .withSuccessHandler(function(finalizeRes) {
-                if (!uploadState.active) return;
+  uploadState.fileId = fileId || '';
+  uploadState.phase = 'resolving';
+  renderUploadBanner('Resolving uploaded file: ' + file.name, 'default', 100, false);
 
-                if (!finalizeRes || !finalizeRes.ok) {
-                  showAlert('Upload', (finalizeRes && finalizeRes.error) || 'Failed to finalize uploaded message.');
-                  resetUploadState();
-                  return;
-                }
+  const continueFinalize = function(resolvedFileId) {
+    if (!uploadState.active) return;
 
-                const conversationIdAtFinalize = uploadState.conversationId;
+    uploadState.fileId = resolvedFileId || '';
+    uploadState.phase = 'finalizing';
+    renderUploadBanner('Finalizing message: ' + file.name, 'default', 100, false);
 
-                document.getElementById('composerInput').value = '';
-                autoGrowTextarea(document.getElementById('composerInput'));
-                clearReplyTarget();
+    google.script.run
+      .withSuccessHandler(function(finalizeRes) {
+        if (!uploadState.active) return;
 
-                if (Array.isArray(finalizeRes.conversations)) {
-                  conversations = finalizeRes.conversations;
-                  activeConversation = getConversationById(activeConversationId);
-                  renderSidebar();
-                  renderActiveTopbar();
-                }
-
-                if (typeof finalizeRes.version === 'number' && conversationIdAtFinalize) {
-                  conversationVersions.set(conversationIdAtFinalize, finalizeRes.version);
-                }
-
-                if (finalizeRes.message && String(finalizeRes.conversationId || '') === conversationIdAtFinalize) {
-                  mergeMessages(conversationIdAtFinalize, [finalizeRes.message], false);
-                  if (activeConversationId === conversationIdAtFinalize) {
-                    renderMessages(true);
-                  }
-                } else if (conversationIdAtFinalize) {
-                  loadConversation(true);
-                }
-
-                renderUploadBanner('Upload complete: ' + file.name, 'success', 100, false);
-                const keepMessage = 'Upload complete: ' + file.name;
-                resetUploadState(false);
-                setTimeout(function() {
-                  if (!uploadState.active) {
-                    hideUploadBannerIfTextMatches(keepMessage);
-                  }
-                }, 1400);
-              })
-              .withFailureHandler(function(err) {
-                console.error(err);
-                showAlert('Upload', 'Failed to finalize uploaded message.');
-                resetUploadState();
-              })
-              .finalizeUploadedMessage(sessionToken, {
-                uploadToken: uploadState.uploadToken,
-                fileId: fileId,
-                fileName: file.name,
-                mimeType: file.type || 'application/octet-stream',
-                fileSize: file.size,
-                text: text,
-                replyToMessageId: replyTarget ? replyTarget.messageId : ''
-              });
-          }).catch(function(error) {
-            console.error(error);
-            showAlert('Upload', error && error.message ? error.message : 'Upload failed.');
-            resetUploadState();
-          });
-        })
-        .withFailureHandler(function(err) {
-          console.error(err);
-          showAlert('Upload', 'Failed to create upload session.');
+        if (!finalizeRes || !finalizeRes.ok) {
+          showAlert('Upload', (finalizeRes && finalizeRes.error) || 'Failed to finalize uploaded message.');
           resetUploadState();
-        })
-        .createDriveUploadSession(sessionToken, {
-          conversationId: conversationIdAtStart,
-          fileName: file.name,
-          mimeType: file.type || 'application/octet-stream',
-          fileSize: file.size,
-          text: text,
-          replyToMessageId: replyTarget ? replyTarget.messageId : ''
-        });
-    }
-
-    async function uploadFileResumable(file, uploadUrl, onProgress) {
-      let start = 0;
-      let fileId = '';
-
-      while (start < file.size) {
-        const endExclusive = Math.min(start + CHUNK_SIZE, file.size);
-        const chunk = file.slice(start, endExclusive);
-        const contentRange = 'bytes ' + start + '-' + (endExclusive - 1) + '/' + file.size;
-        const response = await sendUploadChunk(uploadUrl, chunk, file.type || 'application/octet-stream', contentRange, onProgress, endExclusive, file.size);
-        const status = response.status;
-
-        if (status === 308) {
-          const range = response.getResponseHeader('Range');
-          if (range) {
-            const parsedEnd = parseResumableRangeEnd(range);
-            start = parsedEnd + 1;
-          } else {
-            start = endExclusive;
-          }
-          const percent = Math.min(99, Math.floor((start / file.size) * 100));
-          if (typeof onProgress === 'function') onProgress(percent, response.xhr);
-          continue;
+          return;
         }
 
-        if (status >= 200 && status < 300) {
-          let body = {};
-          try {
-            body = response.responseText ? JSON.parse(response.responseText) : {};
-          } catch (e) {
-            body = {};
-          }
-          fileId = body.id || '';
-          if (!fileId) {
-            throw new Error('Drive upload completed but file ID was not returned.');
-          }
-          if (typeof onProgress === 'function') onProgress(100, response.xhr);
-          return fileId;
+        const conversationIdAtFinalize = uploadState.conversationId;
+
+        document.getElementById('composerInput').value = '';
+        autoGrowTextarea(document.getElementById('composerInput'));
+        clearReplyTarget();
+
+        if (Array.isArray(finalizeRes.conversations)) {
+          conversations = finalizeRes.conversations;
+          activeConversation = getConversationById(activeConversationId);
+          renderSidebar();
+          renderActiveTopbar();
         }
 
-        throw new Error('Upload failed with HTTP ' + status + '.');
+        if (typeof finalizeRes.version === 'number' && conversationIdAtFinalize) {
+          conversationVersions.set(conversationIdAtFinalize, finalizeRes.version);
+        }
+
+        if (finalizeRes.message && String(finalizeRes.conversationId || '') === conversationIdAtFinalize) {
+          mergeMessages(conversationIdAtFinalize, [finalizeRes.message], false);
+          if (activeConversationId === conversationIdAtFinalize) {
+            renderMessages(true);
+          }
+        } else if (conversationIdAtFinalize) {
+          loadConversation(true);
+        }
+
+        renderUploadBanner('Upload complete: ' + file.name, 'success', 100, false);
+        const keepMessage = 'Upload complete: ' + file.name;
+        resetUploadState(false);
+        setTimeout(function() {
+          if (!uploadState.active) {
+            hideUploadBannerIfTextMatches(keepMessage);
+          }
+        }, 1400);
+      })
+      .withFailureHandler(function(err) {
+        console.error(err);
+        showAlert('Upload', 'Failed to finalize uploaded message.');
+        resetUploadState();
+      })
+      .finalizeUploadedMessage(sessionToken, {
+        uploadToken: uploadState.uploadToken,
+        fileId: resolvedFileId || '',
+        fileName: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        fileSize: file.size,
+        text: text,
+        replyToMessageId: replyTarget ? replyTarget.messageId : ''
+      });
+  };
+
+  if (fileId) {
+    continueFinalize(fileId);
+    return;
+  }
+
+  google.script.run
+    .withSuccessHandler(function(resolveRes) {
+      if (!resolveRes || !resolveRes.ok) {
+        showAlert('Upload', (resolveRes && resolveRes.error) || 'Uploaded file was not resolved on Drive.');
+        resetUploadState();
+        return;
       }
 
-      throw new Error('Upload did not complete.');
+      continueFinalize(String(resolveRes.fileId || ''));
+    })
+    .withFailureHandler(function(err) {
+      console.error(err);
+      showAlert('Upload', 'Failed to resolve uploaded file on Drive.');
+      resetUploadState();
+    })
+    .resolveUploadedFileId(sessionToken, uploadState.uploadToken);
+}).catch(function(error) {
+  console.error(error);
+  showAlert('Upload', error && error.message ? error.message : 'Upload failed.');
+  resetUploadState();
+});
+async function uploadFileResumable(file, uploadUrl, onProgress) {
+  let start = 0;
+  let fileId = '';
+
+  while (start < file.size) {
+    const endExclusive = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, endExclusive);
+    const contentRange = 'bytes ' + start + '-' + (endExclusive - 1) + '/' + file.size;
+
+    const response = await sendUploadChunk(
+      uploadUrl,
+      chunk,
+      file.type || 'application/octet-stream',
+      contentRange,
+      onProgress,
+      endExclusive,
+      file.size
+    );
+
+    const status = response.status;
+
+    if (status === 308) {
+      const range = response.getResponseHeader('Range');
+      if (range) {
+        const parsedEnd = parseResumableRangeEnd(range);
+        start = parsedEnd + 1;
+      } else {
+        start = endExclusive;
+      }
+
+      const percent = Math.min(99, Math.floor((start / file.size) * 100));
+      if (typeof onProgress === 'function') onProgress(percent, response.xhr);
+      continue;
     }
+
+    if (status >= 200 && status < 300) {
+      let body = {};
+      try {
+        body = response.responseText ? JSON.parse(response.responseText) : {};
+      } catch (e) {
+        body = {};
+      }
+
+      fileId = body.id || '';
+      if (typeof onProgress === 'function') onProgress(100, response.xhr);
+
+      // Даже если body пустой, upload уже мог завершиться
+      return fileId || '';
+    }
+
+    // Важный фикс:
+    // если это был последний chunk и браузер вернул status 0,
+    // не считаем это фаталом сразу — файл часто уже лежит на Drive
+    if (status === 0 && endExclusive >= file.size) {
+      if (typeof onProgress === 'function') onProgress(100, response.xhr);
+      return '';
+    }
+
+    throw new Error('Upload failed with HTTP ' + status + '.');
+  }
+
+  return fileId || '';
+}
 
     function sendUploadChunk(uploadUrl, blobChunk, mimeType, contentRange, onProgress, uploadedBytes, totalBytes) {
       return new Promise(function(resolve, reject) {
