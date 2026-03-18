@@ -1,1 +1,2434 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
 
+    :root {
+      --bg: #f5f6fa;
+      --panel: #ffffff;
+      --panel-2: #f8f9fd;
+      --text: #20242c;
+      --muted: #6e7685;
+      --border: #e5e8f0;
+      --accent: #4f46e5;
+      --accent-soft: #eef0ff;
+      --danger: #d92d20;
+      --overlay: rgba(15, 23, 42, 0.44);
+      --my-msg: #edf2ff;
+      --other-msg: #ffffff;
+      --reply-bg: #f4f6fb;
+      --shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
+      --sidebar-width: 310px;
+    }
+
+    body.dark {
+      --bg: #0d1117;
+      --panel: #151b23;
+      --panel-2: #10161d;
+      --text: #e6edf3;
+      --muted: #98a5b7;
+      --border: #263041;
+      --accent: #7c8cff;
+      --accent-soft: #1d2442;
+      --danger: #ff6b6b;
+      --overlay: rgba(0, 0, 0, 0.58);
+      --my-msg: #1a2747;
+      --other-msg: #161d28;
+      --reply-bg: #111824;
+      --shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    input, textarea {
+      user-select: text;
+      font: inherit;
+    }
+
+    button, select {
+      font: inherit;
+    }
+
+    textarea {
+      resize: none;
+    }
+
+    .screen {
+      display: none;
+      height: 100vh;
+      width: 100%;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .auth-screen {
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+
+    .auth-brand {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .auth-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tabs button {
+      flex: 1;
+      height: 42px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tabs button.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .auth-block {
+      display: none;
+    }
+
+    .auth-block.active {
+      display: block;
+    }
+
+    .field {
+      margin-bottom: 10px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 10px;
+      outline: none;
+      padding: 11px 12px;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .field-row > * {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .submit-btn,
+    .primary-btn,
+    .secondary-btn,
+    .danger-btn {
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      padding: 11px 14px;
+    }
+
+    .submit-btn,
+    .primary-btn {
+      background: var(--accent);
+      color: white;
+    }
+
+    .secondary-btn {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .danger-btn {
+      background: var(--danger);
+      color: white;
+    }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .status {
+      min-height: 20px;
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--danger);
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      width: 100%;
+      height: 100vh;
+    }
+
+    .sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .sidebar-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .avatar.large {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      font-size: 18px;
+    }
+
+    .user-box {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .user-box .name {
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-box .meta {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .icon-btn {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .search-wrap {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 10px;
+      outline: none;
+      padding: 11px 12px;
+    }
+
+    .search-results {
+      position: absolute;
+      top: calc(100% - 4px);
+      left: 14px;
+      right: 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+      z-index: 1200;
+    }
+
+    .search-results.open {
+      display: block;
+    }
+
+    .search-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      background: var(--panel);
+    }
+
+    .search-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-item:hover {
+      background: var(--panel-2);
+    }
+
+    .search-item-meta {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .search-item-title {
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-item-sub {
+      font-size: 12px;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      margin-top: 2px;
+      line-height: 1.35;
+    }
+
+    .sidebar-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 8px 8px 6px;
+    }
+
+    .conversation-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+    }
+
+    .conversation-item:hover {
+      background: var(--panel-2);
+    }
+
+    .conversation-item.active {
+      background: var(--accent-soft);
+      border-color: rgba(79, 70, 229, 0.16);
+    }
+
+    .conversation-meta {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .conversation-line {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .conversation-title {
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .conversation-time {
+      margin-left: auto;
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .conversation-subtitle,
+    .conversation-last {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .chat-topbar {
+      height: 64px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      flex-shrink: 0;
+    }
+
+    .chat-title-box {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .chat-title {
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .chat-main {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .placeholder-card {
+      width: 100%;
+      max-width: 700px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .placeholder-card h2 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .placeholder-card p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .tip-box {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .tip-index {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .tip-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .tip-text {
+      line-height: 1.6;
+    }
+
+    .tip-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .conversation-view {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      flex-direction: column;
+    }
+
+    .conversation-view.active {
+      display: flex;
+    }
+
+    .messages {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .empty-state {
+      margin: auto;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+    }
+
+    .message-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      max-width: 88%;
+    }
+
+    .message-row.mine {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message-row .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .message-card {
+      min-width: 0;
+      max-width: 100%;
+      background: var(--other-msg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .message-row.mine .message-card {
+      background: var(--my-msg);
+    }
+
+    .message-head {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .message-author {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .message-username {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .message-reply {
+      border-left: 3px solid var(--accent);
+      background: var(--reply-bg);
+      border-radius: 10px;
+      padding: 7px 10px;
+      margin-bottom: 8px;
+    }
+
+    .message-reply-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 2px;
+    }
+
+    .message-reply-text {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message-text {
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
+      user-select: text;
+    }
+
+    .message-text.deleted {
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    .message-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .composer-wrap {
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 12px 14px 14px;
+      flex-shrink: 0;
+    }
+
+    .reply-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+
+    .reply-banner.active {
+      display: flex;
+    }
+
+    .reply-banner-meta {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .reply-banner-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .reply-banner-text {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .composer {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .composer textarea {
+      flex: 1;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 12px;
+      outline: none;
+      min-height: 48px;
+      max-height: 180px;
+      padding: 12px;
+      overflow-y: auto;
+    }
+
+    .dropdown-backdrop,
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+    }
+
+    .dropdown-backdrop.open {
+      display: block;
+      z-index: 9998;
+    }
+
+    .message-dropdown {
+      position: fixed;
+      min-width: 180px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 6px;
+      display: none;
+      z-index: 9999;
+    }
+
+    .message-dropdown.open {
+      display: block;
+    }
+
+    .message-dropdown button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      text-align: left;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .message-dropdown button:hover {
+      background: var(--panel-2);
+    }
+
+    .message-dropdown button.danger {
+      color: var(--danger);
+    }
+
+    .modal-overlay {
+      background: var(--overlay);
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 12000;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 500px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .modal-head {
+      padding: 16px 18px 8px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .modal-body {
+      padding: 0 18px 16px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .modal-content {
+      padding: 0 18px 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 18px 18px;
+    }
+
+    .mobile-toggle {
+      display: none;
+    }
+
+    .mobile-sidebar-backdrop {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .sidebar.mobile-open {
+        display: flex;
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(92vw, 360px);
+        z-index: 13000;
+        box-shadow: var(--shadow);
+      }
+
+      .mobile-sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: var(--overlay);
+        display: none;
+        z-index: 12999;
+      }
+
+      .mobile-sidebar-backdrop.open {
+        display: block;
+      }
+
+      .mobile-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .message-row {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="light">
+  <div id="authScreen" class="screen auth-screen active">
+    <div class="auth-card">
+      <div class="auth-brand">Heyo</div>
+      <div class="auth-sub">Main chat, direct messages, profile settings, reply menu, and theme support.</div>
+
+      <div class="tabs">
+        <button id="loginTabBtn" class="active" onclick="switchAuthMode('login')">Login</button>
+        <button id="registerTabBtn" onclick="switchAuthMode('register')">Create account</button>
+      </div>
+
+      <div id="loginBlock" class="auth-block active">
+        <div class="field">
+          <label for="loginIdentifier">Email / phone / username / @username</label>
+          <input id="loginIdentifier" type="text" autocomplete="username" placeholder="user@example.com / +1... / username / @username">
+        </div>
+
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
+        </div>
+
+        <button class="submit-btn" onclick="submitLogin()">Login</button>
+      </div>
+
+      <div id="registerBlock" class="auth-block">
+        <div class="tabs" style="margin-bottom:12px;">
+          <button id="regEmailBtn" class="active" onclick="switchRegisterMethod('email')">Email</button>
+          <button id="regPhoneBtn" onclick="switchRegisterMethod('phone')">Phone</button>
+        </div>
+
+        <div class="field">
+          <label for="registerDisplayName">Display name</label>
+          <input id="registerDisplayName" type="text" maxlength="40" placeholder="Display name">
+        </div>
+
+        <div class="field">
+          <label for="registerUsername">Username</label>
+          <input id="registerUsername" type="text" maxlength="20" placeholder="lowercase English letters only">
+        </div>
+
+        <div id="registerEmailWrap" class="field">
+          <label for="registerEmail">Email</label>
+          <input id="registerEmail" type="email" placeholder="mail@example.com">
+        </div>
+
+        <div id="registerPhoneWrap" style="display:none;">
+          <div class="field-row">
+            <div class="field">
+              <label for="registerPhoneCountry">Country</label>
+              <select id="registerPhoneCountry">
+                <option value="RU">Russia (+7)</option>
+                <option value="US">United States (+1)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="registerPhone">Phone</label>
+              <input id="registerPhone" type="text" placeholder="+7 / +1">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="registerPassword">Password</label>
+          <input id="registerPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+        </div>
+
+        <div class="field">
+          <label for="registerBio">Bio</label>
+          <textarea id="registerBio" maxlength="240" rows="3" placeholder="Profile description"></textarea>
+        </div>
+
+        <button class="submit-btn" onclick="submitRegister()">Create account</button>
+      </div>
+
+      <div id="authStatus" class="status"></div>
+    </div>
+  </div>
+
+  <div id="appScreen" class="screen">
+    <div id="mobileSidebarBackdrop" class="mobile-sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+
+    <div class="app-shell">
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-head">
+          <div id="meAvatar" class="avatar">U</div>
+          <div class="user-box">
+            <div id="meDisplayName" class="name">User</div>
+            <div id="meUsername" class="meta">@user</div>
+          </div>
+          <button class="icon-btn" title="Settings" onclick="openSettings()">⚙</button>
+        </div>
+
+        <div class="search-wrap">
+          <input id="userSearchInput" type="text" placeholder="Search users">
+          <div id="searchResults" class="search-results"></div>
+        </div>
+
+        <div class="sidebar-body">
+          <div class="section-title">Rooms</div>
+          <div id="mainConversationList"></div>
+
+          <div class="section-title">Direct messages</div>
+          <div id="directConversationList"></div>
+        </div>
+      </aside>
+
+      <main class="chat-panel">
+        <div class="chat-topbar">
+          <button class="icon-btn mobile-toggle" onclick="openMobileSidebar()">☰</button>
+          <div id="topAvatar" class="avatar">M</div>
+          <div class="chat-title-box">
+            <div id="chatTitle" class="chat-title">Tips</div>
+            <div id="chatSubtitle" class="chat-subtitle">No conversation selected</div>
+          </div>
+          <button class="secondary-btn" onclick="logout()">Log out</button>
+        </div>
+
+        <div class="chat-main">
+          <div id="placeholderView" class="placeholder">
+            <div class="placeholder-card">
+              <h2>Welcome to Heyo</h2>
+              <p>Select Main or a direct message from the left. If nothing is selected, tips are shown here.</p>
+
+              <div class="tip-box">
+                <div id="tipIndex" class="tip-index"></div>
+                <div id="tipTitle" class="tip-title"></div>
+                <div id="tipText" class="tip-text"></div>
+              </div>
+
+              <div class="tip-actions">
+                <button class="secondary-btn" onclick="prevTip()">Previous</button>
+                <button class="secondary-btn" onclick="nextTip()">Next</button>
+                <button class="primary-btn" onclick="selectMainConversation()">Open Main</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="conversationView" class="conversation-view">
+            <div id="messages" class="messages"></div>
+
+            <div class="composer-wrap">
+              <div id="replyBanner" class="reply-banner">
+                <div class="reply-banner-meta">
+                  <div id="replyBannerLabel" class="reply-banner-label">Replying</div>
+                  <div id="replyBannerText" class="reply-banner-text"></div>
+                </div>
+                <button class="secondary-btn" onclick="clearReplyTarget()">Cancel</button>
+              </div>
+
+              <div class="composer">
+                <textarea id="composerInput" placeholder="Write a message..." rows="1"></textarea>
+                <button id="sendBtn" class="primary-btn" onclick="sendMessageFromUI()">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="dropdownBackdrop" class="dropdown-backdrop" onclick="closeMessageDropdown()"></div>
+  <div id="messageDropdown" class="message-dropdown"></div>
+
+  <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal">
+      <div id="modalTitle" class="modal-head">Modal</div>
+      <div id="modalBody" class="modal-body"></div>
+      <div id="modalContent" class="modal-content"></div>
+      <div id="modalActions" class="modal-actions"></div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjbGkp5x9q1Pkxo4nKOr_tC3UFyJmL72neVrGMNS9_boXxffgV0jrmzV-Btd1aiK_HqA/exec';
+
+    (function initGoogleScriptRunAdapter() {
+      function createRunner(successHandler, failureHandler) {
+        const chain = {
+          withSuccessHandler(cb) {
+            return createRunner(typeof cb === 'function' ? cb : null, failureHandler);
+          },
+
+          withFailureHandler(cb) {
+            return createRunner(successHandler, typeof cb === 'function' ? cb : null);
+          }
+        };
+
+        return new Proxy(chain, {
+          get(target, prop) {
+            if (prop in target) return target[prop];
+            if (typeof prop !== 'string') return undefined;
+
+            return function(...args) {
+              callServerAction(prop, args, successHandler, failureHandler);
+            };
+          }
+        });
+      }
+
+      async function callServerAction(action, args, successHandler, failureHandler) {
+        try {
+          if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_GAS_WEB_APP_URL_HERE') {
+            throw new Error('SCRIPT_URL is not configured.');
+          }
+
+          const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: {
+              'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify({
+              action: action,
+              data: args
+            })
+          });
+
+          const raw = await response.text();
+
+          let result;
+          try {
+            result = raw ? JSON.parse(raw) : null;
+          } catch (e) {
+            throw new Error('Server returned invalid JSON.');
+          }
+
+          if (typeof successHandler === 'function') {
+            successHandler(result);
+          }
+        } catch (error) {
+          if (typeof failureHandler === 'function') {
+            failureHandler(error);
+          } else {
+            console.error('google.script.run adapter error:', error);
+          }
+        }
+      }
+
+      window.google = window.google || {};
+      window.google.script = window.google.script || {};
+      window.google.script.run = createRunner(null, null);
+    })();
+
+    let authMode = 'login';
+    let registerMethod = 'email';
+
+    let sessionToken = localStorage.getItem('heyo_token') || '';
+    let currentUser = null;
+
+    let conversations = [];
+    let activeConversationId = '';
+    let activeConversation = null;
+
+    const conversationVersions = new Map();
+    const messagesByConversation = new Map();
+
+    let pollingHandle = null;
+    let sidebarRefreshHandle = null;
+
+    let isLoadingConversation = false;
+    let needsReloadConversation = false;
+
+    let searchDebounce = null;
+    let replyTarget = null;
+    let activeModalResolver = null;
+
+    let dropdownState = {
+      open: false,
+      messageId: '',
+      anchor: null
+    };
+
+    let longPressTimer = null;
+    let longPressTriggered = false;
+
+    const tips = [
+      {
+        title: 'Main is the public room',
+        text: 'Every authenticated user can see and use the Main conversation.'
+      },
+      {
+        title: 'Direct messages are isolated',
+        text: 'Main and direct messages are separate conversations and do not share messages.'
+      },
+      {
+        title: 'Search works with username and @username',
+        text: 'You can search by display name, bio, username, or @username.'
+      },
+      {
+        title: 'You can message yourself',
+        text: 'Your own account is included in search results, which works like saved messages.'
+      },
+      {
+        title: 'Reply menu uses right-click and long-press',
+        text: 'Use right-click on desktop or long-press on mobile to open the message menu.'
+      }
+    ];
+    let tipIndex = 0;
+
+    function switchAuthMode(mode) {
+      authMode = mode;
+      document.getElementById('loginTabBtn').classList.toggle('active', mode === 'login');
+      document.getElementById('registerTabBtn').classList.toggle('active', mode === 'register');
+      document.getElementById('loginBlock').classList.toggle('active', mode === 'login');
+      document.getElementById('registerBlock').classList.toggle('active', mode === 'register');
+      setAuthStatus('');
+    }
+
+    function switchRegisterMethod(method) {
+      registerMethod = method;
+      document.getElementById('regEmailBtn').classList.toggle('active', method === 'email');
+      document.getElementById('regPhoneBtn').classList.toggle('active', method === 'phone');
+      document.getElementById('registerEmailWrap').style.display = method === 'email' ? '' : 'none';
+      document.getElementById('registerPhoneWrap').style.display = method === 'phone' ? '' : 'none';
+    }
+
+    function setAuthStatus(text) {
+      document.getElementById('authStatus').textContent = text || '';
+    }
+
+    function submitLogin() {
+      const identifier = document.getElementById('loginIdentifier').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      if (!identifier || !password) {
+        setAuthStatus('Identifier and password are required.');
+        return;
+      }
+
+      setAuthStatus('Logging in...');
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            setAuthStatus((res && res.error) || 'Login failed.');
+            return;
+          }
+
+          sessionToken = res.token;
+          localStorage.setItem('heyo_token', sessionToken);
+          currentUser = res.user;
+          document.getElementById('loginPassword').value = '';
+          setAuthStatus('');
+          startApp();
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+          setAuthStatus('Login failed.');
+        })
+        .login(identifier, password);
+    }
+
+    function submitRegister() {
+      const payload = {
+        displayName: document.getElementById('registerDisplayName').value.trim(),
+        username: document.getElementById('registerUsername').value.trim(),
+        password: document.getElementById('registerPassword').value,
+        email: registerMethod === 'email' ? document.getElementById('registerEmail').value.trim() : '',
+        phoneCountry: registerMethod === 'phone' ? document.getElementById('registerPhoneCountry').value : '',
+        phone: registerMethod === 'phone' ? document.getElementById('registerPhone').value.trim() : '',
+        bio: document.getElementById('registerBio').value.trim(),
+        theme: 'light'
+      };
+
+      if (!payload.displayName || !payload.username || !payload.password) {
+        setAuthStatus('Display name, username and password are required.');
+        return;
+      }
+
+      if (registerMethod === 'email' && !payload.email) {
+        setAuthStatus('Email is required.');
+        return;
+      }
+
+      if (registerMethod === 'phone' && !payload.phone) {
+        setAuthStatus('Phone is required.');
+        return;
+      }
+
+      setAuthStatus('Creating account...');
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            setAuthStatus((res && res.error) || 'Registration failed.');
+            return;
+          }
+
+          sessionToken = res.token;
+          localStorage.setItem('heyo_token', sessionToken);
+          currentUser = res.user;
+          setAuthStatus('');
+          startApp();
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+          setAuthStatus('Registration failed.');
+        })
+        .registerAccount(payload);
+    }
+
+    function verifySession() {
+      if (!sessionToken) {
+        showAuthScreen();
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            localStorage.removeItem('heyo_token');
+            sessionToken = '';
+            currentUser = null;
+            showAuthScreen();
+            return;
+          }
+
+          currentUser = res.user;
+          startApp();
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+          localStorage.removeItem('heyo_token');
+          sessionToken = '';
+          currentUser = null;
+          showAuthScreen();
+        })
+        .getSession(sessionToken);
+    }
+
+    function showAuthScreen() {
+      stopPolling();
+      document.getElementById('authScreen').classList.add('active');
+      document.getElementById('appScreen').classList.remove('active');
+    }
+
+    function showAppScreen() {
+      document.getElementById('authScreen').classList.remove('active');
+      document.getElementById('appScreen').classList.add('active');
+    }
+
+    function startApp() {
+      resetAppState();
+      showAppScreen();
+      applyTheme(currentUser && currentUser.theme ? currentUser.theme : 'light');
+      renderCurrentUser();
+      renderTips();
+      autoGrowTextarea(document.getElementById('composerInput'));
+      fetchAppData(true);
+      startPolling();
+    }
+
+    function resetAppState() {
+      conversations = [];
+      activeConversationId = '';
+      activeConversation = null;
+      conversationVersions.clear();
+      messagesByConversation.clear();
+      replyTarget = null;
+      clearSearchResults();
+      closeMessageDropdown();
+      showPlaceholder();
+    }
+
+    function renderCurrentUser() {
+      if (!currentUser) return;
+      document.getElementById('meDisplayName').textContent = currentUser.displayName || 'User';
+      document.getElementById('meUsername').textContent = '@' + (currentUser.username || 'user');
+      document.getElementById('meAvatar').textContent = getInitial(currentUser.displayName || currentUser.username || 'U');
+    }
+
+    function fetchAppData(initial) {
+      if (!sessionToken) return;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            handleAppError(res);
+            return;
+          }
+
+          currentUser = res.user;
+          conversations = Array.isArray(res.conversations) ? res.conversations : [];
+          renderCurrentUser();
+          applyTheme(currentUser.theme || 'light');
+          renderSidebar();
+
+          if (initial) {
+            showPlaceholder();
+          } else if (activeConversationId) {
+            activeConversation = getConversationById(activeConversationId);
+            if (!activeConversation) {
+              showPlaceholder();
+            } else {
+              renderActiveTopbar();
+            }
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+        })
+        .getAppData(sessionToken);
+    }
+
+    function refreshSidebarOnly() {
+      if (!sessionToken) return;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) return;
+          if (res.user) {
+            currentUser = res.user;
+            renderCurrentUser();
+            applyTheme(currentUser.theme || 'light');
+          }
+          if (Array.isArray(res.conversations)) {
+            conversations = res.conversations;
+            activeConversation = getConversationById(activeConversationId);
+            renderSidebar();
+            renderActiveTopbar();
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+        })
+        .getAppData(sessionToken);
+    }
+
+    function startPolling() {
+      stopPolling();
+
+      pollingHandle = setInterval(function() {
+        if (activeConversationId) {
+          loadConversation(false);
+        }
+      }, 1400);
+
+      sidebarRefreshHandle = setInterval(function() {
+        refreshSidebarOnly();
+      }, 4000);
+    }
+
+    function stopPolling() {
+      if (pollingHandle) {
+        clearInterval(pollingHandle);
+        pollingHandle = null;
+      }
+      if (sidebarRefreshHandle) {
+        clearInterval(sidebarRefreshHandle);
+        sidebarRefreshHandle = null;
+      }
+    }
+
+    function getConversationById(conversationId) {
+      return conversations.find(function(item) {
+        return item.conversationId === conversationId;
+      }) || null;
+    }
+
+    function renderSidebar() {
+      const main = conversations.filter(function(c) { return c.type === 'main'; });
+      const direct = conversations.filter(function(c) { return c.type === 'direct'; });
+
+      document.getElementById('mainConversationList').innerHTML =
+        main.map(renderConversationItem).join('') || '';
+
+      document.getElementById('directConversationList').innerHTML =
+        direct.length
+          ? direct.map(renderConversationItem).join('')
+          : '<div class="empty-state" style="margin:0; padding:14px;">No direct messages yet</div>';
+    }
+
+    function renderConversationItem(conversation) {
+      const active = conversation.conversationId === activeConversationId ? 'active' : '';
+      const subtitle = conversation.subtitle ? `<div class="conversation-subtitle">${escapeHtml(conversation.subtitle)}</div>` : '';
+      const last = conversation.lastMessageText ? `<div class="conversation-last">${escapeHtml(conversation.lastMessageText)}</div>` : '';
+      const time = conversation.lastMessageAt ? formatSidebarTime(conversation.lastMessageAt) : '';
+
+      return `
+        <div class="conversation-item ${active}" onclick="selectConversation('${escapeJsString(conversation.conversationId)}')">
+          <div class="avatar">${escapeHtml(conversation.initials || 'C')}</div>
+          <div class="conversation-meta">
+            <div class="conversation-line">
+              <div class="conversation-title">${escapeHtml(conversation.title || 'Conversation')}</div>
+              <div class="conversation-time">${escapeHtml(time)}</div>
+            </div>
+            ${subtitle}
+            ${last}
+          </div>
+        </div>
+      `;
+    }
+
+    function selectMainConversation() {
+      const main = conversations.find(function(c) { return c.type === 'main'; });
+      if (main) selectConversation(main.conversationId);
+    }
+
+    function selectConversation(conversationId) {
+      activeConversationId = conversationId;
+      activeConversation = getConversationById(conversationId);
+      replyTarget = null;
+      renderReplyBanner();
+      renderSidebar();
+      renderActiveTopbar();
+      showConversationView();
+      closeMobileSidebar();
+
+      if (!conversationVersions.has(conversationId)) {
+        conversationVersions.set(conversationId, 0);
+      }
+      if (!messagesByConversation.has(conversationId)) {
+        messagesByConversation.set(conversationId, []);
+      }
+
+      loadConversation(true);
+    }
+
+    function renderActiveTopbar() {
+      const title = document.getElementById('chatTitle');
+      const subtitle = document.getElementById('chatSubtitle');
+      const avatar = document.getElementById('topAvatar');
+
+      if (!activeConversation) {
+        title.textContent = 'Tips';
+        subtitle.textContent = 'No conversation selected';
+        avatar.textContent = 'T';
+        return;
+      }
+
+      title.textContent = activeConversation.title || 'Conversation';
+      subtitle.textContent = activeConversation.subtitle || (activeConversation.type === 'main' ? 'Public room' : 'Direct message');
+      avatar.textContent = getInitial(activeConversation.title || 'C');
+    }
+
+    function showPlaceholder() {
+      activeConversationId = '';
+      activeConversation = null;
+      renderActiveTopbar();
+      renderSidebar();
+      document.getElementById('placeholderView').style.display = 'flex';
+      document.getElementById('conversationView').classList.remove('active');
+    }
+
+    function showConversationView() {
+      document.getElementById('placeholderView').style.display = 'none';
+      document.getElementById('conversationView').classList.add('active');
+    }
+
+    function loadConversation(forceScroll) {
+      if (!sessionToken || !activeConversationId) return;
+
+      if (isLoadingConversation) {
+        needsReloadConversation = true;
+        return;
+      }
+
+      isLoadingConversation = true;
+
+      const requestedConversationId = activeConversationId;
+      const sinceVersion = Number(conversationVersions.get(requestedConversationId) || 0);
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          isLoadingConversation = false;
+
+          if (!res || !res.ok) {
+            handleAppError(res);
+            return;
+          }
+
+          if (String(res.conversationId || '') !== requestedConversationId) {
+            return;
+          }
+
+          if (typeof res.version === 'number') {
+            conversationVersions.set(requestedConversationId, res.version);
+          }
+
+          if (res.reset || !messagesByConversation.has(requestedConversationId)) {
+            messagesByConversation.set(requestedConversationId, []);
+          }
+
+          if (Array.isArray(res.messages) && res.messages.length) {
+            mergeMessages(requestedConversationId, res.messages, !!res.reset);
+          } else if (res.reset) {
+            messagesByConversation.set(requestedConversationId, []);
+          }
+
+          if (activeConversationId === requestedConversationId) {
+            renderMessages(forceScroll);
+          }
+
+          if (needsReloadConversation) {
+            needsReloadConversation = false;
+            loadConversation(false);
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+          isLoadingConversation = false;
+        })
+        .getConversationMessages(sessionToken, requestedConversationId, sinceVersion);
+    }
+
+    function mergeMessages(conversationId, incoming, reset) {
+      let current = reset ? [] : (messagesByConversation.get(conversationId) || []);
+      const byId = new Map();
+
+      current.forEach(function(item) {
+        byId.set(item.messageId, item);
+      });
+
+      incoming.forEach(function(item) {
+        byId.set(item.messageId, item);
+      });
+
+      const merged = Array.from(byId.values()).sort(function(a, b) {
+        const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        if (ta !== tb) return ta - tb;
+        return String(a.messageId).localeCompare(String(b.messageId));
+      });
+
+      messagesByConversation.set(conversationId, merged);
+    }
+
+    function renderMessages(forceScroll) {
+      const messagesEl = document.getElementById('messages');
+      const list = messagesByConversation.get(activeConversationId) || [];
+      const nearBottom = Math.abs(messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight) < 90;
+
+      if (!list.length) {
+        messagesEl.innerHTML = '<div class="empty-state">No messages here yet</div>';
+      } else {
+        messagesEl.innerHTML = list.map(renderMessage).join('');
+      }
+
+      if (forceScroll || nearBottom) {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+    }
+
+    function renderMessage(msg) {
+      const mineClass = msg.isMine ? 'mine' : '';
+      const replyBlock = msg.replyToMessageId ? `
+        <div class="message-reply">
+          <div class="message-reply-name">${escapeHtml(msg.replyDisplayName || 'Reply')}</div>
+          <div class="message-reply-text">${escapeHtml(msg.replyPreview || '')}</div>
+        </div>
+      ` : '';
+
+      const textBlock = msg.deletedAt
+        ? '<div class="message-text deleted">This message was deleted.</div>'
+        : `<div class="message-text">${escapeHtml(msg.text || '')}</div>`;
+
+      const meta = [];
+      if (msg.createdAt) meta.push(formatMessageTime(msg.createdAt));
+      if (msg.editedAt && !msg.deletedAt) meta.push('edited');
+
+      return `
+        <div class="message-row ${mineClass}">
+          <div class="avatar">${escapeHtml(msg.initials || 'U')}</div>
+          <div
+            class="message-card"
+            data-message-id="${escapeAttr(msg.messageId)}"
+            data-own="${msg.isMine ? '1' : '0'}"
+            data-deleted="${msg.deletedAt ? '1' : '0'}"
+          >
+            <div class="message-head">
+              <div class="message-author">${escapeHtml(msg.displayName || 'User')}</div>
+              <div class="message-username">@${escapeHtml(msg.username || '')}</div>
+            </div>
+            ${replyBlock}
+            ${textBlock}
+            <div class="message-meta">
+              ${meta.map(function(x) {
+                return '<span>' + escapeHtml(x) + '</span>';
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function sendMessageFromUI() {
+      if (!sessionToken || !activeConversationId) return;
+
+      const input = document.getElementById('composerInput');
+      const button = document.getElementById('sendBtn');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const requestedConversationId = activeConversationId;
+      button.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          button.disabled = false;
+
+          if (!res || !res.ok) {
+            showAlert('Send message', (res && res.error) || 'Failed to send message.');
+            return;
+          }
+
+          input.value = '';
+          autoGrowTextarea(input);
+          clearReplyTarget();
+
+          if (Array.isArray(res.conversations)) {
+            conversations = res.conversations;
+            activeConversation = getConversationById(activeConversationId);
+            renderSidebar();
+            renderActiveTopbar();
+          }
+
+          if (String(res.conversationId || '') !== requestedConversationId) {
+            return;
+          }
+
+          if (typeof res.version === 'number') {
+            conversationVersions.set(requestedConversationId, res.version);
+          }
+
+          if (res.message) {
+            mergeMessages(requestedConversationId, [res.message], false);
+            if (activeConversationId === requestedConversationId) {
+              renderMessages(true);
+            }
+          } else {
+            loadConversation(true);
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+          button.disabled = false;
+          showAlert('Send message', 'Failed to send message.');
+        })
+        .sendMessage(
+          sessionToken,
+          requestedConversationId,
+          text,
+          replyTarget ? replyTarget.messageId : ''
+        );
+    }
+
+    function clearReplyTarget() {
+      replyTarget = null;
+      renderReplyBanner();
+    }
+
+    function renderReplyBanner() {
+      const banner = document.getElementById('replyBanner');
+      const label = document.getElementById('replyBannerLabel');
+      const text = document.getElementById('replyBannerText');
+
+      if (!replyTarget) {
+        banner.classList.remove('active');
+        label.textContent = 'Replying';
+        text.textContent = '';
+        return;
+      }
+
+      banner.classList.add('active');
+      label.textContent = 'Replying to ' + (replyTarget.displayName || replyTarget.username || 'message');
+      text.textContent = truncate(replyTarget.text || replyTarget.replyPreview || '', 140);
+    }
+
+    function getMessageByIdFromActive(messageId) {
+      const list = messagesByConversation.get(activeConversationId) || [];
+      return list.find(function(item) {
+        return item.messageId === messageId;
+      }) || null;
+    }
+
+    function openMessageDropdownAt(x, y, messageId) {
+      const msg = getMessageByIdFromActive(messageId);
+      if (!msg) return;
+
+      closeMessageDropdown();
+
+      dropdownState.open = true;
+      dropdownState.messageId = messageId;
+
+      const menu = document.getElementById('messageDropdown');
+      const backdrop = document.getElementById('dropdownBackdrop');
+
+      const items = [];
+
+      if (!msg.deletedAt) {
+        items.push(`<button onclick="replyToMessage('${escapeJsString(msg.messageId)}')">Reply</button>`);
+        items.push(`<button onclick="copyMessageText('${escapeJsString(msg.messageId)}')">Copy message</button>`);
+      }
+
+      if (msg.isMine && !msg.deletedAt) {
+        items.push(`<button onclick="editMessageUI('${escapeJsString(msg.messageId)}')">Edit</button>`);
+        items.push(`<button class="danger" onclick="deleteMessageUI('${escapeJsString(msg.messageId)}')">Delete</button>`);
+      }
+
+      if (!items.length) {
+        items.push('<button onclick="closeMessageDropdown()">Close</button>');
+      }
+
+      menu.innerHTML = items.join('');
+      menu.classList.add('open');
+      backdrop.classList.add('open');
+
+      menu.style.left = '0px';
+      menu.style.top = '0px';
+
+      const rect = menu.getBoundingClientRect();
+      let left = x;
+      let top = y;
+
+      if (left + rect.width > window.innerWidth - 8) {
+        left = window.innerWidth - rect.width - 8;
+      }
+      if (top + rect.height > window.innerHeight - 8) {
+        top = window.innerHeight - rect.height - 8;
+      }
+      if (left < 8) left = 8;
+      if (top < 8) top = 8;
+
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+    }
+
+    function closeMessageDropdown() {
+      dropdownState.open = false;
+      dropdownState.messageId = '';
+      document.getElementById('messageDropdown').classList.remove('open');
+      document.getElementById('dropdownBackdrop').classList.remove('open');
+    }
+
+    function replyToMessage(messageId) {
+      const msg = getMessageByIdFromActive(messageId);
+      closeMessageDropdown();
+      if (!msg || msg.deletedAt) return;
+      replyTarget = msg;
+      renderReplyBanner();
+      document.getElementById('composerInput').focus();
+    }
+
+    function copyMessageText(messageId) {
+      const msg = getMessageByIdFromActive(messageId);
+      closeMessageDropdown();
+      if (!msg || msg.deletedAt) return;
+
+      const text = msg.text || '';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+          showToast('Message copied.');
+        }).catch(function() {
+          fallbackCopyText(text);
+        });
+      } else {
+        fallbackCopyText(text);
+      }
+    }
+
+    function fallbackCopyText(text) {
+      const temp = document.createElement('textarea');
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
+      try {
+        document.execCommand('copy');
+        showToast('Message copied.');
+      } catch (e) {
+        showAlert('Copy message', 'Failed to copy message.');
+      }
+      document.body.removeChild(temp);
+    }
+
+    function editMessageUI(messageId) {
+      const msg = getMessageByIdFromActive(messageId);
+      closeMessageDropdown();
+      if (!msg) return;
+
+      showPrompt('Edit message', 'Update your message text.', msg.text || '').then(function(value) {
+        if (value === null) return;
+        const normalized = String(value || '').trim();
+        if (!normalized) {
+          showAlert('Edit message', 'Message cannot be empty.');
+          return;
+        }
+
+        const conversationIdAtRequest = activeConversationId;
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res || !res.ok) {
+              showAlert('Edit message', (res && res.error) || 'Failed to edit message.');
+              return;
+            }
+
+            if (Array.isArray(res.conversations)) {
+              conversations = res.conversations;
+              activeConversation = getConversationById(activeConversationId);
+              renderSidebar();
+              renderActiveTopbar();
+            }
+
+            if (res.message && String(res.conversationId || '') === conversationIdAtRequest) {
+              if (typeof res.version === 'number') {
+                conversationVersions.set(conversationIdAtRequest, res.version);
+              }
+              mergeMessages(conversationIdAtRequest, [res.message], false);
+              if (activeConversationId === conversationIdAtRequest) {
+                renderMessages(false);
+              }
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.error(err);
+            showAlert('Edit message', 'Failed to edit message.');
+          })
+          .editMessage(sessionToken, messageId, normalized);
+      });
+    }
+
+    function deleteMessageUI(messageId) {
+      closeMessageDropdown();
+
+      showConfirm('Delete message', 'Delete this message?', 'Delete', true).then(function(confirmed) {
+        if (!confirmed) return;
+
+        const conversationIdAtRequest = activeConversationId;
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res || !res.ok) {
+              showAlert('Delete message', (res && res.error) || 'Failed to delete message.');
+              return;
+            }
+
+            if (Array.isArray(res.conversations)) {
+              conversations = res.conversations;
+              activeConversation = getConversationById(activeConversationId);
+              renderSidebar();
+              renderActiveTopbar();
+            }
+
+            if (res.message && String(res.conversationId || '') === conversationIdAtRequest) {
+              if (typeof res.version === 'number') {
+                conversationVersions.set(conversationIdAtRequest, res.version);
+              }
+              mergeMessages(conversationIdAtRequest, [res.message], false);
+              if (activeConversationId === conversationIdAtRequest) {
+                renderMessages(false);
+              }
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.error(err);
+            showAlert('Delete message', 'Failed to delete message.');
+          })
+          .deleteMessage(sessionToken, messageId);
+      });
+    }
+
+    function openSettings() {
+      if (!currentUser) return;
+
+      const html = `
+        <div class="field">
+          <label for="settingsDisplayName">Display name</label>
+          <input id="settingsDisplayName" type="text" maxlength="40" value="${escapeAttr(currentUser.displayName || '')}">
+        </div>
+        <div class="field">
+          <label for="settingsUsername">Username</label>
+          <input id="settingsUsername" type="text" disabled value="@${escapeAttr(currentUser.username || '')}">
+        </div>
+        <div class="field">
+          <label for="settingsBio">Bio</label>
+          <textarea id="settingsBio" rows="4" maxlength="240">${escapeHtml(currentUser.bio || '')}</textarea>
+        </div>
+        <div class="field">
+          <label for="settingsTheme">Theme</label>
+          <select id="settingsTheme">
+            <option value="light"${currentUser.theme === 'light' ? ' selected' : ''}>Light</option>
+            <option value="dark"${currentUser.theme === 'dark' ? ' selected' : ''}>Dark</option>
+          </select>
+        </div>
+      `;
+
+      openCustomModal({
+        title: 'Profile settings',
+        message: 'Update your profile information and theme.',
+        html: html,
+        buttons: [
+          { text: 'Cancel', className: 'secondary-btn', value: 'cancel' },
+          { text: 'Save', className: 'primary-btn', value: 'save' }
+        ],
+        onAction: function(value) {
+          if (value !== 'save') {
+            closeModal(null);
+            return;
+          }
+
+          const payload = {
+            displayName: document.getElementById('settingsDisplayName').value.trim(),
+            bio: document.getElementById('settingsBio').value.trim(),
+            theme: document.getElementById('settingsTheme').value
+          };
+
+          google.script.run
+            .withSuccessHandler(function(res) {
+              if (!res || !res.ok) {
+                showAlert('Profile settings', (res && res.error) || 'Failed to update profile.');
+                return;
+              }
+
+              closeModal(true);
+
+              currentUser = res.user || currentUser;
+              if (Array.isArray(res.conversations)) {
+                conversations = res.conversations;
+              }
+
+              applyTheme(currentUser.theme || 'light');
+              renderCurrentUser();
+              activeConversation = getConversationById(activeConversationId);
+              renderSidebar();
+              renderActiveTopbar();
+              renderMessages(false);
+            })
+            .withFailureHandler(function(err) {
+              console.error(err);
+              showAlert('Profile settings', 'Failed to update profile.');
+            })
+            .updateProfile(sessionToken, payload);
+        }
+      });
+    }
+
+    function applyTheme(theme) {
+      document.body.classList.remove('light', 'dark');
+      document.body.classList.add(theme === 'dark' ? 'dark' : 'light');
+    }
+
+    function performUserSearch() {
+      const query = document.getElementById('userSearchInput').value.trim();
+      if (!query) {
+        clearSearchResults();
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            clearSearchResults();
+            return;
+          }
+          renderSearchResults(Array.isArray(res.users) ? res.users : []);
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+          clearSearchResults();
+        })
+        .searchUsers(sessionToken, query);
+    }
+
+    function renderSearchResults(users) {
+      const wrap = document.getElementById('searchResults');
+
+      if (!users.length) {
+        wrap.innerHTML = `
+          <div class="search-item">
+            <div class="search-item-meta">
+              <div class="search-item-title">No users found</div>
+            </div>
+          </div>
+        `;
+        wrap.classList.add('open');
+        return;
+      }
+
+      wrap.innerHTML = users.map(function(user) {
+        const sub = '@' + (user.username || '') + (user.bio ? ' • ' + truncate(user.bio, 100) : '');
+        return `
+          <div class="search-item" onclick="startDirectMessage('${escapeJsString(user.userId)}')">
+            <div class="avatar">${escapeHtml(user.initials || 'U')}</div>
+            <div class="search-item-meta">
+              <div class="search-item-title">${escapeHtml(user.displayName || 'User')}</div>
+              <div class="search-item-sub">${escapeHtml(sub)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      wrap.classList.add('open');
+    }
+
+    function clearSearchResults() {
+      const wrap = document.getElementById('searchResults');
+      wrap.classList.remove('open');
+      wrap.innerHTML = '';
+    }
+
+    function startDirectMessage(userId) {
+      clearSearchResults();
+      document.getElementById('userSearchInput').value = '';
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            showAlert('Direct message', (res && res.error) || 'Failed to open direct message.');
+            return;
+          }
+
+          if (Array.isArray(res.conversations)) {
+            conversations = res.conversations;
+            renderSidebar();
+          }
+
+          if (res.conversationId) {
+            selectConversation(res.conversationId);
+          }
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+          showAlert('Direct message', 'Failed to open direct message.');
+        })
+        .openDirectConversation(sessionToken, userId);
+    }
+
+    function renderTips() {
+      const tip = tips[tipIndex];
+      document.getElementById('tipIndex').textContent = 'Tip ' + (tipIndex + 1) + ' / ' + tips.length;
+      document.getElementById('tipTitle').textContent = tip.title;
+      document.getElementById('tipText').textContent = tip.text;
+    }
+
+    function prevTip() {
+      tipIndex = (tipIndex - 1 + tips.length) % tips.length;
+      renderTips();
+    }
+
+    function nextTip() {
+      tipIndex = (tipIndex + 1) % tips.length;
+      renderTips();
+    }
+
+    function openMobileSidebar() {
+      document.getElementById('sidebar').classList.add('mobile-open');
+      document.getElementById('mobileSidebarBackdrop').classList.add('open');
+    }
+
+    function closeMobileSidebar() {
+      document.getElementById('sidebar').classList.remove('mobile-open');
+      document.getElementById('mobileSidebarBackdrop').classList.remove('open');
+    }
+
+    function logout() {
+      const token = sessionToken;
+      localStorage.removeItem('heyo_token');
+      sessionToken = '';
+      currentUser = null;
+      resetAppState();
+      showAuthScreen();
+
+      if (token) {
+        google.script.run.logout(token);
+      }
+    }
+
+    function handleAppError(res) {
+      const error = (res && res.error) || 'Unexpected error.';
+      if (/session|auth|expired|invalid/i.test(error)) {
+        showAlert('Session', error).then(function() {
+          logout();
+        });
+      }
+    }
+
+    function openCustomModal(config) {
+      return new Promise(function(resolve) {
+        activeModalResolver = resolve;
+
+        document.getElementById('modalTitle').textContent = config.title || 'Modal';
+        document.getElementById('modalBody').textContent = config.message || '';
+        document.getElementById('modalContent').innerHTML = config.html || '';
+
+        const actions = document.getElementById('modalActions');
+        actions.innerHTML = '';
+
+        (config.buttons || []).forEach(function(buttonConfig) {
+          const btn = document.createElement('button');
+          btn.className = buttonConfig.className || 'secondary-btn';
+          btn.textContent = buttonConfig.text || 'OK';
+          btn.onclick = function() {
+            if (typeof config.onAction === 'function') {
+              config.onAction(buttonConfig.value);
+            } else {
+              closeModal(buttonConfig.value);
+            }
+          };
+          actions.appendChild(btn);
+        });
+
+        document.getElementById('modalOverlay').classList.add('open');
+        document.getElementById('modalOverlay').setAttribute('aria-hidden', 'false');
+
+        const textareas = document.querySelectorAll('#modalContent textarea');
+        for (let i = 0; i < textareas.length; i++) {
+          autoGrowTextarea(textareas[i]);
+          textareas[i].addEventListener('input', function() {
+            autoGrowTextarea(this);
+          });
+        }
+      });
+    }
+
+    function closeModal(result) {
+      document.getElementById('modalOverlay').classList.remove('open');
+      document.getElementById('modalOverlay').setAttribute('aria-hidden', 'true');
+      document.getElementById('modalContent').innerHTML = '';
+      document.getElementById('modalActions').innerHTML = '';
+
+      const resolver = activeModalResolver;
+      activeModalResolver = null;
+      if (resolver) resolver(result);
+    }
+
+    function showAlert(title, message) {
+      return openCustomModal({
+        title: title,
+        message: message,
+        buttons: [
+          { text: 'OK', className: 'primary-btn', value: true }
+        ]
+      });
+    }
+
+    function showConfirm(title, message, okText, danger) {
+      return openCustomModal({
+        title: title,
+        message: message,
+        buttons: [
+          { text: 'Cancel', className: 'secondary-btn', value: false },
+          { text: okText || 'OK', className: danger ? 'danger-btn' : 'primary-btn', value: true }
+        ]
+      });
+    }
+
+    function showPrompt(title, message, value) {
+      return openCustomModal({
+        title: title,
+        message: message,
+        html: `
+          <div class="field">
+            <textarea id="promptInput" rows="4">${escapeHtml(value || '')}</textarea>
+          </div>
+        `,
+        buttons: [
+          { text: 'Cancel', className: 'secondary-btn', value: 'cancel' },
+          { text: 'Save', className: 'primary-btn', value: 'save' }
+        ],
+        onAction: function(action) {
+          if (action !== 'save') {
+            closeModal(null);
+            return;
+          }
+          const input = document.getElementById('promptInput');
+          closeModal(input ? input.value : null);
+        }
+      });
+    }
+
+    function showToast(message) {
+      showAlert('Notice', message);
+    }
+
+    function autoGrowTextarea(el) {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+    }
+
+    function findMessageCardNode(target) {
+      if (!target) return null;
+      return target.closest('.message-card[data-message-id]');
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/\n/g, '&#10;');
+    }
+
+    function escapeJsString(value) {
+      return String(value || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/</g, '\\x3C')
+        .replace(/>/g, '\\x3E');
+    }
+
+    function truncate(value, maxLen) {
+      const text = String(value || '');
+      if (text.length <= maxLen) return text;
+      return text.slice(0, maxLen - 1) + '…';
+    }
+
+    function getInitial(value) {
+      const text = String(value || '').trim();
+      return text ? text.charAt(0).toUpperCase() : 'U';
+    }
+
+    function formatMessageTime(iso) {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleString([], {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function formatSidebarTime(iso) {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      const now = new Date();
+
+      const sameDay =
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate();
+
+      if (sameDay) {
+        return d.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+
+      return d.toLocaleDateString([], {
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    document.getElementById('composerInput').addEventListener('input', function() {
+      autoGrowTextarea(this);
+    });
+
+    document.getElementById('composerInput').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessageFromUI();
+      }
+    });
+
+    document.getElementById('userSearchInput').addEventListener('input', function() {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(performUserSearch, 220);
+    });
+
+    document.getElementById('modalOverlay').addEventListener('click', function(event) {
+      if (event.target === this && activeModalResolver) {
+        closeModal(null);
+      }
+    });
+
+    const messagesEl = document.getElementById('messages');
+
+    messagesEl.addEventListener('contextmenu', function(event) {
+      const card = findMessageCardNode(event.target);
+      if (!card) return;
+
+      event.preventDefault();
+
+      const messageId = card.getAttribute('data-message-id');
+      openMessageDropdownAt(event.clientX, event.clientY, messageId);
+    });
+
+    messagesEl.addEventListener('touchstart', function(event) {
+      const card = findMessageCardNode(event.target);
+      if (!card) return;
+
+      longPressTriggered = false;
+      const touch = event.touches && event.touches[0];
+      if (!touch) return;
+
+      clearTimeout(longPressTimer);
+      longPressTimer = setTimeout(function() {
+        longPressTriggered = true;
+        const messageId = card.getAttribute('data-message-id');
+        openMessageDropdownAt(touch.clientX, touch.clientY, messageId);
+      }, 550);
+    }, { passive: true });
+
+    messagesEl.addEventListener('touchend', function() {
+      clearTimeout(longPressTimer);
+    }, { passive: true });
+
+    messagesEl.addEventListener('touchcancel', function() {
+      clearTimeout(longPressTimer);
+    }, { passive: true });
+
+    messagesEl.addEventListener('touchmove', function() {
+      clearTimeout(longPressTimer);
+    }, { passive: true });
+
+    messagesEl.addEventListener('click', function(event) {
+      if (longPressTriggered) {
+        event.preventDefault();
+        longPressTriggered = false;
+      }
+    });
+
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('messageDropdown');
+      const searchWrap = document.getElementById('searchResults');
+
+      if (dropdownState.open && !dropdown.contains(event.target)) {
+        closeMessageDropdown();
+      }
+
+      if (
+        searchWrap.classList.contains('open') &&
+        !document.getElementById('userSearchInput').contains(event.target) &&
+        !searchWrap.contains(event.target)
+      ) {
+        clearSearchResults();
+      }
+    });
+
+    document.addEventListener('scroll', function() {
+      closeMessageDropdown();
+    }, true);
+
+    window.addEventListener('resize', function() {
+      closeMessageDropdown();
+      if (window.innerWidth > 900) {
+        closeMobileSidebar();
+      }
+    });
+
+    verifySession();
+    renderTips();
+  </script>
+</body>
+</html>
