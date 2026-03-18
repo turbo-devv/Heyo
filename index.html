@@ -19,6 +19,8 @@
       --accent: #4f46e5;
       --accent-soft: #eef0ff;
       --danger: #d92d20;
+      --success: #0f9d58;
+      --warning: #c27803;
       --overlay: rgba(15, 23, 42, 0.44);
       --my-msg: #edf2ff;
       --other-msg: #ffffff;
@@ -37,6 +39,8 @@
       --accent: #7c8cff;
       --accent-soft: #1d2442;
       --danger: #ff6b6b;
+      --success: #39c57a;
+      --warning: #f1b14d;
       --overlay: rgba(0, 0, 0, 0.58);
       --my-msg: #1a2747;
       --other-msg: #161d28;
@@ -70,12 +74,16 @@
       font: inherit;
     }
 
-    button, select {
+    button, select, progress {
       font: inherit;
     }
 
     textarea {
       resize: none;
+    }
+
+    a {
+      color: inherit;
     }
 
     .screen {
@@ -185,7 +193,8 @@
     .submit-btn,
     .primary-btn,
     .secondary-btn,
-    .danger-btn {
+    .danger-btn,
+    .ghost-btn {
       border: none;
       border-radius: 10px;
       cursor: pointer;
@@ -199,7 +208,8 @@
       color: white;
     }
 
-    .secondary-btn {
+    .secondary-btn,
+    .ghost-btn {
       background: var(--panel-2);
       color: var(--text);
       border: 1px solid var(--border);
@@ -208,6 +218,16 @@
     .danger-btn {
       background: var(--danger);
       color: white;
+    }
+
+    .submit-btn[disabled],
+    .primary-btn[disabled],
+    .secondary-btn[disabled],
+    .danger-btn[disabled],
+    .ghost-btn[disabled],
+    .icon-btn[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .submit-btn {
@@ -661,6 +681,124 @@
       color: var(--muted);
     }
 
+    .message-attachments {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .message-attachments:first-child {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .attachment-card {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .attachment-image-link,
+    .attachment-video-link {
+      display: block;
+      text-decoration: none;
+    }
+
+    .attachment-image,
+    .attachment-video {
+      display: block;
+      width: 100%;
+      max-width: 420px;
+      max-height: 360px;
+      object-fit: cover;
+      background: #000;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .attachment-file {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .attachment-file-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .attachment-file-body {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .attachment-file-name {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .attachment-file-meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .attachment-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .attachment-action-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .attachment-caption {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .attachment-caption-name {
+      font-size: 14px;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .attachment-caption-meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
     .message-meta {
       display: flex;
       flex-wrap: wrap;
@@ -677,7 +815,8 @@
       flex-shrink: 0;
     }
 
-    .reply-banner {
+    .reply-banner,
+    .upload-banner {
       display: none;
       align-items: center;
       justify-content: space-between;
@@ -689,23 +828,27 @@
       margin-bottom: 10px;
     }
 
-    .reply-banner.active {
+    .reply-banner.active,
+    .upload-banner.active {
       display: flex;
     }
 
-    .reply-banner-meta {
+    .reply-banner-meta,
+    .upload-banner-meta {
       min-width: 0;
       flex: 1;
     }
 
-    .reply-banner-label {
+    .reply-banner-label,
+    .upload-banner-label {
       font-size: 12px;
       font-weight: 700;
       color: var(--accent);
       margin-bottom: 4px;
     }
 
-    .reply-banner-text {
+    .reply-banner-text,
+    .upload-banner-text {
       font-size: 13px;
       color: var(--muted);
       white-space: nowrap;
@@ -713,7 +856,47 @@
       text-overflow: ellipsis;
     }
 
+    .upload-banner-label.error {
+      color: var(--danger);
+    }
+
+    .upload-banner-label.success {
+      color: var(--success);
+    }
+
+    .upload-progress-wrap {
+      margin-top: 8px;
+    }
+
+    .upload-progress {
+      width: 100%;
+      height: 10px;
+      appearance: none;
+      border: none;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.08);
+    }
+
+    .upload-progress::-webkit-progress-bar {
+      background: rgba(0,0,0,0.08);
+    }
+
+    .upload-progress::-webkit-progress-value {
+      background: var(--accent);
+    }
+
+    .upload-progress::-moz-progress-bar {
+      background: var(--accent);
+    }
+
     .composer {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .composer-actions {
       display: flex;
       gap: 10px;
       align-items: flex-end;
@@ -812,6 +995,8 @@
       padding: 0 18px 16px;
       color: var(--muted);
       line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .modal-content {
@@ -823,6 +1008,7 @@
       justify-content: flex-end;
       gap: 10px;
       padding: 0 18px 18px;
+      flex-wrap: wrap;
     }
 
     .mobile-toggle {
@@ -872,6 +1058,19 @@
       .message-row {
         max-width: 100%;
       }
+
+      .composer {
+        align-items: stretch;
+      }
+
+      .composer-actions {
+        flex-direction: column;
+      }
+
+      .attachment-image,
+      .attachment-video {
+        max-width: 100%;
+      }
     }
   </style>
 </head>
@@ -879,7 +1078,7 @@
   <div id="authScreen" class="screen auth-screen active">
     <div class="auth-card">
       <div class="auth-brand">Heyo</div>
-      <div class="auth-sub">Main chat, direct messages, profile settings, reply menu, and theme support.</div>
+      <div class="auth-sub">Main chat, direct messages, profile settings, reply menu, theme support, and file uploads.</div>
 
       <div class="tabs">
         <button id="loginTabBtn" class="active" onclick="switchAuthMode('login')">Login</button>
@@ -1025,9 +1224,24 @@
                 <button class="secondary-btn" onclick="clearReplyTarget()">Cancel</button>
               </div>
 
+              <div id="uploadBanner" class="upload-banner">
+                <div class="upload-banner-meta">
+                  <div id="uploadBannerLabel" class="upload-banner-label">Upload</div>
+                  <div id="uploadBannerText" class="upload-banner-text"></div>
+                  <div id="uploadProgressWrap" class="upload-progress-wrap" style="display:none;">
+                    <progress id="uploadProgress" class="upload-progress" value="0" max="100"></progress>
+                  </div>
+                </div>
+                <button id="cancelUploadBtn" class="secondary-btn" onclick="cancelCurrentUpload()" style="display:none;">Cancel</button>
+              </div>
+
               <div class="composer">
                 <textarea id="composerInput" placeholder="Write a message..." rows="1"></textarea>
-                <button id="sendBtn" class="primary-btn" onclick="sendMessageFromUI()">Send</button>
+                <div class="composer-actions">
+                  <input id="fileInput" type="file" style="display:none;">
+                  <button id="attachBtn" class="secondary-btn" onclick="openFilePicker()">Attach</button>
+                  <button id="sendBtn" class="primary-btn" onclick="sendMessageFromUI()">Send</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1050,6 +1264,8 @@
 
   <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjbGkp5x9q1Pkxo4nKOr_tC3UFyJmL72neVrGMNS9_boXxffgV0jrmzV-Btd1aiK_HqA/exec';
+    const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
+    const CHUNK_SIZE = 8 * 1024 * 1024;
 
     (function initGoogleScriptRunAdapter() {
       function createRunner(successHandler, failureHandler) {
@@ -1151,6 +1367,18 @@
     let longPressTimer = null;
     let longPressTriggered = false;
 
+    let uploadState = {
+      active: false,
+      file: null,
+      xhr: null,
+      uploadToken: '',
+      uploadUrl: '',
+      fileId: '',
+      conversationId: '',
+      progress: 0,
+      phase: ''
+    };
+
     const tips = [
       {
         title: 'Main is the public room',
@@ -1169,8 +1397,12 @@
         text: 'Your own account is included in search results, which works like saved messages.'
       },
       {
-        title: 'Reply menu uses right-click and long-press',
-        text: 'Use right-click on desktop or long-press on mobile to open the message menu.'
+        title: 'Right-click and long-press open the message menu',
+        text: 'Use right-click on desktop or long-press on mobile to reply, edit, delete, or copy.'
+      },
+      {
+        title: 'Files go straight to Google Drive',
+        text: 'Photos, videos, and any files up to 1 GB upload directly to Drive and then appear in chat.'
       }
     ];
     let tipIndex = 0;
@@ -1337,6 +1569,7 @@
       replyTarget = null;
       clearSearchResults();
       closeMessageDropdown();
+      resetUploadState(true);
       showPlaceholder();
     }
 
@@ -1483,6 +1716,7 @@
       renderActiveTopbar();
       showConversationView();
       closeMobileSidebar();
+      resetUploadState(true);
 
       if (!conversationVersions.has(conversationId)) {
         conversationVersions.set(conversationId, 0);
@@ -1590,7 +1824,7 @@
       });
 
       incoming.forEach(function(item) {
-        byId.set(item.messageId, item);
+        byId.set(item.messageId, normalizeIncomingMessage(item));
       });
 
       const merged = Array.from(byId.values()).sort(function(a, b) {
@@ -1601,6 +1835,34 @@
       });
 
       messagesByConversation.set(conversationId, merged);
+    }
+
+    function normalizeIncomingMessage(msg) {
+      const normalized = Object.assign({}, msg || {});
+      normalized.attachments = Array.isArray(normalized.attachments)
+        ? normalized.attachments.map(normalizeIncomingAttachment).filter(Boolean)
+        : [];
+      normalized.hasAttachments = normalized.attachments.length > 0;
+      normalized.attachmentCount = normalized.attachments.length;
+      normalized.messageType = deriveClientMessageType(normalized.text, normalized.attachments, normalized.messageType);
+      return normalized;
+    }
+
+    function normalizeIncomingAttachment(item) {
+      if (!item || typeof item !== 'object') return null;
+      const att = Object.assign({}, item);
+      att.fileId = String(att.fileId || '');
+      att.name = String(att.name || '');
+      att.mimeType = String(att.mimeType || 'application/octet-stream');
+      att.size = Number.isFinite(Number(att.size)) ? Math.max(0, Math.floor(Number(att.size))) : 0;
+      att.category = detectAttachmentCategory(att.mimeType);
+      att.extension = extractFileExtension(att.name);
+      att.webViewLink = String(att.webViewLink || '');
+      att.webContentLink = String(att.webContentLink || '');
+      att.thumbnailLink = String(att.thumbnailLink || '');
+      att.iconLink = String(att.iconLink || '');
+      if (!att.fileId || !att.name) return null;
+      return att;
     }
 
     function renderMessages(forceScroll) {
@@ -1628,13 +1890,15 @@
         </div>
       ` : '';
 
+      const attachmentsHtml = renderMessageAttachments(msg.attachments || []);
       const textBlock = msg.deletedAt
         ? '<div class="message-text deleted">This message was deleted.</div>'
-        : `<div class="message-text">${escapeHtml(msg.text || '')}</div>`;
+        : (msg.text ? `<div class="message-text">${escapeHtml(msg.text || '')}</div>` : '');
 
       const meta = [];
       if (msg.createdAt) meta.push(formatMessageTime(msg.createdAt));
       if (msg.editedAt && !msg.deletedAt) meta.push('edited');
+      if (msg.hasAttachments) meta.push(String(msg.attachmentCount || 0) + ' file' + ((msg.attachmentCount || 0) === 1 ? '' : 's'));
 
       return `
         <div class="message-row ${mineClass}">
@@ -1650,6 +1914,7 @@
               <div class="message-username">@${escapeHtml(msg.username || '')}</div>
             </div>
             ${replyBlock}
+            ${attachmentsHtml}
             ${textBlock}
             <div class="message-meta">
               ${meta.map(function(x) {
@@ -1661,8 +1926,81 @@
       `;
     }
 
+    function renderMessageAttachments(attachments) {
+      if (!attachments || !attachments.length) return '';
+
+      return `
+        <div class="message-attachments">
+          ${attachments.map(renderSingleAttachment).join('')}
+        </div>
+      `;
+    }
+
+    function renderSingleAttachment(att) {
+      const safeName = escapeHtml(att.name || 'file');
+      const safeMeta = escapeHtml(buildAttachmentMetaText(att));
+      const viewLink = escapeAttr(att.webViewLink || att.webContentLink || '#');
+      const downloadLink = escapeAttr(att.webContentLink || att.webViewLink || '#');
+      const canOpen = !!(att.webViewLink || att.webContentLink);
+
+      if (att.category === 'image') {
+        const src = escapeAttr(att.thumbnailLink || att.webContentLink || att.webViewLink || '');
+        return `
+          <div class="attachment-card">
+            <a class="attachment-image-link" href="${viewLink}" target="_blank" rel="noopener noreferrer">
+              <img class="attachment-image" src="${src}" alt="${safeName}" loading="lazy">
+            </a>
+            <div class="attachment-caption">
+              <div class="attachment-caption-name">${safeName}</div>
+              <div class="attachment-caption-meta">${safeMeta}</div>
+              <div class="attachment-actions">
+                ${canOpen ? `<a class="attachment-action-link" href="${viewLink}" target="_blank" rel="noopener noreferrer">Open</a>` : ''}
+                ${canOpen ? `<a class="attachment-action-link" href="${downloadLink}" target="_blank" rel="noopener noreferrer">Download</a>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (att.category === 'video') {
+        const src = escapeAttr(att.webContentLink || att.webViewLink || '');
+        return `
+          <div class="attachment-card">
+            <a class="attachment-video-link" href="${viewLink}" target="_blank" rel="noopener noreferrer">
+              <video class="attachment-video" controls preload="metadata" ${src ? `src="${src}"` : ''}></video>
+            </a>
+            <div class="attachment-caption">
+              <div class="attachment-caption-name">${safeName}</div>
+              <div class="attachment-caption-meta">${safeMeta}</div>
+              <div class="attachment-actions">
+                ${canOpen ? `<a class="attachment-action-link" href="${viewLink}" target="_blank" rel="noopener noreferrer">Open</a>` : ''}
+                ${canOpen ? `<a class="attachment-action-link" href="${downloadLink}" target="_blank" rel="noopener noreferrer">Download</a>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="attachment-card">
+          <div class="attachment-file">
+            <div class="attachment-file-icon">${escapeHtml(getAttachmentIcon(att))}</div>
+            <div class="attachment-file-body">
+              <div class="attachment-file-name">${safeName}</div>
+              <div class="attachment-file-meta">${safeMeta}</div>
+              <div class="attachment-actions">
+                ${canOpen ? `<a class="attachment-action-link" href="${viewLink}" target="_blank" rel="noopener noreferrer">Open</a>` : ''}
+                ${canOpen ? `<a class="attachment-action-link" href="${downloadLink}" target="_blank" rel="noopener noreferrer">Download</a>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     function sendMessageFromUI() {
       if (!sessionToken || !activeConversationId) return;
+      if (uploadState.active) return;
 
       const input = document.getElementById('composerInput');
       const button = document.getElementById('sendBtn');
@@ -1671,10 +2009,12 @@
 
       const requestedConversationId = activeConversationId;
       button.disabled = true;
+      setComposerDisabled(true);
 
       google.script.run
         .withSuccessHandler(function(res) {
           button.disabled = false;
+          setComposerDisabled(false);
 
           if (!res || !res.ok) {
             showAlert('Send message', (res && res.error) || 'Failed to send message.');
@@ -1712,6 +2052,7 @@
         .withFailureHandler(function(err) {
           console.error(err);
           button.disabled = false;
+          setComposerDisabled(false);
           showAlert('Send message', 'Failed to send message.');
         })
         .sendMessage(
@@ -1720,6 +2061,350 @@
           text,
           replyTarget ? replyTarget.messageId : ''
         );
+    }
+
+    function openFilePicker() {
+      if (!sessionToken || !activeConversationId) return;
+      if (uploadState.active) return;
+      document.getElementById('fileInput').click();
+    }
+
+    function handleFileSelection(file) {
+      if (!file) return;
+      if (!sessionToken || !activeConversationId) return;
+
+      if (uploadState.active) {
+        showAlert('Upload', 'Another upload is already in progress.');
+        return;
+      }
+
+      if (file.size <= 0) {
+        showAlert('Upload', 'Empty file is not allowed.');
+        return;
+      }
+
+      if (file.size > MAX_UPLOAD_BYTES) {
+        showAlert('Upload', 'File exceeds 1 GB limit.');
+        return;
+      }
+
+      const conversationIdAtStart = activeConversationId;
+      const text = document.getElementById('composerInput').value.trim();
+
+      uploadState.active = true;
+      uploadState.file = file;
+      uploadState.conversationId = conversationIdAtStart;
+      uploadState.phase = 'preparing';
+      uploadState.progress = 0;
+      renderUploadBanner('Preparing upload: ' + file.name, 'default', 0, true);
+      setComposerDisabled(true);
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!uploadState.active) return;
+
+          if (!res || !res.ok) {
+            showAlert('Upload', (res && res.error) || 'Failed to create upload session.');
+            resetUploadState();
+            return;
+          }
+
+          if (conversationIdAtStart !== activeConversationId) {
+            showAlert('Upload', 'Conversation changed during upload setup.');
+            resetUploadState();
+            return;
+          }
+
+          uploadState.uploadToken = String(res.uploadToken || '');
+          uploadState.uploadUrl = String(res.uploadUrl || '');
+          uploadState.phase = 'uploading';
+
+          if (!uploadState.uploadUrl || !uploadState.uploadToken) {
+            showAlert('Upload', 'Upload session is invalid.');
+            resetUploadState();
+            return;
+          }
+
+          uploadFileResumable(file, uploadState.uploadUrl, function(percent, xhr) {
+            uploadState.xhr = xhr || uploadState.xhr;
+            uploadState.progress = percent;
+            renderUploadBanner('Uploading ' + file.name + ' — ' + percent + '%', 'default', percent, true);
+          }).then(function(fileId) {
+            if (!uploadState.active) return;
+            uploadState.fileId = fileId;
+            uploadState.phase = 'finalizing';
+            renderUploadBanner('Finalizing message: ' + file.name, 'default', 100, false);
+
+            google.script.run
+              .withSuccessHandler(function(finalizeRes) {
+                if (!uploadState.active) return;
+
+                if (!finalizeRes || !finalizeRes.ok) {
+                  showAlert('Upload', (finalizeRes && finalizeRes.error) || 'Failed to finalize uploaded message.');
+                  resetUploadState();
+                  return;
+                }
+
+                const conversationIdAtFinalize = uploadState.conversationId;
+
+                document.getElementById('composerInput').value = '';
+                autoGrowTextarea(document.getElementById('composerInput'));
+                clearReplyTarget();
+
+                if (Array.isArray(finalizeRes.conversations)) {
+                  conversations = finalizeRes.conversations;
+                  activeConversation = getConversationById(activeConversationId);
+                  renderSidebar();
+                  renderActiveTopbar();
+                }
+
+                if (typeof finalizeRes.version === 'number' && conversationIdAtFinalize) {
+                  conversationVersions.set(conversationIdAtFinalize, finalizeRes.version);
+                }
+
+                if (finalizeRes.message && String(finalizeRes.conversationId || '') === conversationIdAtFinalize) {
+                  mergeMessages(conversationIdAtFinalize, [finalizeRes.message], false);
+                  if (activeConversationId === conversationIdAtFinalize) {
+                    renderMessages(true);
+                  }
+                } else if (conversationIdAtFinalize) {
+                  loadConversation(true);
+                }
+
+                renderUploadBanner('Upload complete: ' + file.name, 'success', 100, false);
+                const keepMessage = 'Upload complete: ' + file.name;
+                resetUploadState(false);
+                setTimeout(function() {
+                  if (!uploadState.active) {
+                    hideUploadBannerIfTextMatches(keepMessage);
+                  }
+                }, 1400);
+              })
+              .withFailureHandler(function(err) {
+                console.error(err);
+                showAlert('Upload', 'Failed to finalize uploaded message.');
+                resetUploadState();
+              })
+              .finalizeUploadedMessage(sessionToken, {
+                uploadToken: uploadState.uploadToken,
+                fileId: fileId,
+                fileName: file.name,
+                mimeType: file.type || 'application/octet-stream',
+                fileSize: file.size,
+                text: text,
+                replyToMessageId: replyTarget ? replyTarget.messageId : ''
+              });
+          }).catch(function(error) {
+            console.error(error);
+            showAlert('Upload', error && error.message ? error.message : 'Upload failed.');
+            resetUploadState();
+          });
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+          showAlert('Upload', 'Failed to create upload session.');
+          resetUploadState();
+        })
+        .createDriveUploadSession(sessionToken, {
+          conversationId: conversationIdAtStart,
+          fileName: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          fileSize: file.size,
+          text: text,
+          replyToMessageId: replyTarget ? replyTarget.messageId : ''
+        });
+    }
+
+    async function uploadFileResumable(file, uploadUrl, onProgress) {
+      let start = 0;
+      let fileId = '';
+
+      while (start < file.size) {
+        const endExclusive = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, endExclusive);
+        const contentRange = 'bytes ' + start + '-' + (endExclusive - 1) + '/' + file.size;
+        const response = await sendUploadChunk(uploadUrl, chunk, file.type || 'application/octet-stream', contentRange, onProgress, endExclusive, file.size);
+        const status = response.status;
+
+        if (status === 308) {
+          const range = response.getResponseHeader('Range');
+          if (range) {
+            const parsedEnd = parseResumableRangeEnd(range);
+            start = parsedEnd + 1;
+          } else {
+            start = endExclusive;
+          }
+          const percent = Math.min(99, Math.floor((start / file.size) * 100));
+          if (typeof onProgress === 'function') onProgress(percent, response.xhr);
+          continue;
+        }
+
+        if (status >= 200 && status < 300) {
+          let body = {};
+          try {
+            body = response.responseText ? JSON.parse(response.responseText) : {};
+          } catch (e) {
+            body = {};
+          }
+          fileId = body.id || '';
+          if (!fileId) {
+            throw new Error('Drive upload completed but file ID was not returned.');
+          }
+          if (typeof onProgress === 'function') onProgress(100, response.xhr);
+          return fileId;
+        }
+
+        throw new Error('Upload failed with HTTP ' + status + '.');
+      }
+
+      throw new Error('Upload did not complete.');
+    }
+
+    function sendUploadChunk(uploadUrl, blobChunk, mimeType, contentRange, onProgress, uploadedBytes, totalBytes) {
+      return new Promise(function(resolve, reject) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadUrl, true);
+        xhr.setRequestHeader('Content-Type', mimeType || 'application/octet-stream');
+        xhr.setRequestHeader('Content-Range', contentRange);
+
+        xhr.upload.onprogress = function(event) {
+          if (!event.lengthComputable) return;
+          const loadedForChunk = event.loaded || 0;
+          const chunkSize = blobChunk.size || 0;
+          const chunkStart = uploadedBytes - chunkSize;
+          const totalLoaded = Math.min(totalBytes, chunkStart + loadedForChunk);
+          const percent = Math.min(99, Math.floor((totalLoaded / totalBytes) * 100));
+          if (typeof onProgress === 'function') {
+            onProgress(percent, xhr);
+          }
+        };
+
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+          resolve({
+            status: xhr.status,
+            responseText: xhr.responseText,
+            xhr: xhr,
+            getResponseHeader: function(name) {
+              return xhr.getResponseHeader(name);
+            }
+          });
+        };
+
+        xhr.onerror = function() {
+          reject(new Error('Network error during upload.'));
+        };
+
+        xhr.onabort = function() {
+          reject(new Error('Upload cancelled.'));
+        };
+
+        xhr.send(blobChunk);
+      });
+    }
+
+    function parseResumableRangeEnd(rangeHeader) {
+      const match = String(rangeHeader || '').match(/bytes=0-(\d+)$/i);
+      if (!match) return -1;
+      return Number(match[1]) || -1;
+    }
+
+    function cancelCurrentUpload() {
+      if (!uploadState.active) return;
+
+      if (uploadState.xhr) {
+        try {
+          uploadState.xhr.abort();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      renderUploadBanner('Upload cancelled.', 'error', 0, false);
+      resetUploadState(false);
+      setTimeout(function() {
+        if (!uploadState.active) {
+          hideUploadBannerIfTextMatches('Upload cancelled.');
+        }
+      }, 1200);
+    }
+
+    function resetUploadState(clearBanner) {
+      if (clearBanner !== false) {
+        hideUploadBanner();
+      }
+      uploadState.active = false;
+      uploadState.file = null;
+      uploadState.xhr = null;
+      uploadState.uploadToken = '';
+      uploadState.uploadUrl = '';
+      uploadState.fileId = '';
+      uploadState.conversationId = '';
+      uploadState.progress = 0;
+      uploadState.phase = '';
+      document.getElementById('fileInput').value = '';
+      setComposerDisabled(false);
+    }
+
+    function renderUploadBanner(text, state, percent, canCancel) {
+      const banner = document.getElementById('uploadBanner');
+      const label = document.getElementById('uploadBannerLabel');
+      const value = document.getElementById('uploadBannerText');
+      const progressWrap = document.getElementById('uploadProgressWrap');
+      const progress = document.getElementById('uploadProgress');
+      const cancelBtn = document.getElementById('cancelUploadBtn');
+
+      banner.classList.add('active');
+      label.classList.remove('error', 'success');
+
+      if (state === 'error') {
+        label.classList.add('error');
+        label.textContent = 'Upload error';
+      } else if (state === 'success') {
+        label.classList.add('success');
+        label.textContent = 'Upload complete';
+      } else {
+        label.textContent = 'Upload';
+      }
+
+      value.textContent = text || '';
+      if (typeof percent === 'number') {
+        progressWrap.style.display = '';
+        progress.value = Math.max(0, Math.min(100, percent));
+      } else {
+        progressWrap.style.display = 'none';
+        progress.value = 0;
+      }
+
+      cancelBtn.style.display = canCancel ? '' : 'none';
+    }
+
+    function hideUploadBanner() {
+      const banner = document.getElementById('uploadBanner');
+      banner.classList.remove('active');
+      document.getElementById('uploadBannerLabel').classList.remove('error', 'success');
+      document.getElementById('uploadBannerLabel').textContent = 'Upload';
+      document.getElementById('uploadBannerText').textContent = '';
+      document.getElementById('uploadProgressWrap').style.display = 'none';
+      document.getElementById('uploadProgress').value = 0;
+      document.getElementById('cancelUploadBtn').style.display = 'none';
+    }
+
+    function hideUploadBannerIfTextMatches(expectedText) {
+      const current = document.getElementById('uploadBannerText').textContent;
+      if (current === expectedText) {
+        hideUploadBanner();
+      }
+    }
+
+    function setComposerDisabled(disabled) {
+      const composer = document.getElementById('composerInput');
+      const sendBtn = document.getElementById('sendBtn');
+      const attachBtn = document.getElementById('attachBtn');
+
+      composer.disabled = !!disabled && !uploadState.active;
+      sendBtn.disabled = !!disabled;
+      attachBtn.disabled = !!disabled;
     }
 
     function clearReplyTarget() {
@@ -1741,7 +2426,17 @@
 
       banner.classList.add('active');
       label.textContent = 'Replying to ' + (replyTarget.displayName || replyTarget.username || 'message');
-      text.textContent = truncate(replyTarget.text || replyTarget.replyPreview || '', 140);
+      text.textContent = buildReplyPreviewClient(replyTarget);
+    }
+
+    function buildReplyPreviewClient(message) {
+      const text = String(message && message.text || '').trim();
+      if (text) return truncate(text, 140);
+
+      const attachments = Array.isArray(message && message.attachments) ? message.attachments : [];
+      if (attachments.length) return describeAttachmentListShortClient(attachments);
+
+      return '';
     }
 
     function getMessageByIdFromActive(messageId) {
@@ -1771,7 +2466,7 @@
       }
 
       if (msg.isMine && !msg.deletedAt) {
-        items.push(`<button onclick="editMessageUI('${escapeJsString(msg.messageId)}')">Edit</button>`);
+        items.push(`<button onclick="editMessageUI('${escapeJsString(msg.messageId)}')">Edit text</button>`);
         items.push(`<button class="danger" onclick="deleteMessageUI('${escapeJsString(msg.messageId)}')">Delete</button>`);
       }
 
@@ -1824,7 +2519,7 @@
       closeMessageDropdown();
       if (!msg || msg.deletedAt) return;
 
-      const text = msg.text || '';
+      const text = buildCopyTextFromMessage(msg);
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(function() {
           showToast('Message copied.');
@@ -1834,6 +2529,20 @@
       } else {
         fallbackCopyText(text);
       }
+    }
+
+    function buildCopyTextFromMessage(msg) {
+      const blocks = [];
+      if (msg.text) blocks.push(msg.text);
+
+      if (Array.isArray(msg.attachments) && msg.attachments.length) {
+        msg.attachments.forEach(function(att) {
+          const line = '[' + attachmentTypeLabelClient(att) + '] ' + (att.name || 'file') + (att.webViewLink ? ' - ' + att.webViewLink : '');
+          blocks.push(line);
+        });
+      }
+
+      return blocks.join('\n');
     }
 
     function fallbackCopyText(text) {
@@ -2330,6 +3039,84 @@
       });
     }
 
+    function formatFileSize(bytes) {
+      const value = Number(bytes);
+      if (!Number.isFinite(value) || value <= 0) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let size = value;
+      let unit = 0;
+      while (size >= 1024 && unit < units.length - 1) {
+        size /= 1024;
+        unit += 1;
+      }
+      const digits = size >= 10 || unit === 0 ? 0 : 1;
+      return size.toFixed(digits) + ' ' + units[unit];
+    }
+
+    function detectAttachmentCategory(mimeType) {
+      const type = String(mimeType || '').toLowerCase();
+      if (type.startsWith('image/')) return 'image';
+      if (type.startsWith('video/')) return 'video';
+      if (type.startsWith('audio/')) return 'audio';
+      return 'file';
+    }
+
+    function extractFileExtension(name) {
+      const text = String(name || '');
+      const idx = text.lastIndexOf('.');
+      if (idx <= 0 || idx === text.length - 1) return '';
+      return text.slice(idx + 1).toLowerCase();
+    }
+
+    function deriveClientMessageType(text, attachments, fallback) {
+      const normalizedText = String(text || '').trim();
+      if (attachments && attachments.length && normalizedText) return 'mixed';
+      if (attachments && attachments.length) return 'file';
+      return fallback || 'text';
+    }
+
+    function attachmentTypeLabelClient(att) {
+      const category = detectAttachmentCategory(att && att.mimeType);
+      if (category === 'image') return 'Photo';
+      if (category === 'video') return 'Video';
+      if (category === 'audio') return 'Audio';
+      return 'File';
+    }
+
+    function describeAttachmentListShortClient(attachments) {
+      if (!attachments || !attachments.length) return '';
+      if (attachments.length === 1) {
+        return '[' + attachmentTypeLabelClient(attachments[0]) + '] ' + truncate(attachments[0].name || 'file', 60);
+      }
+      return attachments.length + ' files';
+    }
+
+    function getAttachmentIcon(att) {
+      const category = detectAttachmentCategory(att && att.mimeType);
+      const ext = extractFileExtension(att && att.name);
+
+      if (category === 'image') return '🖼';
+      if (category === 'video') return '🎬';
+      if (category === 'audio') return '🎵';
+
+      if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return '🗜';
+      if (['pdf'].includes(ext)) return '📕';
+      if (['doc', 'docx', 'rtf', 'txt', 'md'].includes(ext)) return '📄';
+      if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
+      if (['ppt', 'pptx'].includes(ext)) return '📽';
+      if (['js', 'ts', 'html', 'css', 'json', 'py', 'java', 'go', 'php', 'sql', 'xml', 'yml', 'yaml'].includes(ext)) return '💻';
+
+      return '📎';
+    }
+
+    function buildAttachmentMetaText(att) {
+      const parts = [];
+      parts.push(attachmentTypeLabelClient(att));
+      if (att.mimeType) parts.push(att.mimeType);
+      if (att.size > 0) parts.push(formatFileSize(att.size));
+      return parts.join(' • ');
+    }
+
     document.getElementById('composerInput').addEventListener('input', function() {
       autoGrowTextarea(this);
     });
@@ -2339,6 +3126,14 @@
         event.preventDefault();
         sendMessageFromUI();
       }
+    });
+
+    document.getElementById('fileInput').addEventListener('change', function(event) {
+      const files = event.target.files;
+      if (files && files[0]) {
+        handleFileSelection(files[0]);
+      }
+      event.target.value = '';
     });
 
     document.getElementById('userSearchInput').addEventListener('input', function() {
