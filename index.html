@@ -5,239 +5,561 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
-    :root{--bg:#f5f6fa;--panel:#fff;--panel-2:#f8f9fd;--text:#20242c;--muted:#6e7685;--border:#e5e8f0;--accent:#4f46e5;--accent-soft:#eef0ff;--danger:#d92d20;--success:#0f9d58;--warning:#c27803;--overlay:rgba(15,23,42,.44);--my-msg:#edf2ff;--other-msg:#fff;--reply-bg:#f4f6fb;--shadow:0 14px 34px rgba(15,23,42,.10);--sidebar-width:310px;--online:#22c55e}
-    body.dark{--bg:#0d1117;--panel:#151b23;--panel-2:#10161d;--text:#e6edf3;--muted:#98a5b7;--border:#263041;--accent:#7c8cff;--accent-soft:#1d2442;--danger:#ff6b6b;--success:#39c57a;--warning:#f1b14d;--overlay:rgba(0,0,0,.58);--my-msg:#1a2747;--other-msg:#161d28;--reply-bg:#111824;--shadow:0 16px 36px rgba(0,0,0,.34);--online:#22c55e}
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;animation:none!important;transition:none!important;scroll-behavior:auto!important}
-    html,body{height:100%}
-    body{margin:0;font-family:'Ubuntu',-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;user-select:none}
-    input,textarea{user-select:text;font:inherit}button,select,progress{font:inherit}textarea{resize:none}a{color:inherit}
-    .screen{display:none;height:100vh;width:100%}.screen.active{display:flex}
-    .auth-screen{align-items:center;justify-content:center;padding:24px}
-    .auth-card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:20px}
-    .auth-brand{font-size:24px;font-weight:700;margin-bottom:8px}
-    .auth-sub{font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.5}
-    .tabs{display:flex;gap:8px;margin-bottom:14px}
-    .tabs button{flex:1;height:42px;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font-weight:700;cursor:pointer}
-    .tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-    .auth-block{display:none}.auth-block.active{display:block}
-    .field{margin-bottom:10px}.field label{display:block;font-size:13px;color:var(--muted);font-weight:700;margin-bottom:5px}
-    .field input,.field textarea,.field select{width:100%;border:1px solid var(--border);background:var(--panel-2);color:var(--text);border-radius:10px;outline:none;padding:11px 12px}
-    .field-row{display:flex;gap:10px}.field-row>*{flex:1;min-width:0}
-    .submit-btn,.primary-btn,.secondary-btn,.danger-btn,.ghost-btn{border:none;border-radius:10px;cursor:pointer;font-weight:700;padding:11px 14px}
-    .submit-btn,.primary-btn{background:var(--accent);color:#fff}
-    .secondary-btn,.ghost-btn{background:var(--panel-2);color:var(--text);border:1px solid var(--border)}
-    .danger-btn{background:var(--danger);color:#fff}
-    .submit-btn[disabled],.primary-btn[disabled],.secondary-btn[disabled],.danger-btn[disabled],.ghost-btn[disabled],.icon-btn[disabled]{opacity:.6;cursor:not-allowed}
-    .submit-btn{width:100%;margin-top:4px}
-    .status{min-height:20px;margin-top:12px;font-size:14px;color:var(--danger)}
-    .app-shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;width:100%;height:100vh}
-    .sidebar{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-width:0}
-    .sidebar-head{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--border)}
-    .avatar{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:700;border:1px solid var(--border);flex-shrink:0;position:relative;overflow:hidden}
-    .avatar.large{width:54px;height:54px;border-radius:16px;font-size:18px}
-    .avatar.xl{width:72px;height:72px;border-radius:20px;font-size:24px}
-    .avatar img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
-    .online-dot{width:10px;height:10px;border-radius:50%;background:var(--online);border:2px solid var(--panel);position:absolute;bottom:-1px;right:-1px;z-index:1}
-    .user-box{min-width:0;flex:1}
-    .user-box .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .user-box .meta{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .icon-btn{border:1px solid var(--border);background:var(--panel-2);color:var(--text);width:38px;height:38px;border-radius:10px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center}
-    .search-wrap{padding:12px 14px;border-bottom:1px solid var(--border);position:relative}
-    .search-wrap input{width:100%;border:1px solid var(--border);background:var(--panel-2);color:var(--text);border-radius:10px;outline:none;padding:11px 12px}
-    .search-results{position:absolute;top:calc(100% - 4px);left:14px;right:14px;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);max-height:300px;overflow-y:auto;display:none;z-index:1200}
-    .search-results.open{display:block}
-    .search-item{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--panel)}
-    .search-item:last-child{border-bottom:none}.search-item:hover{background:var(--panel-2)}
-    .search-item-meta{min-width:0;flex:1}
-    .search-item-title{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .search-item-sub{font-size:12px;color:var(--muted);overflow-wrap:anywhere;margin-top:2px;line-height:1.35}
-    .sidebar-body{flex:1;min-height:0;overflow-y:auto;padding:10px}
-    .section-title{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:8px 8px 6px;display:flex;align-items:center;justify-content:space-between}
-    .section-title .icon-btn{width:26px;height:26px;font-size:14px;border-radius:8px}
-    .conversation-item{display:flex;gap:10px;padding:10px;border-radius:12px;cursor:pointer;margin-bottom:4px;border:1px solid transparent}
-    .conversation-item:hover{background:var(--panel-2)}
-    .conversation-item.active{background:var(--accent-soft);border-color:rgba(79,70,229,.16)}
-    .conversation-meta{min-width:0;flex:1}
-    .conversation-line{display:flex;gap:8px;align-items:center;min-width:0}
-    .conversation-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .conversation-time{margin-left:auto;flex-shrink:0;font-size:11px;color:var(--muted)}
-    .conversation-subtitle,.conversation-last{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-    .chat-panel{display:flex;flex-direction:column;min-width:0;min-height:0}
-    .chat-topbar{height:64px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;align-items:center;gap:12px;padding:10px 14px;flex-shrink:0}
-    .chat-title-box{min-width:0;flex:1;cursor:pointer}
-    .chat-title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .chat-subtitle{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-    .chat-main{flex:1;min-height:0;display:flex;flex-direction:column}
-    .placeholder{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
-    .placeholder-card{width:100%;max-width:700px;background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:24px}
-    .placeholder-card h2{margin:0 0 8px;font-size:28px}
-    .placeholder-card p{margin:0 0 16px;color:var(--muted);line-height:1.6}
-    .conversation-view{display:none;flex:1;min-height:0;flex-direction:column}
-    .conversation-view.active{display:flex}
-    .messages{flex:1;min-height:0;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px}
-    .empty-state{margin:auto;color:var(--muted);text-align:center;padding:24px}
-    .date-separator{display:flex;align-items:center;gap:12px;padding:8px 0;color:var(--muted);font-size:12px;font-weight:700}
-    .date-separator::before,.date-separator::after{content:'';flex:1;height:1px;background:var(--border)}
-    .message-row{display:flex;gap:10px;align-items:flex-start;max-width:88%}
-    .message-row.mine{align-self:flex-end;flex-direction:row-reverse}
-    .message-row .avatar{width:34px;height:34px;border-radius:10px;font-size:13px;cursor:pointer}
-    .message-card{min-width:0;max-width:100%;background:var(--other-msg);border:1px solid var(--border);border-radius:16px;padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
-    .message-row.mine .message-card{background:var(--my-msg)}
-    .message-head{display:flex;gap:8px;align-items:center;margin-bottom:6px}
-    .message-author{font-size:13px;font-weight:700;cursor:pointer}.message-author:hover{text-decoration:underline}
-    .message-username{font-size:12px;color:var(--muted)}
-    .message-forwarded{font-size:11px;color:var(--accent);font-weight:700;margin-bottom:4px}
-    .message-reply{border-left:3px solid var(--accent);background:var(--reply-bg);border-radius:10px;padding:7px 10px;margin-bottom:8px}
-    .message-reply-name{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:2px}
-    .message-reply-text{font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word}
-    .message-text{white-space:pre-wrap;word-break:break-word;line-height:1.55;user-select:text}
-    .message-text.deleted{font-style:italic;color:var(--muted)}
-    .message-attachments{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-    .message-attachments:first-child{margin-top:0;margin-bottom:10px}
-    .attachment-card{border:1px solid var(--border);background:var(--panel-2);border-radius:14px;overflow:hidden}
-    .attachment-image{display:block;width:100%;max-width:420px;max-height:360px;object-fit:contain;background:#000;cursor:pointer}
-    .attachment-video{display:block;width:100%;max-width:420px;max-height:360px;background:#000;border-bottom:1px solid var(--border)}
-    .attachment-audio{width:100%;padding:12px}
-    .attachment-file{display:flex;align-items:flex-start;gap:10px;padding:12px;min-width:0}
-    .attachment-file-icon{width:42px;height:42px;border-radius:12px;border:1px solid var(--border);background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:18px;flex-shrink:0}
-    .attachment-file-body{min-width:0;flex:1}
-    .attachment-file-name{font-size:14px;font-weight:700;line-height:1.35;word-break:break-word}
-    .attachment-file-meta{margin-top:4px;font-size:12px;color:var(--muted);line-height:1.4;word-break:break-word}
-    .attachment-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .attachment-action-link{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:8px 10px;border-radius:10px;text-decoration:none;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:12px;font-weight:700}
-    .attachment-caption{padding:10px 12px;border-top:1px solid var(--border)}
-    .attachment-caption-name{font-size:14px;font-weight:700;word-break:break-word}
-    .attachment-caption-meta{margin-top:4px;font-size:12px;color:var(--muted);line-height:1.35;word-break:break-word}
-    .message-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)}
-    .composer-wrap{background:var(--panel);border-top:1px solid var(--border);padding:12px 14px 14px;flex-shrink:0}
-    .reply-banner,.upload-banner{display:none;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--border);background:var(--panel-2);border-radius:12px;padding:10px 12px;margin-bottom:10px}
-    .reply-banner.active,.upload-banner.active{display:flex}
-    .reply-banner-meta,.upload-banner-meta{min-width:0;flex:1}
-    .reply-banner-label,.upload-banner-label{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px}
-    .reply-banner-text,.upload-banner-text{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .upload-banner-label.error{color:var(--danger)}.upload-banner-label.success{color:var(--success)}
-    .upload-progress-wrap{margin-top:8px}
-    .upload-progress{width:100%;height:10px;appearance:none;border:none;overflow:hidden;border-radius:999px;background:rgba(0,0,0,.08)}
-    .upload-progress::-webkit-progress-bar{background:rgba(0,0,0,.08)}.upload-progress::-webkit-progress-value{background:var(--accent)}.upload-progress::-moz-progress-bar{background:var(--accent)}
-    .composer{display:flex;gap:10px;align-items:flex-end}
-    .composer-actions{display:flex;gap:10px;align-items:flex-end}
-    .composer textarea{flex:1;border:1px solid var(--border);background:var(--panel-2);color:var(--text);border-radius:12px;outline:none;min-height:48px;max-height:180px;padding:12px;overflow-y:auto}
-    .dropdown-backdrop,.modal-overlay{position:fixed;inset:0;display:none}
-    .dropdown-backdrop.open{display:block;z-index:9998}
-    .message-dropdown{position:fixed;min-width:180px;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:6px;display:none;z-index:9999}
-    .message-dropdown.open{display:block}
-    .message-dropdown button{width:100%;border:none;background:transparent;text-align:left;color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:500}
-    .message-dropdown button:hover{background:var(--panel-2)}
-    .message-dropdown button.danger{color:var(--danger)}
-    .modal-overlay{background:var(--overlay);align-items:center;justify-content:center;padding:18px;z-index:12000}
-    .modal-overlay.open{display:flex}
-    .modal{width:100%;max-width:500px;background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;max-height:90vh;overflow-y:auto}
-    .modal-head{padding:16px 18px 8px;font-size:18px;font-weight:700}
-    .modal-body{padding:0 18px 16px;color:var(--muted);line-height:1.5;white-space:pre-wrap;word-break:break-word}
-    .modal-content{padding:0 18px 16px}
-    .modal-actions{display:flex;justify-content:flex-end;gap:10px;padding:0 18px 18px;flex-wrap:wrap}
-    .profile-header{display:flex;flex-direction:column;align-items:center;padding:20px;gap:12px}
-    .profile-header .avatar{width:80px;height:80px;border-radius:24px;font-size:28px}
-    .profile-name{font-size:20px;font-weight:700}.profile-username{font-size:14px;color:var(--muted)}
-    .profile-bio{font-size:14px;color:var(--muted);text-align:center;max-width:300px;line-height:1.5}
-    .profile-status{font-size:13px;font-weight:700;padding:4px 10px;border-radius:8px}
-    .profile-status.online{color:var(--success);background:rgba(34,197,94,.1)}
-    .profile-status.offline{color:var(--muted);background:var(--panel-2)}
-    .profile-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
-    .mobile-toggle{display:none}
-    .mobile-sidebar-backdrop{display:none}
-    @media(max-width:900px){.app-shell{grid-template-columns:1fr}.sidebar{display:none}.sidebar.mobile-open{display:flex;position:fixed;inset:0 auto 0 0;width:min(92vw,360px);z-index:13000;box-shadow:var(--shadow)}.mobile-sidebar-backdrop{position:fixed;inset:0;background:var(--overlay);display:none;z-index:12999}.mobile-sidebar-backdrop.open{display:block}.mobile-toggle{display:inline-flex}.message-row{max-width:100%}.composer{align-items:stretch}.composer-actions{flex-direction:column}.attachment-image,.attachment-video{max-width:100%}}
-    .img-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:20000;cursor:pointer}
-    .img-preview-overlay img{max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px}
+
+    :root {
+      --bg: #f5f6fa;
+      --panel: #ffffff;
+      --panel-2: #f8f9fd;
+      --text: #20242c;
+      --muted: #6e7685;
+      --border: #e5e8f0;
+      --accent: #4f46e5;
+      --accent-soft: #eef0ff;
+      --danger: #d92d20;
+      --success: #0f9d58;
+      --overlay: rgba(15, 23, 42, 0.44);
+      --my-msg: #edf2ff;
+      --other-msg: #ffffff;
+      --reply-bg: #f4f6fb;
+      --shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
+      --sidebar-width: 310px;
+      --online: #22c55e;
+    }
+
+    body.dark {
+      --bg: #0d1117;
+      --panel: #151b23;
+      --panel-2: #10161d;
+      --text: #e6edf3;
+      --muted: #98a5b7;
+      --border: #263041;
+      --accent: #7c8cff;
+      --accent-soft: #1d2442;
+      --danger: #ff6b6b;
+      --success: #39c57a;
+      --overlay: rgba(0, 0, 0, 0.58);
+      --my-msg: #1a2747;
+      --other-msg: #161d28;
+      --reply-bg: #111824;
+      --shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      user-select: none;
+    }
+    input, textarea { user-select: text; font: inherit; }
+    button, select { font: inherit; }
+    textarea { resize: none; }
+    a { color: inherit; }
+
+    /* Screens */
+    .screen { display: none; height: 100vh; width: 100%; }
+    .screen.active { display: flex; }
+
+    /* Auth */
+    .auth-screen { align-items: center; justify-content: center; padding: 24px; }
+    .auth-card {
+      width: 100%; max-width: 420px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 18px; box-shadow: var(--shadow); padding: 20px;
+    }
+    .auth-brand { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .auth-sub { font-size: 14px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tabs button {
+      flex: 1; height: 42px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--panel-2); color: var(--text); font-weight: 700; cursor: pointer;
+    }
+    .tabs button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .auth-block { display: none; }
+    .auth-block.active { display: block; }
+
+    /* Fields */
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 13px; color: var(--muted); font-weight: 700; margin-bottom: 5px; }
+    .field input, .field textarea, .field select {
+      width: 100%; border: 1px solid var(--border); background: var(--panel-2);
+      color: var(--text); border-radius: 10px; outline: none; padding: 11px 12px;
+    }
+    .field-row { display: flex; gap: 10px; }
+    .field-row > * { flex: 1; min-width: 0; }
+
+    /* Buttons */
+    .submit-btn, .primary-btn, .secondary-btn, .danger-btn {
+      border: none; border-radius: 10px; cursor: pointer; font-weight: 700; padding: 11px 14px;
+    }
+    .submit-btn, .primary-btn { background: var(--accent); color: #fff; }
+    .secondary-btn { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+    .danger-btn { background: var(--danger); color: #fff; }
+    [disabled] { opacity: 0.6; cursor: not-allowed; }
+    .submit-btn { width: 100%; margin-top: 4px; }
+    .status { min-height: 20px; margin-top: 12px; font-size: 14px; color: var(--danger); }
+
+    /* App Shell */
+    .app-shell { display: grid; grid-template-columns: var(--sidebar-width) 1fr; width: 100%; height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--panel); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; min-width: 0;
+    }
+    .sidebar-head {
+      display: flex; align-items: center; gap: 12px; padding: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Avatar */
+    .avatar {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: grid; place-items: center;
+      background: var(--accent-soft); color: var(--accent);
+      font-weight: 700; border: 1px solid var(--border);
+      flex-shrink: 0; position: relative; overflow: visible;
+    }
+    .avatar.lg { width: 54px; height: 54px; border-radius: 16px; font-size: 18px; }
+    .avatar.xl { width: 80px; height: 80px; border-radius: 24px; font-size: 28px; }
+    .avatar-inner {
+      width: 100%; height: 100%; border-radius: inherit;
+      overflow: hidden; display: grid; place-items: center;
+    }
+    .avatar-inner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .online-dot {
+      width: 11px; height: 11px; border-radius: 50%; background: var(--online);
+      border: 2.5px solid var(--panel); position: absolute; bottom: -2px; right: -2px; z-index: 1;
+    }
+
+    .user-box { min-width: 0; flex: 1; }
+    .user-box .name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-box .meta { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .icon-btn {
+      border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
+      width: 38px; height: 38px; border-radius: 10px; cursor: pointer; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+
+    /* Search */
+    .search-wrap { padding: 12px 14px; border-bottom: 1px solid var(--border); position: relative; }
+    .search-wrap input {
+      width: 100%; border: 1px solid var(--border); background: var(--panel-2);
+      color: var(--text); border-radius: 10px; outline: none; padding: 11px 12px;
+    }
+    .search-results {
+      position: absolute; top: calc(100% - 4px); left: 14px; right: 14px;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      box-shadow: var(--shadow); max-height: 300px; overflow-y: auto; display: none; z-index: 1200;
+    }
+    .search-results.open { display: block; }
+    .search-item {
+      display: flex; gap: 10px; padding: 10px 12px;
+      border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .search-item:last-child { border-bottom: none; }
+    .search-item:hover { background: var(--panel-2); }
+    .search-item-meta { min-width: 0; flex: 1; }
+    .search-item-title { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .search-item-sub { font-size: 12px; color: var(--muted); }
+
+    .sidebar-body { flex: 1; min-height: 0; overflow-y: auto; padding: 10px; }
+    .section-title {
+      font-size: 12px; color: var(--muted); font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; padding: 8px 8px 6px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .section-title .icon-btn { width: 24px; height: 24px; font-size: 14px; border-radius: 7px; }
+
+    /* Conversation items */
+    .ci {
+      display: flex; gap: 10px; padding: 10px; border-radius: 12px;
+      cursor: pointer; margin-bottom: 4px; border: 1px solid transparent;
+    }
+    .ci:hover { background: var(--panel-2); }
+    .ci.active { background: var(--accent-soft); border-color: rgba(79, 70, 229, 0.16); }
+    .ci-meta { min-width: 0; flex: 1; }
+    .ci-line { display: flex; gap: 8px; align-items: center; }
+    .ci-title { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ci-time { margin-left: auto; flex-shrink: 0; font-size: 11px; color: var(--muted); }
+    .ci-sub, .ci-last { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+    /* Chat panel */
+    .chat-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .chat-topbar {
+      height: 64px; border-bottom: 1px solid var(--border); background: var(--panel);
+      display: flex; align-items: center; gap: 12px; padding: 10px 14px; flex-shrink: 0;
+    }
+    .chat-title-box { min-width: 0; flex: 1; cursor: pointer; }
+    .chat-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-subtitle { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+    .chat-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+    /* Placeholder */
+    .placeholder { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .placeholder-card {
+      width: 100%; max-width: 600px; background: var(--panel); border: 1px solid var(--border);
+      border-radius: 18px; box-shadow: var(--shadow); padding: 24px; text-align: center;
+    }
+    .placeholder-card h2 { margin: 0 0 8px; font-size: 28px; }
+    .placeholder-card p { margin: 0; color: var(--muted); line-height: 1.6; }
+
+    /* Conversation view */
+    .conversation-view { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    .conversation-view.active { display: flex; }
+
+    /* Messages */
+    .messages { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .empty-state { margin: auto; color: var(--muted); text-align: center; padding: 24px; }
+
+    /* Date separator */
+    .date-sep { display: flex; align-items: center; gap: 12px; padding: 6px 0; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .date-sep::before, .date-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* Message row */
+    .mr { display: flex; gap: 10px; align-items: flex-start; max-width: 85%; }
+    .mr.mine { align-self: flex-end; flex-direction: row-reverse; }
+    .mr .avatar { width: 34px; height: 34px; border-radius: 10px; font-size: 13px; cursor: pointer; flex-shrink: 0; }
+
+    /* Message card */
+    .mc {
+      min-width: 0; max-width: 100%;
+      background: var(--other-msg); border: 1px solid var(--border);
+      border-radius: 16px; padding: 10px 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .mr.mine .mc { background: var(--my-msg); }
+
+    .mh { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+    .mh-author { font-size: 13px; font-weight: 700; cursor: pointer; }
+    .mh-author:hover { text-decoration: underline; }
+    .mh-user { font-size: 12px; color: var(--muted); }
+
+    .m-fwd { font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+
+    .m-reply {
+      border-left: 3px solid var(--accent); background: var(--reply-bg);
+      border-radius: 10px; padding: 7px 10px; margin-bottom: 6px;
+    }
+    .m-reply-name { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 2px; }
+    .m-reply-text { font-size: 12px; color: var(--muted); white-space: pre-wrap; word-break: break-word; }
+
+    .m-text { white-space: pre-wrap; word-break: break-word; line-height: 1.55; user-select: text; }
+    .m-text.del { font-style: italic; color: var(--muted); }
+
+    /* Attachments */
+    .m-atts { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .att-card { border: 1px solid var(--border); background: var(--panel-2); border-radius: 14px; overflow: hidden; }
+
+    .att-img {
+      display: block; width: 100%; max-width: 400px; max-height: 340px;
+      object-fit: contain; cursor: pointer;
+    }
+
+    .att-vid-wrap { position: relative; width: 100%; max-width: 400px; }
+    .att-vid-wrap iframe { width: 100%; height: 240px; border: none; border-bottom: 1px solid var(--border); }
+
+    .att-audio-wrap { padding: 12px; }
+    .att-audio-wrap iframe { width: 100%; height: 80px; border: none; }
+
+    .att-file { display: flex; align-items: flex-start; gap: 10px; padding: 12px; }
+    .att-icon {
+      width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--accent-soft); color: var(--accent);
+      display: grid; place-items: center; font-size: 18px; flex-shrink: 0;
+    }
+    .att-body { min-width: 0; flex: 1; }
+    .att-name { font-size: 14px; font-weight: 700; word-break: break-word; }
+    .att-meta { margin-top: 4px; font-size: 12px; color: var(--muted); }
+    .att-actions { display: flex; gap: 8px; margin-top: 6px; }
+    .att-link {
+      display: inline-flex; align-items: center; min-height: 32px; padding: 6px 10px;
+      border-radius: 10px; text-decoration: none; border: 1px solid var(--border);
+      background: var(--panel); color: var(--text); font-size: 12px; font-weight: 700;
+    }
+
+    .att-caption { padding: 8px 12px; border-top: 1px solid var(--border); }
+    .att-caption-name { font-size: 13px; font-weight: 700; }
+    .att-caption-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .m-meta { display: flex; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+
+    /* Composer */
+    .composer-wrap {
+      background: var(--panel); border-top: 1px solid var(--border);
+      padding: 12px 14px 14px; flex-shrink: 0;
+    }
+    .reply-banner, .upload-banner {
+      display: none; align-items: center; justify-content: space-between; gap: 12px;
+      border: 1px solid var(--border); background: var(--panel-2);
+      border-radius: 12px; padding: 10px 12px; margin-bottom: 10px;
+    }
+    .reply-banner.active, .upload-banner.active { display: flex; }
+    .reply-banner-meta, .upload-banner-meta { min-width: 0; flex: 1; }
+    .reply-banner-label, .upload-banner-label { font-size: 12px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+    .reply-banner-text, .upload-banner-text { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .upload-banner-label.error { color: var(--danger); }
+    .upload-banner-label.success { color: var(--success); }
+    .upload-progress-wrap { margin-top: 6px; }
+    .upload-progress {
+      width: 100%; height: 8px; appearance: none; border: none;
+      border-radius: 999px; background: rgba(0,0,0,0.08);
+    }
+    .upload-progress::-webkit-progress-bar { background: rgba(0,0,0,0.08); }
+    .upload-progress::-webkit-progress-value { background: var(--accent); }
+    .upload-progress::-moz-progress-bar { background: var(--accent); }
+
+    .composer { display: flex; gap: 10px; align-items: flex-end; }
+    .composer textarea {
+      flex: 1; border: 1px solid var(--border); background: var(--panel-2);
+      color: var(--text); border-radius: 12px; outline: none;
+      min-height: 48px; max-height: 180px; padding: 12px; overflow-y: auto;
+    }
+    .composer-actions { display: flex; gap: 6px; align-items: flex-end; }
+    .composer-actions .icon-btn { width: 48px; height: 48px; font-size: 18px; }
+    #sendBtn { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* Dropdowns & Modals */
+    .dropdown-backdrop, .modal-overlay { position: fixed; inset: 0; display: none; }
+    .dropdown-backdrop.open { display: block; z-index: 9998; }
+    .msg-dd {
+      position: fixed; min-width: 180px; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+      padding: 6px; display: none; z-index: 9999;
+    }
+    .msg-dd.open { display: block; }
+    .msg-dd button {
+      width: 100%; border: none; background: transparent; text-align: left;
+      color: var(--text); padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 500;
+    }
+    .msg-dd button:hover { background: var(--panel-2); }
+    .msg-dd button.danger { color: var(--danger); }
+
+    .modal-overlay {
+      background: var(--overlay); align-items: center; justify-content: center;
+      padding: 18px; z-index: 12000;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      width: 100%; max-width: 500px; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow);
+      overflow: hidden; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-head { padding: 16px 18px 8px; font-size: 18px; font-weight: 700; }
+    .modal-body { padding: 0 18px 12px; color: var(--muted); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+    .modal-content { padding: 0 18px 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 0 18px 18px; flex-wrap: wrap; }
+
+    /* Profile */
+    .profile-header { display: flex; flex-direction: column; align-items: center; padding: 16px; gap: 10px; }
+    .profile-name { font-size: 20px; font-weight: 700; }
+    .profile-username { font-size: 14px; color: var(--muted); }
+    .profile-bio { font-size: 14px; color: var(--muted); text-align: center; max-width: 300px; line-height: 1.5; }
+    .profile-status { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 8px; }
+    .profile-status.on { color: var(--success); background: rgba(34,197,94,0.1); }
+    .profile-status.off { color: var(--muted); background: var(--panel-2); }
+    .profile-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+
+    /* Image preview overlay */
+    .img-ov {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 20000; cursor: pointer;
+    }
+    .img-ov img { max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 8px; }
+
+    /* Mobile */
+    .mobile-toggle { display: none; }
+    .mobile-sidebar-backdrop { display: none; }
+
+    @media (max-width: 900px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .sidebar.mob-open {
+        display: flex; position: fixed; inset: 0 auto 0 0;
+        width: min(92vw, 360px); z-index: 13000; box-shadow: var(--shadow);
+      }
+      .mobile-sidebar-backdrop {
+        position: fixed; inset: 0; background: var(--overlay); display: none; z-index: 12999;
+      }
+      .mobile-sidebar-backdrop.open { display: block; }
+      .mobile-toggle { display: inline-flex; }
+      .mr { max-width: 100%; }
+      .composer { align-items: stretch; }
+      .composer-actions { flex-direction: column; }
+      .att-img, .att-vid-wrap { max-width: 100%; }
+    }
   </style>
 </head>
 <body class="light">
+
+  <!-- ============ Auth Screen ============ -->
   <div id="authScreen" class="screen auth-screen active">
     <div class="auth-card">
       <div class="auth-brand">Heyo</div>
       <div id="authSub" class="auth-sub">Welcome back. Log in to continue.</div>
+
       <div class="tabs">
-        <button id="loginTabBtn" class="active" onclick="switchAuthMode('login')">Login</button>
-        <button id="registerTabBtn" onclick="switchAuthMode('register')">Create account</button>
+        <button id="loginTabBtn" class="active" onclick="switchAuth('login')">Login</button>
+        <button id="registerTabBtn" onclick="switchAuth('register')">Create account</button>
       </div>
+
       <div id="loginBlock" class="auth-block active">
-        <div class="field"><label for="loginIdentifier" data-i18n="authIdentifierLabel">Email / phone / username</label><input id="loginIdentifier" type="text" autocomplete="username" placeholder="user@example.com"></div>
-        <div class="field"><label for="loginPassword" data-i18n="password">Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password"></div>
-        <button class="submit-btn" onclick="submitLogin()" data-i18n="loginBtn">Login</button>
+        <div class="field">
+          <label>Email / phone / username</label>
+          <input id="loginId" type="text" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="loginPw" type="password" autocomplete="current-password">
+        </div>
+        <button class="submit-btn" onclick="doLogin()">Login</button>
       </div>
+
       <div id="registerBlock" class="auth-block">
-        <div class="tabs" style="margin-bottom:12px"><button id="regEmailBtn" class="active" onclick="switchRegisterMethod('email')">Email</button><button id="regPhoneBtn" onclick="switchRegisterMethod('phone')">Phone</button></div>
-        <div class="field"><label for="registerDisplayName" data-i18n="displayName">Display name</label><input id="registerDisplayName" type="text" maxlength="40"></div>
-        <div class="field"><label for="registerUsername" data-i18n="username">Username</label><input id="registerUsername" type="text" maxlength="20" placeholder="lowercase letters only"></div>
-        <div id="registerEmailWrap" class="field"><label for="registerEmail">Email</label><input id="registerEmail" type="email" placeholder="mail@example.com"></div>
-        <div id="registerPhoneWrap" style="display:none"><div class="field-row"><div class="field"><label for="registerPhoneCountry">Country</label><select id="registerPhoneCountry"><option value="RU">Russia (+7)</option><option value="US">US (+1)</option></select></div><div class="field"><label for="registerPhone">Phone</label><input id="registerPhone" type="text"></div></div></div>
-        <div class="field"><label for="registerPassword" data-i18n="password">Password</label><input id="registerPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters"></div>
-        <div class="field"><label for="registerBio">Bio</label><textarea id="registerBio" maxlength="240" rows="3"></textarea></div>
-        <button class="submit-btn" onclick="submitRegister()" data-i18n="createAccountBtn">Create account</button>
+        <div class="tabs" style="margin-bottom:12px">
+          <button id="regEmailBtn" class="active" onclick="switchRegMethod('email')">Email</button>
+          <button id="regPhoneBtn" onclick="switchRegMethod('phone')">Phone</button>
+        </div>
+        <div class="field">
+          <label>Display name</label>
+          <input id="regDN" type="text" maxlength="40">
+        </div>
+        <div class="field">
+          <label>Username</label>
+          <input id="regUN" type="text" maxlength="20" placeholder="lowercase letters only">
+        </div>
+        <div id="regEmailW" class="field">
+          <label>Email</label>
+          <input id="regEmail" type="email">
+        </div>
+        <div id="regPhoneW" style="display:none">
+          <div class="field-row">
+            <div class="field">
+              <label>Country</label>
+              <select id="regPhCo">
+                <option value="RU">Russia (+7)</option>
+                <option value="US">US (+1)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Phone</label>
+              <input id="regPh" type="text">
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="regPw" type="password" autocomplete="new-password" placeholder="Min 6 characters">
+        </div>
+        <div class="field">
+          <label>Bio</label>
+          <textarea id="regBio" maxlength="240" rows="2"></textarea>
+        </div>
+        <button class="submit-btn" onclick="doRegister()">Create account</button>
       </div>
+
       <div id="authStatus" class="status"></div>
     </div>
   </div>
 
+  <!-- ============ App Screen ============ -->
   <div id="appScreen" class="screen">
-    <div id="mobileSidebarBackdrop" class="mobile-sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+    <div id="mobBD" class="mobile-sidebar-backdrop" onclick="closeMobSB()"></div>
+
     <div class="app-shell">
+      <!-- Sidebar -->
       <aside id="sidebar" class="sidebar">
         <div class="sidebar-head">
-          <div id="meAvatar" class="avatar" onclick="openProfile(currentUser&&currentUser.userId)">U</div>
-          <div class="user-box" onclick="openProfile(currentUser&&currentUser.userId)" style="cursor:pointer">
-            <div id="meDisplayName" class="name">User</div>
-            <div id="meUsername" class="meta">@user</div>
+          <div id="meAvatar" class="avatar" style="cursor:pointer" onclick="openProfile(CU && CU.userId)">
+            <div class="avatar-inner">U</div>
           </div>
-          <button class="icon-btn" title="Settings" onclick="openSettings()">⚙</button>
+          <div class="user-box" onclick="openProfile(CU && CU.userId)" style="cursor:pointer">
+            <div id="meDN" class="name">User</div>
+            <div id="meUN" class="meta">@user</div>
+          </div>
+          <button class="icon-btn" onclick="openSettings()" title="Settings">⚙</button>
         </div>
+
         <div class="search-wrap">
-          <input id="userSearchInput" type="text" data-i18n-placeholder="searchUsers" placeholder="Search users">
-          <div id="searchResults" class="search-results"></div>
+          <input id="searchIn" type="text" placeholder="Search users">
+          <div id="searchRes" class="search-results"></div>
         </div>
+
         <div class="sidebar-body">
-          <div class="section-title"><span data-i18n="channels">Channels</span></div>
-          <div id="channelList"></div>
-          <div class="section-title"><span data-i18n="groups">Groups</span><button class="icon-btn" onclick="createGroupUI()" title="Create group">+</button></div>
-          <div id="groupList"></div>
-          <div class="section-title"><span data-i18n="directMessages">Direct messages</span></div>
-          <div id="directConversationList"></div>
+          <div class="section-title"><span>Channels</span></div>
+          <div id="chList"></div>
+
+          <div class="section-title">
+            <span>Groups</span>
+            <button class="icon-btn" onclick="createGroupUI()" title="New group">+</button>
+          </div>
+          <div id="grList"></div>
+
+          <div class="section-title"><span>Direct messages</span></div>
+          <div id="dmList"></div>
         </div>
       </aside>
+
+      <!-- Main Chat Panel -->
       <main class="chat-panel">
         <div class="chat-topbar">
-          <button class="icon-btn mobile-toggle" onclick="openMobileSidebar()">☰</button>
-          <div id="topAvatar" class="avatar" onclick="openConversationProfile()">M</div>
-          <div class="chat-title-box" onclick="openConversationProfile()">
-            <div id="chatTitle" class="chat-title">Heyo</div>
-            <div id="chatSubtitle" class="chat-subtitle"></div>
+          <button class="icon-btn mobile-toggle" onclick="openMobSB()">☰</button>
+          <div id="topAv" class="avatar" onclick="openConvoProfile()">
+            <div class="avatar-inner">H</div>
           </div>
-          <button class="secondary-btn" onclick="doLogout()" data-i18n="logout">Log out</button>
+          <div class="chat-title-box" onclick="openConvoProfile()">
+            <div id="chatTitle" class="chat-title">Heyo</div>
+            <div id="chatSub" class="chat-subtitle"></div>
+          </div>
+          <button class="secondary-btn" onclick="doLogout()">Log out</button>
         </div>
+
         <div class="chat-main">
-          <div id="placeholderView" class="placeholder">
+          <!-- Placeholder when no conversation selected -->
+          <div id="phView" class="placeholder">
             <div class="placeholder-card">
-              <h2 data-i18n="welcomeTitle">Welcome to Heyo</h2>
-              <p data-i18n="welcomeText">Select a conversation from the left to start chatting.</p>
+              <h2>Welcome to Heyo</h2>
+              <p>Select a conversation from the left to start chatting.</p>
             </div>
           </div>
-          <div id="conversationView" class="conversation-view">
+
+          <!-- Active conversation view -->
+          <div id="convoView" class="conversation-view">
             <div id="messages" class="messages"></div>
+
             <div id="composerWrap" class="composer-wrap">
+              <!-- Reply banner -->
               <div id="replyBanner" class="reply-banner">
-                <div class="reply-banner-meta"><div id="replyBannerLabel" class="reply-banner-label">Replying</div><div id="replyBannerText" class="reply-banner-text"></div></div>
-                <button class="secondary-btn" onclick="clearReplyTarget()">✕</button>
+                <div class="reply-banner-meta">
+                  <div id="replyLabel" class="reply-banner-label">Replying</div>
+                  <div id="replyText" class="reply-banner-text"></div>
+                </div>
+                <button class="icon-btn" onclick="clearReply()" style="width:32px;height:32px">✕</button>
               </div>
+
+              <!-- Upload banner -->
               <div id="uploadBanner" class="upload-banner">
-                <div class="upload-banner-meta"><div id="uploadBannerLabel" class="upload-banner-label">Upload</div><div id="uploadBannerText" class="upload-banner-text"></div><div id="uploadProgressWrap" class="upload-progress-wrap" style="display:none"><progress id="uploadProgress" class="upload-progress" value="0" max="100"></progress></div></div>
-                <button id="cancelUploadBtn" class="secondary-btn" onclick="cancelCurrentUpload()" style="display:none">✕</button>
+                <div class="upload-banner-meta">
+                  <div id="uplLabel" class="upload-banner-label">Upload</div>
+                  <div id="uplText" class="upload-banner-text"></div>
+                  <div id="uplProgW" class="upload-progress-wrap" style="display:none">
+                    <progress id="uplProg" class="upload-progress" value="0" max="100"></progress>
+                  </div>
+                </div>
+                <button id="uplCancel" class="icon-btn" onclick="cancelUpload()" style="display:none;width:32px;height:32px">✕</button>
               </div>
+
+              <!-- Composer -->
               <div class="composer">
-                <textarea id="composerInput" placeholder="Write a message..." rows="1"></textarea>
+                <textarea id="composerIn" placeholder="Write a message..." rows="1"></textarea>
                 <div class="composer-actions">
-                  <input id="fileInput" type="file" style="display:none">
-                  <button id="attachBtn" class="secondary-btn" onclick="openFilePicker()">📎</button>
-                  <button id="sendBtn" class="primary-btn" onclick="sendMessageFromUI()">➤</button>
+                  <input id="fileIn" type="file" style="display:none">
+                  <button class="icon-btn" onclick="openFilePicker()" title="Attach file">📎</button>
+                  <button id="sendBtn" class="icon-btn" onclick="sendMsg()" title="Send">➤</button>
                 </div>
               </div>
             </div>
@@ -247,502 +569,2081 @@
     </div>
   </div>
 
-  <div id="dropdownBackdrop" class="dropdown-backdrop" onclick="closeMessageDropdown()"></div>
-  <div id="messageDropdown" class="message-dropdown"></div>
-  <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
-    <div class="modal"><div id="modalTitle" class="modal-head">Modal</div><div id="modalBody" class="modal-body"></div><div id="modalContent" class="modal-content"></div><div id="modalActions" class="modal-actions"></div></div>
+  <!-- Dropdown -->
+  <div id="ddBD" class="dropdown-backdrop" onclick="closeDD()"></div>
+  <div id="msgDD" class="msg-dd"></div>
+
+  <!-- Modal -->
+  <div id="modalOv" class="modal-overlay">
+    <div class="modal">
+      <div id="modalTitle" class="modal-head"></div>
+      <div id="modalBody" class="modal-body"></div>
+      <div id="modalContent" class="modal-content"></div>
+      <div id="modalActions" class="modal-actions"></div>
+    </div>
   </div>
 
-<script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiONpHVJdlaULo5y4M4RnCQ5ZKQA1V9Jd9rEKksghlsdD60VV4YDFYhjFba7LI14AicA/exec';
-const MAX_UPLOAD_BYTES = 1024*1024*1024;
-const CHUNK_SIZE = 8*1024*1024;
+  <script>
+    /* ============================================================
+       Configuration
+       ============================================================ */
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbweH1XuQye_P8usFRe1EtJ7MySjXusu6q_RBQPVDuM4yEOnx0x6xcTw0j0YOBHO0OruUQ/exec';
+    const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
+    const CHUNK_SIZE = 8 * 1024 * 1024;
 
-/* ========================= i18n ========================= */
-const i18n = {
-  en: {
-    loginBtn:'Login', createAccountBtn:'Create account', password:'Password', displayName:'Display name', username:'Username',
-    authIdentifierLabel:'Email / phone / username', searchUsers:'Search users', channels:'Channels', groups:'Groups',
-    directMessages:'Direct messages', logout:'Log out', welcomeTitle:'Welcome to Heyo', welcomeText:'Select a conversation from the left to start chatting.',
-    authSubLogin:'Welcome back. Log in to continue.', authSubRegister:'Welcome to Heyo. Sign up to continue.',
-    settings:'Profile settings', theme:'Theme', language:'Language', light:'Light', dark:'Dark',
-    save:'Save', cancel:'Cancel', delete:'Delete', block:'Block', unblock:'Unblock', sendMessage:'Send message',
-    online:'online', offline:'offline', lastSeen:'Last seen', member:'member', members:'members',
-    deleteAccount:'Delete account', deleteAccountConfirm:'Are you sure? This action is permanent. All your messages will stay but your profile will be removed.',
-    createGroup:'Create group', groupName:'Group name', groupDescription:'Description (optional)',
-    leaveGroup:'Leave group', deleteGroup:'Delete group', inviteLink:'Invite link', copyLink:'Copy link',
-    editGroup:'Edit group', groupProfile:'Group info', userProfile:'Profile',
-    forward:'Forward', reply:'Reply', edit:'Edit', copy:'Copy text', deleteMsg:'Delete',
-    forwarded:'Forwarded message', noMessages:'No messages yet', channelReadOnly:'Only @usonance can post here.',
-    inviteToGroup:'Invite user', close:'Close', confirm:'Confirm', bio:'Bio',
-    messageDeleted:'This message was deleted.', edited:'edited',
-    today:'Today', yesterday:'Yesterday'
-  },
-  ru: {
-    loginBtn:'Войти', createAccountBtn:'Создать аккаунт', password:'Пароль', displayName:'Имя', username:'Имя пользователя',
-    authIdentifierLabel:'Email / телефон / имя пользователя', searchUsers:'Поиск пользователей', channels:'Каналы', groups:'Группы',
-    directMessages:'Личные сообщения', logout:'Выйти', welcomeTitle:'Добро пожаловать в Heyo', welcomeText:'Выберите чат слева, чтобы начать общение.',
-    authSubLogin:'С возвращением. Войдите, чтобы продолжить.', authSubRegister:'Добро пожаловать в Heyo. Зарегистрируйтесь, чтобы продолжить.',
-    settings:'Настройки профиля', theme:'Тема', language:'Язык', light:'Светлая', dark:'Тёмная',
-    save:'Сохранить', cancel:'Отмена', delete:'Удалить', block:'Заблокировать', unblock:'Разблокировать', sendMessage:'Написать',
-    online:'онлайн', offline:'не в сети', lastSeen:'Был(а)', member:'участник', members:'участников',
-    deleteAccount:'Удалить аккаунт', deleteAccountConfirm:'Вы уверены? Это действие необратимо. Все сообщения останутся, но профиль будет удалён.',
-    createGroup:'Создать группу', groupName:'Название группы', groupDescription:'Описание (необязательно)',
-    leaveGroup:'Покинуть группу', deleteGroup:'Удалить группу', inviteLink:'Ссылка-приглашение', copyLink:'Копировать',
-    editGroup:'Редактировать', groupProfile:'Информация о группе', userProfile:'Профиль',
-    forward:'Переслать', reply:'Ответить', edit:'Редактировать', copy:'Копировать текст', deleteMsg:'Удалить',
-    forwarded:'Пересланное сообщение', noMessages:'Пока нет сообщений', channelReadOnly:'Только @usonance может писать сюда.',
-    inviteToGroup:'Пригласить', close:'Закрыть', confirm:'Подтвердить', bio:'О себе',
-    messageDeleted:'Сообщение удалено.', edited:'изменено',
-    today:'Сегодня', yesterday:'Вчера'
-  }
-};
-let lang = localStorage.getItem('heyo_lang') || 'en';
-function t(key) { return (i18n[lang] && i18n[lang][key]) || (i18n.en[key]) || key; }
-function applyI18n() {
-  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-placeholder')); });
-}
-
-/* ========================= google.script.run adapter ========================= */
-(function(){
-  function cr(sh,fh){const c={withSuccessHandler(cb){return cr(typeof cb==='function'?cb:null,fh)},withFailureHandler(cb){return cr(sh,typeof cb==='function'?cb:null)}};return new Proxy(c,{get(tgt,p){if(p in tgt)return tgt[p];if(typeof p!=='string')return undefined;return function(...args){ca(p,args,sh,fh)}}});}
-  async function ca(action,args,sh,fh){try{if(!SCRIPT_URL)throw new Error('SCRIPT_URL not set.');const r=await fetch(SCRIPT_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,data:args})});const raw=await r.text();let result;try{result=raw?JSON.parse(raw):null}catch(e){throw new Error('Invalid JSON.')}if(typeof sh==='function')sh(result)}catch(e){if(typeof fh==='function')fh(e);else console.error(e)}}
-  window.google=window.google||{};window.google.script=window.google.script||{};window.google.script.run=cr(null,null);
-})();
-
-/* ========================= State ========================= */
-let authMode='login',registerMethod='email';
-let sessionToken=localStorage.getItem('heyo_token')||'';
-let currentUser=null,conversations=[],activeConversationId='',activeConversation=null;
-const conversationVersions=new Map(),messagesByConversation=new Map();
-let pollingHandle=null,sidebarRefreshHandle=null,onlineStatusHandle=null;
-let isLoadingConversation=false,needsReloadConversation=false;
-let searchDebounce=null,replyTarget=null,activeModalResolver=null;
-let dropdownState={open:false,messageId:'',anchor:null};
-let longPressTimer=null,longPressTriggered=false;
-let onlineUsers={};
-let uploadState={active:false,file:null,xhr:null,uploadToken:'',uploadUrl:'',fileId:'',conversationId:'',progress:0,phase:''};
-
-/* ========================= Avatar helper ========================= */
-function avatarHtml(initials, avatarFileId, cssClass, onlineStatus, onclick) {
-  cssClass = cssClass || '';
-  const onclickAttr = onclick ? ` onclick="${onclick}"` : '';
-  let inner = escapeHtml(initials || 'U');
-  if (avatarFileId) {
-    const src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(avatarFileId) + '&sz=w200';
-    inner = `<img src="${escapeAttr(src)}" alt="" loading="lazy">`;
-  }
-  let dot = '';
-  if (onlineStatus === true) dot = '<div class="online-dot"></div>';
-  return `<div class="avatar ${cssClass}"${onclickAttr}>${inner}${dot}</div>`;
-}
-
-/* ========================= Auth ========================= */
-function switchAuthMode(mode){
-  authMode=mode;
-  document.getElementById('loginTabBtn').classList.toggle('active',mode==='login');
-  document.getElementById('registerTabBtn').classList.toggle('active',mode==='register');
-  document.getElementById('loginBlock').classList.toggle('active',mode==='login');
-  document.getElementById('registerBlock').classList.toggle('active',mode==='register');
-  document.getElementById('authSub').textContent = mode==='login' ? t('authSubLogin') : t('authSubRegister');
-  setAuthStatus('');
-}
-function switchRegisterMethod(m){registerMethod=m;document.getElementById('regEmailBtn').classList.toggle('active',m==='email');document.getElementById('regPhoneBtn').classList.toggle('active',m==='phone');document.getElementById('registerEmailWrap').style.display=m==='email'?'':'none';document.getElementById('registerPhoneWrap').style.display=m==='phone'?'':'none'}
-function setAuthStatus(t){document.getElementById('authStatus').textContent=t||''}
-
-function submitLogin(){
-  const id=document.getElementById('loginIdentifier').value.trim(),pw=document.getElementById('loginPassword').value;
-  if(!id||!pw){setAuthStatus('Identifier and password are required.');return}
-  setAuthStatus('...');
-  google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){setAuthStatus((r&&r.error)||'Login failed.');return}sessionToken=r.token;localStorage.setItem('heyo_token',sessionToken);currentUser=r.user;lang=currentUser.language||'en';localStorage.setItem('heyo_lang',lang);document.getElementById('loginPassword').value='';setAuthStatus('');startApp()}).withFailureHandler(e=>{console.error(e);setAuthStatus('Login failed.')}).login(id,pw);
-}
-function submitRegister(){
-  const p={displayName:document.getElementById('registerDisplayName').value.trim(),username:document.getElementById('registerUsername').value.trim(),password:document.getElementById('registerPassword').value,email:registerMethod==='email'?document.getElementById('registerEmail').value.trim():'',phoneCountry:registerMethod==='phone'?document.getElementById('registerPhoneCountry').value:'',phone:registerMethod==='phone'?document.getElementById('registerPhone').value.trim():'',bio:document.getElementById('registerBio').value.trim(),theme:'light',language:lang};
-  if(!p.displayName||!p.username||!p.password){setAuthStatus('Required fields missing.');return}
-  if(registerMethod==='email'&&!p.email){setAuthStatus('Email required.');return}
-  if(registerMethod==='phone'&&!p.phone){setAuthStatus('Phone required.');return}
-  setAuthStatus('...');
-  google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){setAuthStatus((r&&r.error)||'Failed.');return}sessionToken=r.token;localStorage.setItem('heyo_token',sessionToken);currentUser=r.user;lang=currentUser.language||'en';localStorage.setItem('heyo_lang',lang);setAuthStatus('');startApp()}).withFailureHandler(e=>{console.error(e);setAuthStatus('Registration failed.')}).registerAccount(p);
-}
-function verifySession(){if(!sessionToken){showAuthScreen();return}google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){localStorage.removeItem('heyo_token');sessionToken='';currentUser=null;showAuthScreen();return}currentUser=r.user;lang=currentUser.language||'en';localStorage.setItem('heyo_lang',lang);startApp()}).withFailureHandler(()=>{localStorage.removeItem('heyo_token');sessionToken='';showAuthScreen()}).getSession(sessionToken)}
-function showAuthScreen(){stopPolling();document.getElementById('authScreen').classList.add('active');document.getElementById('appScreen').classList.remove('active');applyI18n()}
-function showAppScreen(){document.getElementById('authScreen').classList.remove('active');document.getElementById('appScreen').classList.add('active');applyI18n()}
-
-/* ========================= App lifecycle ========================= */
-function startApp(){resetAppState();showAppScreen();applyTheme(currentUser&&currentUser.theme||'light');renderCurrentUser();autoGrowTextarea(document.getElementById('composerInput'));fetchAppData(true);startPolling();checkPendingInvite()}
-function resetAppState(){conversations=[];activeConversationId='';activeConversation=null;conversationVersions.clear();messagesByConversation.clear();replyTarget=null;clearSearchResults();closeMessageDropdown();resetUploadState(true);showPlaceholder()}
-function renderCurrentUser(){if(!currentUser)return;document.getElementById('meDisplayName').textContent=currentUser.displayName||'User';document.getElementById('meUsername').textContent='@'+(currentUser.username||'user');document.getElementById('meAvatar').innerHTML=avatarHtml(currentUser.initials,currentUser.avatarFileId,'',null,null).replace(/<\/?div[^>]*>/g,'')+( currentUser.avatarFileId?`<img src="https://drive.google.com/thumbnail?id=${encodeURIComponent(currentUser.avatarFileId)}&sz=w200" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:(currentUser.initials||'U'))}
-
-function fetchAppData(initial){
-  if(!sessionToken)return;
-  google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){handleAppError(r);return}currentUser=r.user;conversations=Array.isArray(r.conversations)?r.conversations:[];renderCurrentUser();applyTheme(currentUser.theme||'light');renderSidebar();if(initial)showPlaceholder();else if(activeConversationId){activeConversation=getConversationById(activeConversationId);if(!activeConversation)showPlaceholder();else renderActiveTopbar()}}).withFailureHandler(e=>console.error(e)).getAppData(sessionToken);
-}
-function refreshSidebarOnly(){if(!sessionToken)return;google.script.run.withSuccessHandler(r=>{if(!r||!r.ok)return;if(r.user){currentUser=r.user;renderCurrentUser();applyTheme(currentUser.theme||'light')}if(Array.isArray(r.conversations)){conversations=r.conversations;activeConversation=getConversationById(activeConversationId);renderSidebar();renderActiveTopbar()}}).withFailureHandler(e=>console.error(e)).getAppData(sessionToken)}
-function fetchOnlineUsers(){if(!sessionToken)return;google.script.run.withSuccessHandler(r=>{if(r&&r.ok&&r.online)onlineUsers=r.online}).withFailureHandler(()=>{}).getOnlineUsers(sessionToken)}
-function startPolling(){stopPolling();pollingHandle=setInterval(()=>{if(activeConversationId)loadConversation(false)},1400);sidebarRefreshHandle=setInterval(refreshSidebarOnly,4000);onlineStatusHandle=setInterval(fetchOnlineUsers,5000);fetchOnlineUsers()}
-function stopPolling(){if(pollingHandle){clearInterval(pollingHandle);pollingHandle=null}if(sidebarRefreshHandle){clearInterval(sidebarRefreshHandle);sidebarRefreshHandle=null}if(onlineStatusHandle){clearInterval(onlineStatusHandle);onlineStatusHandle=null}}
-function getConversationById(id){return conversations.find(c=>c.conversationId===id)||null}
-
-function checkPendingInvite(){
-  const invite=localStorage.getItem('heyo_pending_invite');
-  if(!invite)return;
-  localStorage.removeItem('heyo_pending_invite');
-  google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert('Invite',(r&&r.error)||'Failed to join group.');return}if(Array.isArray(r.conversations)){conversations=r.conversations;renderSidebar()}if(r.conversationId)selectConversation(r.conversationId)}).withFailureHandler(e=>{console.error(e);showAlert('Invite','Failed to join group.')}).joinGroupByInvite(sessionToken,invite);
-}
-
-/* ========================= Sidebar ========================= */
-function renderSidebar(){
-  const ch=conversations.filter(c=>c.type==='channel');
-  const gr=conversations.filter(c=>c.type==='group');
-  const dm=conversations.filter(c=>c.type==='direct');
-  document.getElementById('channelList').innerHTML=ch.map(renderConversationItem).join('')||'';
-  document.getElementById('groupList').innerHTML=gr.map(renderConversationItem).join('')||'';
-  document.getElementById('directConversationList').innerHTML=dm.length?dm.map(renderConversationItem).join(''):`<div class="empty-state" style="margin:0;padding:14px;font-size:13px">${t('noMessages')}</div>`;
-}
-function renderConversationItem(c){
-  const active=c.conversationId===activeConversationId?'active':'';
-  const subtitle=c.subtitle?`<div class="conversation-subtitle">${escapeHtml(c.subtitle)}</div>`:'';
-  const last=c.lastMessageText?`<div class="conversation-last">${escapeHtml(c.lastMessageText)}</div>`:'';
-  const time=c.lastMessageAt?formatSidebarTime(c.lastMessageAt):'';
-  const isOnline=c.type==='direct'?checkDmOnline(c):false;
-  return `<div class="conversation-item ${active}" onclick="selectConversation('${escapeJs(c.conversationId)}')">${avatarHtml(c.initials,c.avatarFileId,'',isOnline)}<div class="conversation-meta"><div class="conversation-line"><div class="conversation-title">${escapeHtml(c.title||'Conversation')}</div><div class="conversation-time">${escapeHtml(time)}</div></div>${subtitle}${last}</div></div>`;
-}
-function checkDmOnline(c){/* approximate: we don't have peerId in summary, but we can check onlineUsers */return false}
-
-/* ========================= Conversation ========================= */
-function selectConversation(id){activeConversationId=id;activeConversation=getConversationById(id);replyTarget=null;renderReplyBanner();renderSidebar();renderActiveTopbar();showConversationView();closeMobileSidebar();resetUploadState(true);if(!conversationVersions.has(id))conversationVersions.set(id,0);if(!messagesByConversation.has(id))messagesByConversation.set(id,[]);updateComposerState();loadConversation(true)}
-function renderActiveTopbar(){
-  const ti=document.getElementById('chatTitle'),su=document.getElementById('chatSubtitle'),av=document.getElementById('topAvatar');
-  if(!activeConversation){ti.textContent='Heyo';su.textContent='';av.innerHTML='H';return}
-  ti.textContent=activeConversation.title||'Conversation';
-  su.textContent=activeConversation.subtitle||(activeConversation.type==='channel'?'Channel':activeConversation.type==='group'?activeConversation.memberCount+' '+t('members'):'');
-  av.innerHTML=avatarHtml(activeConversation.initials,activeConversation.avatarFileId,'',null).replace(/^<div[^>]*>|<\/div>$/g,'');
-}
-function showPlaceholder(){activeConversationId='';activeConversation=null;renderActiveTopbar();renderSidebar();document.getElementById('placeholderView').style.display='flex';document.getElementById('conversationView').classList.remove('active')}
-function showConversationView(){document.getElementById('placeholderView').style.display='none';document.getElementById('conversationView').classList.add('active')}
-function updateComposerState(){
-  const wrap=document.getElementById('composerWrap');
-  if(!activeConversation){wrap.style.display='';return}
-  if(activeConversation.type==='channel'){
-    // Only usonance can type
-    if(currentUser&&currentUser.username==='usonance'){wrap.style.display=''}
-    else{wrap.style.display='none'}
-  } else {wrap.style.display=''}
-}
-
-function loadConversation(forceScroll){
-  if(!sessionToken||!activeConversationId)return;
-  if(isLoadingConversation){needsReloadConversation=true;return}
-  isLoadingConversation=true;
-  const reqId=activeConversationId,sv=Number(conversationVersions.get(reqId)||0);
-  google.script.run.withSuccessHandler(r=>{isLoadingConversation=false;if(!r||!r.ok){handleAppError(r);return}if(String(r.conversationId||'')!==reqId)return;if(typeof r.version==='number')conversationVersions.set(reqId,r.version);if(r.reset||!messagesByConversation.has(reqId))messagesByConversation.set(reqId,[]);if(Array.isArray(r.messages)&&r.messages.length)mergeMessages(reqId,r.messages,!!r.reset);else if(r.reset)messagesByConversation.set(reqId,[]);if(activeConversationId===reqId)renderMessages(forceScroll);if(needsReloadConversation){needsReloadConversation=false;loadConversation(false)}}).withFailureHandler(e=>{console.error(e);isLoadingConversation=false}).getConversationMessages(sessionToken,reqId,sv);
-}
-function mergeMessages(cid,incoming,reset){
-  let current=reset?[]:(messagesByConversation.get(cid)||[]);
-  const byId=new Map();
-  current.forEach(m=>byId.set(m.messageId,m));
-  incoming.forEach(m=>byId.set(m.messageId,normalizeMsg(m)));
-  const merged=Array.from(byId.values()).sort((a,b)=>{const ta=a.createdAt?new Date(a.createdAt).getTime():0,tb=b.createdAt?new Date(b.createdAt).getTime():0;return ta!==tb?ta-tb:String(a.messageId).localeCompare(String(b.messageId))});
-  messagesByConversation.set(cid,merged);
-}
-function normalizeMsg(m){const n=Object.assign({},m);n.attachments=Array.isArray(n.attachments)?n.attachments.filter(Boolean):[];n.hasAttachments=n.attachments.length>0;return n}
-
-/* ========================= Render Messages with Date Separators ========================= */
-function renderMessages(forceScroll){
-  const el=document.getElementById('messages');
-  const list=messagesByConversation.get(activeConversationId)||[];
-  const near=Math.abs(el.scrollHeight-el.scrollTop-el.clientHeight)<90;
-  if(!list.length){el.innerHTML=`<div class="empty-state">${t('noMessages')}</div>`;return}
-  let html='',lastDateStr='';
-  for(let i=0;i<list.length;i++){
-    const msg=list[i];
-    const dateStr=getDateString(msg.createdAt);
-    if(dateStr&&dateStr!==lastDateStr){html+=`<div class="date-separator">${escapeHtml(formatDateSeparator(msg.createdAt))}</div>`;lastDateStr=dateStr}
-    html+=renderMessage(msg);
-  }
-  el.innerHTML=html;
-  if(forceScroll||near)el.scrollTop=el.scrollHeight;
-}
-function getDateString(iso){if(!iso)return'';const d=new Date(iso);return isNaN(d)?'':d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
-function formatDateSeparator(iso){
-  const d=new Date(iso);if(isNaN(d))return'';
-  const now=new Date();
-  const isToday=d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth()&&d.getDate()===now.getDate();
-  if(isToday)return t('today');
-  const yest=new Date(now);yest.setDate(yest.getDate()-1);
-  if(d.getFullYear()===yest.getFullYear()&&d.getMonth()===yest.getMonth()&&d.getDate()===yest.getDate())return t('yesterday');
-  return d.toLocaleDateString(lang==='ru'?'ru-RU':'en-US',{year:'numeric',month:'long',day:'numeric'});
-}
-
-function renderMessage(msg){
-  const mine=msg.isMine?'mine':'';
-  const isOnline=onlineUsers[msg.userId]||false;
-  const avatarClick=`openProfile('${escapeJs(msg.userId)}')`;
-  const fwd=msg.forwardedFromMessageId?`<div class="message-forwarded">↗ ${t('forwarded')}</div>`:'';
-  const reply=msg.replyToMessageId?`<div class="message-reply"><div class="message-reply-name">${escapeHtml(msg.replyDisplayName||'Reply')}</div><div class="message-reply-text">${escapeHtml(msg.replyPreview||'')}</div></div>`:'';
-  const attHtml=renderAttachments(msg.attachments||[]);
-  const textBlock=msg.deletedAt?`<div class="message-text deleted">${t('messageDeleted')}</div>`:(msg.text?`<div class="message-text">${escapeHtml(msg.text)}</div>`:'');
-  const meta=[];
-  if(msg.createdAt)meta.push(formatMsgTime(msg.createdAt));
-  if(msg.editedAt&&!msg.deletedAt)meta.push(t('edited'));
-  return `<div class="message-row ${mine}">${avatarHtml(msg.initials,msg.avatarFileId||'','',isOnline,avatarClick)}<div class="message-card" data-message-id="${escapeAttr(msg.messageId)}" data-own="${msg.isMine?'1':'0'}" data-deleted="${msg.deletedAt?'1':'0'}"><div class="message-head"><div class="message-author" onclick="openProfile('${escapeJs(msg.userId)}')">${escapeHtml(msg.displayName||'User')}</div><div class="message-username">@${escapeHtml(msg.username||'')}</div></div>${fwd}${reply}${attHtml}${textBlock}<div class="message-meta">${meta.map(x=>'<span>'+escapeHtml(x)+'</span>').join('')}</div></div></div>`;
-}
-
-/* ========================= Inline File Previews ========================= */
-function renderAttachments(atts){if(!atts||!atts.length)return'';return `<div class="message-attachments">${atts.map(renderAtt).join('')}</div>`}
-function renderAtt(a){
-  const name=escapeHtml(a.name||'file');
-  const meta=escapeHtml(buildAttMeta(a));
-  const view=escapeAttr(a.webViewLink||a.webContentLink||'#');
-  const dl=escapeAttr(a.webContentLink||a.webViewLink||'#');
-  const cat=detectCategory(a.mimeType);
-
-  if(cat==='image'){
-    // Use webContentLink for direct image, or thumbnail
-    const src=escapeAttr(a.webContentLink||a.thumbnailLink||a.webViewLink||'');
-    return `<div class="attachment-card"><img class="attachment-image" src="${src}" alt="${name}" loading="lazy" onclick="previewImage('${escapeJs(src)}')"><div class="attachment-caption"><div class="attachment-caption-name">${name}</div><div class="attachment-caption-meta">${meta}</div><div class="attachment-actions"><a class="attachment-action-link" href="${dl}" target="_blank" rel="noopener">Download</a></div></div></div>`;
-  }
-  if(cat==='video'){
-    const src=escapeAttr(a.webContentLink||a.webViewLink||'');
-    return `<div class="attachment-card"><video class="attachment-video" controls preload="metadata" src="${src}"></video><div class="attachment-caption"><div class="attachment-caption-name">${name}</div><div class="attachment-caption-meta">${meta}</div></div></div>`;
-  }
-  if(cat==='audio'){
-    const src=escapeAttr(a.webContentLink||a.webViewLink||'');
-    return `<div class="attachment-card"><audio class="attachment-audio" controls preload="metadata" src="${src}"></audio><div class="attachment-caption"><div class="attachment-caption-name">${name}</div><div class="attachment-caption-meta">${meta}</div></div></div>`;
-  }
-  return `<div class="attachment-card"><div class="attachment-file"><div class="attachment-file-icon">${getIcon(a)}</div><div class="attachment-file-body"><div class="attachment-file-name">${name}</div><div class="attachment-file-meta">${meta}</div><div class="attachment-actions"><a class="attachment-action-link" href="${view}" target="_blank" rel="noopener">Open</a><a class="attachment-action-link" href="${dl}" target="_blank" rel="noopener">Download</a></div></div></div></div>`;
-}
-
-function previewImage(src){
-  const ov=document.createElement('div');ov.className='img-preview-overlay';ov.innerHTML=`<img src="${src}">`;ov.onclick=()=>ov.remove();document.body.appendChild(ov);
-}
-
-/* ========================= Send / Edit / Delete ========================= */
-function sendMessageFromUI(){
-  if(!sessionToken||!activeConversationId||uploadState.active)return;
-  const input=document.getElementById('composerInput'),text=input.value.trim();
-  if(!text)return;
-  const reqId=activeConversationId;
-  document.getElementById('sendBtn').disabled=true;
-  google.script.run.withSuccessHandler(r=>{document.getElementById('sendBtn').disabled=false;if(!r||!r.ok){showAlert('Error',(r&&r.error)||'Send failed.');return}input.value='';autoGrowTextarea(input);clearReplyTarget();if(Array.isArray(r.conversations)){conversations=r.conversations;activeConversation=getConversationById(activeConversationId);renderSidebar();renderActiveTopbar()}if(r.message&&String(r.conversationId)===reqId){conversationVersions.set(reqId,r.version);mergeMessages(reqId,[r.message],false);renderMessages(true)}else loadConversation(true)}).withFailureHandler(e=>{console.error(e);document.getElementById('sendBtn').disabled=false;showAlert('Error','Send failed.')}).sendMessage(sessionToken,reqId,text,replyTarget?replyTarget.messageId:'');
-}
-
-/* ========================= File Upload ========================= */
-function openFilePicker(){if(!sessionToken||!activeConversationId||uploadState.active)return;document.getElementById('fileInput').click()}
-function handleFileSelection(file){
-  if(!file||!sessionToken||!activeConversationId)return;
-  if(uploadState.active){showAlert('Upload','Another upload in progress.');return}
-  if(file.size>MAX_UPLOAD_BYTES){showAlert('Upload','File exceeds 1 GB.');return}
-  const cid=activeConversationId,text=document.getElementById('composerInput').value.trim();
-  uploadState={active:true,file,conversationId:cid,phase:'preparing',progress:0,xhr:null,uploadToken:'',uploadUrl:'',fileId:''};
-  renderUploadBanner('Preparing: '+file.name,'default',0,true);
-  google.script.run.withSuccessHandler(r=>{if(!uploadState.active)return;if(!r||!r.ok){showAlert('Upload',(r&&r.error)||'Failed.');resetUploadState();return}uploadState.uploadToken=r.uploadToken;uploadState.uploadUrl=r.uploadUrl;uploadState.phase='uploading';uploadFileResumable(file,r.uploadUrl,(pct,xhr)=>{uploadState.xhr=xhr;uploadState.progress=pct;renderUploadBanner('Uploading '+file.name+' — '+pct+'%','default',pct,true)}).then(fid=>{if(!uploadState.active)return;uploadState.fileId=fid||'';uploadState.phase='finalizing';renderUploadBanner('Finalizing...','default',100,false);const doFinalize=(resolvedId)=>{google.script.run.withSuccessHandler(fr=>{if(!uploadState.active)return;if(!fr||!fr.ok){showAlert('Upload',(fr&&fr.error)||'Finalize failed.');resetUploadState();return}document.getElementById('composerInput').value='';clearReplyTarget();if(Array.isArray(fr.conversations)){conversations=fr.conversations;activeConversation=getConversationById(activeConversationId);renderSidebar();renderActiveTopbar()}if(fr.message&&String(fr.conversationId)===cid){conversationVersions.set(cid,fr.version);mergeMessages(cid,[fr.message],false);renderMessages(true)}resetUploadState()}).withFailureHandler(e=>{console.error(e);showAlert('Upload','Finalize failed.');resetUploadState()}).finalizeUploadedMessage(sessionToken,{uploadToken:uploadState.uploadToken,fileId:resolvedId,fileName:file.name,mimeType:file.type||'application/octet-stream',fileSize:file.size,text,replyToMessageId:replyTarget?replyTarget.messageId:''})};if(fid){doFinalize(fid)}else{google.script.run.withSuccessHandler(rr=>{if(!rr||!rr.ok){showAlert('Upload','Resolve failed.');resetUploadState();return}doFinalize(rr.fileId)}).withFailureHandler(()=>{showAlert('Upload','Resolve failed.');resetUploadState()}).resolveUploadedFileId(sessionToken,uploadState.uploadToken)}}).catch(e=>{console.error(e);showAlert('Upload',e.message||'Failed.');resetUploadState()})}).withFailureHandler(e=>{console.error(e);showAlert('Upload','Session failed.');resetUploadState()}).createDriveUploadSession(sessionToken,{conversationId:cid,fileName:file.name,mimeType:file.type||'application/octet-stream',fileSize:file.size,text,replyToMessageId:replyTarget?replyTarget.messageId:''});
-}
-async function uploadFileResumable(file,url,onProgress){let start=0,fid='';while(start<file.size){const end=Math.min(start+CHUNK_SIZE,file.size),chunk=file.slice(start,end),cr='bytes '+start+'-'+(end-1)+'/'+file.size;const r=await sendChunk(url,chunk,file.type||'application/octet-stream',cr,onProgress,end,file.size);if(r.status===308){const rng=r.xhr.getResponseHeader('Range');start=rng?((rng.match(/bytes=0-(\d+)$/i)||[])[1]||-1)*1+1:end;onProgress(Math.min(99,Math.floor(start/file.size*100)),r.xhr);continue}if(r.status>=200&&r.status<300){try{fid=JSON.parse(r.xhr.responseText||'{}').id||''}catch(e){}onProgress(100,r.xhr);return fid}if(r.status===0&&end>=file.size){onProgress(100,r.xhr);return''}throw new Error('Upload HTTP '+r.status)}return fid}
-function sendChunk(url,blob,mime,cr,onProgress,uploaded,total){return new Promise((res,rej)=>{const xhr=new XMLHttpRequest();xhr.open('PUT',url,true);xhr.setRequestHeader('Content-Type',mime);xhr.setRequestHeader('Content-Range',cr);xhr.upload.onprogress=e=>{if(!e.lengthComputable)return;const p=Math.min(99,Math.floor(((uploaded-blob.size+e.loaded)/total)*100));onProgress(p,xhr)};xhr.onreadystatechange=()=>{if(xhr.readyState===4)res({status:xhr.status,xhr})};xhr.onerror=()=>rej(new Error('Network error'));xhr.onabort=()=>rej(new Error('Cancelled'));xhr.send(blob)})}
-function cancelCurrentUpload(){if(!uploadState.active)return;if(uploadState.xhr)try{uploadState.xhr.abort()}catch(e){}resetUploadState()}
-function resetUploadState(clearBanner){if(clearBanner!==false)hideUploadBanner();uploadState={active:false,file:null,xhr:null,uploadToken:'',uploadUrl:'',fileId:'',conversationId:'',progress:0,phase:''};document.getElementById('fileInput').value=''}
-function renderUploadBanner(text,state,pct,canCancel){const b=document.getElementById('uploadBanner'),l=document.getElementById('uploadBannerLabel'),v=document.getElementById('uploadBannerText'),pw=document.getElementById('uploadProgressWrap'),p=document.getElementById('uploadProgress'),cb=document.getElementById('cancelUploadBtn');b.classList.add('active');l.classList.remove('error','success');if(state==='error')l.classList.add('error');if(state==='success')l.classList.add('success');l.textContent=state==='error'?'Error':state==='success'?'Done':'Upload';v.textContent=text;if(typeof pct==='number'){pw.style.display='';p.value=Math.max(0,Math.min(100,pct))}else{pw.style.display='none'}cb.style.display=canCancel?'':'none'}
-function hideUploadBanner(){document.getElementById('uploadBanner').classList.remove('active')}
-
-/* ========================= Reply ========================= */
-function clearReplyTarget(){replyTarget=null;renderReplyBanner()}
-function renderReplyBanner(){const b=document.getElementById('replyBanner'),l=document.getElementById('replyBannerLabel'),t_=document.getElementById('replyBannerText');if(!replyTarget){b.classList.remove('active');return}b.classList.add('active');l.textContent=t('reply')+': '+(replyTarget.displayName||'');t_.textContent=truncate(replyTarget.text||'',140)}
-function getMessageByIdFromActive(id){return(messagesByConversation.get(activeConversationId)||[]).find(m=>m.messageId===id)||null}
-
-/* ========================= Message Dropdown ========================= */
-function openMessageDropdownAt(x,y,messageId){
-  const msg=getMessageByIdFromActive(messageId);if(!msg)return;closeMessageDropdown();dropdownState={open:true,messageId};
-  const menu=document.getElementById('messageDropdown'),bd=document.getElementById('dropdownBackdrop');
-  const items=[];
-  if(!msg.deletedAt){
-    items.push(`<button onclick="replyToMessage('${escapeJs(msg.messageId)}')">${t('reply')}</button>`);
-    items.push(`<button onclick="copyMessageText('${escapeJs(msg.messageId)}')">${t('copy')}</button>`);
-    items.push(`<button onclick="forwardMessageUI('${escapeJs(msg.messageId)}')">${t('forward')}</button>`);
-  }
-  if(msg.isMine&&!msg.deletedAt){
-    items.push(`<button onclick="editMessageUI('${escapeJs(msg.messageId)}')">${t('edit')}</button>`);
-    items.push(`<button class="danger" onclick="deleteMessageUI('${escapeJs(msg.messageId)}')">${t('deleteMsg')}</button>`);
-  }
-  if(!items.length)items.push(`<button onclick="closeMessageDropdown()">${t('close')}</button>`);
-  menu.innerHTML=items.join('');menu.classList.add('open');bd.classList.add('open');
-  menu.style.left='0px';menu.style.top='0px';
-  const rect=menu.getBoundingClientRect();let left=x,top=y;
-  if(left+rect.width>window.innerWidth-8)left=window.innerWidth-rect.width-8;if(top+rect.height>window.innerHeight-8)top=window.innerHeight-rect.height-8;if(left<8)left=8;if(top<8)top=8;
-  menu.style.left=left+'px';menu.style.top=top+'px';
-}
-function closeMessageDropdown(){dropdownState.open=false;document.getElementById('messageDropdown').classList.remove('open');document.getElementById('dropdownBackdrop').classList.remove('open')}
-function replyToMessage(id){const msg=getMessageByIdFromActive(id);closeMessageDropdown();if(!msg||msg.deletedAt)return;replyTarget=msg;renderReplyBanner();document.getElementById('composerInput').focus()}
-function copyMessageText(id){const msg=getMessageByIdFromActive(id);closeMessageDropdown();if(!msg)return;const text=msg.text||'';if(navigator.clipboard)navigator.clipboard.writeText(text).catch(()=>{});else{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta)}}
-function editMessageUI(id){const msg=getMessageByIdFromActive(id);closeMessageDropdown();if(!msg)return;showPrompt(t('edit'),'',msg.text||'').then(v=>{if(v===null)return;const txt=String(v||'').trim();if(!txt)return;google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert('Error',(r&&r.error)||'Edit failed.');return}if(r.message){mergeMessages(activeConversationId,[r.message],false);renderMessages(false)}if(Array.isArray(r.conversations)){conversations=r.conversations;renderSidebar()}}).withFailureHandler(e=>{console.error(e);showAlert('Error','Edit failed.')}).editMessage(sessionToken,id,txt)})}
-function deleteMessageUI(id){closeMessageDropdown();showConfirm(t('deleteMsg'),t('deleteMsg')+'?',t('delete'),true).then(ok=>{if(!ok)return;google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert('Error',(r&&r.error)||'Delete failed.');return}if(r.message){mergeMessages(activeConversationId,[r.message],false);renderMessages(false)}if(Array.isArray(r.conversations)){conversations=r.conversations;renderSidebar()}}).withFailureHandler(e=>{console.error(e);showAlert('Error','Delete failed.')}).deleteMessage(sessionToken,id)})}
-
-/* ========================= Forward ========================= */
-function forwardMessageUI(messageId){
-  closeMessageDropdown();
-  const targets=conversations.filter(c=>c.type!=='channel');
-  if(!targets.length){showAlert(t('forward'),'No conversations available.');return}
-  let html='<div style="max-height:300px;overflow-y:auto">';
-  targets.forEach(c=>{html+=`<div class="search-item" onclick="doForward('${escapeJs(messageId)}','${escapeJs(c.conversationId)}')"><div class="avatar">${escapeHtml(c.initials||'C')}</div><div class="search-item-meta"><div class="search-item-title">${escapeHtml(c.title)}</div><div class="search-item-sub">${escapeHtml(c.subtitle||'')}</div></div></div>`});
-  html+='</div>';
-  openCustomModal({title:t('forward'),message:'',html,buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'}]});
-}
-function doForward(messageId,targetCid){
-  closeModal(null);
-  google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert('Error',(r&&r.error)||'Forward failed.');return}if(Array.isArray(r.conversations)){conversations=r.conversations;renderSidebar()}showAlert(t('forward'),'✓')}).withFailureHandler(e=>{console.error(e);showAlert('Error','Forward failed.')}).forwardMessage(sessionToken,{messageId,targetConversationId:targetCid});
-}
-
-/* ========================= Profile Modal ========================= */
-function openProfile(userId){
-  if(!userId)return;
-  google.script.run.withSuccessHandler(r=>{if(!r||!r.ok)return;const p=r.profile;
-    let html=`<div class="profile-header">${avatarHtml(p.initials,p.avatarFileId,'xl',p.isOnline)}<div class="profile-name">${escapeHtml(p.displayName)}</div>`;
-    if(p.username)html+=`<div class="profile-username">@${escapeHtml(p.username)}</div>`;
-    if(p.isDeleted)html+=`<div class="profile-status offline">Deleted Account</div>`;
-    else html+=`<div class="profile-status ${p.isOnline?'online':'offline'}">${p.isOnline?t('online'):t('offline')}</div>`;
-    if(p.bio)html+=`<div class="profile-bio">${escapeHtml(p.bio)}</div>`;
-    html+=`<div class="profile-actions">`;
-    if(!p.isSelf&&!p.isDeleted){
-      html+=`<button class="primary-btn" onclick="closeModal(null);startDirectMessage('${escapeJs(p.userId)}')">${t('sendMessage')}</button>`;
-      if(p.blockedByMe)html+=`<button class="secondary-btn" onclick="doUnblock('${escapeJs(p.userId)}')">${t('unblock')}</button>`;
-      else html+=`<button class="danger-btn" onclick="doBlock('${escapeJs(p.userId)}')">${t('block')}</button>`;
-    }
-    html+=`</div></div>`;
-    openCustomModal({title:t('userProfile'),message:'',html,buttons:[{text:t('close'),className:'secondary-btn',value:'close'}]});
-  }).withFailureHandler(e=>console.error(e)).getUserProfile(sessionToken,userId);
-}
-
-function openConversationProfile(){
-  if(!activeConversation)return;
-  if(activeConversation.type==='direct'){/* find peer id from conversation - just use topbar info */return}
-  if(activeConversation.type==='group'||activeConversation.type==='channel'){
-    google.script.run.withSuccessHandler(r=>{if(!r||!r.ok)return;const p=r.profile;
-      let html=`<div class="profile-header">${avatarHtml(p.initials,p.avatarFileId,'xl')}<div class="profile-name">${escapeHtml(p.title)}</div>`;
-      if(p.description)html+=`<div class="profile-bio">${escapeHtml(p.description)}</div>`;
-      html+=`<div class="profile-username">${p.memberCount} ${t('members')}</div></div>`;
-      html+=`<div style="padding:0 4px"><div class="section-title">${t('members')}</div>`;
-      p.members.forEach(m=>{html+=`<div class="search-item" onclick="closeModal(null);openProfile('${escapeJs(m.userId)}')">${avatarHtml(m.initials,m.avatarFileId,'',m.isOnline)}<div class="search-item-meta"><div class="search-item-title">${escapeHtml(m.displayName)}</div><div class="search-item-sub">@${escapeHtml(m.username)}</div></div></div>`});
-      html+=`</div>`;
-      const btns=[{text:t('close'),className:'secondary-btn',value:'close'}];
-      if(p.type==='group'){
-        if(p.isCreator){btns.unshift({text:t('editGroup'),className:'primary-btn',value:'edit'});btns.push({text:t('deleteGroup'),className:'danger-btn',value:'deleteGroup'})}
-        btns.unshift({text:t('inviteLink'),className:'secondary-btn',value:'invite'});
-        btns.push({text:t('leaveGroup'),className:'secondary-btn',value:'leave'});
+    /* ============================================================
+       i18n
+       ============================================================ */
+    const I18N = {
+      en: {
+        authSubLogin: 'Welcome back. Log in to continue.',
+        authSubReg: 'Welcome to Heyo. Sign up to continue.',
+        save: 'Save', cancel: 'Cancel', delete: 'Delete', close: 'Close', confirm: 'Confirm',
+        block: 'Block', unblock: 'Unblock', sendMsg: 'Send message',
+        online: 'online', offline: 'offline', members: 'members',
+        deleteAccount: 'Delete account',
+        deleteAccountMsg: 'This is permanent. All your messages will stay but your profile will be removed.',
+        createGroup: 'Create group', groupName: 'Group name', groupDesc: 'Description',
+        leaveGroup: 'Leave group', deleteGroup: 'Delete group',
+        inviteLink: 'Invite link', copyLink: 'Copy link',
+        editGroup: 'Edit group', groupProfile: 'Group info', userProfile: 'Profile',
+        forward: 'Forward', reply: 'Reply', edit: 'Edit', copy: 'Copy text', delMsg: 'Delete',
+        forwarded: 'Forwarded', noMsgs: 'No messages yet',
+        channelOnly: 'Only @usonance can post here.',
+        settings: 'Settings', theme: 'Theme', language: 'Language',
+        light: 'Light', dark: 'Dark', bio: 'Bio', displayName: 'Display name',
+        msgDeleted: 'Message deleted.', edited: 'edited',
+        today: 'Today', yesterday: 'Yesterday',
+        changeAvatar: 'Change avatar'
+      },
+      ru: {
+        authSubLogin: 'С возвращением. Войдите, чтобы продолжить.',
+        authSubReg: 'Добро пожаловать в Heyo. Зарегистрируйтесь.',
+        save: 'Сохранить', cancel: 'Отмена', delete: 'Удалить', close: 'Закрыть', confirm: 'Подтвердить',
+        block: 'Заблокировать', unblock: 'Разблокировать', sendMsg: 'Написать',
+        online: 'онлайн', offline: 'не в сети', members: 'участников',
+        deleteAccount: 'Удалить аккаунт',
+        deleteAccountMsg: 'Это необратимо. Сообщения останутся, но профиль будет удалён.',
+        createGroup: 'Создать группу', groupName: 'Название группы', groupDesc: 'Описание',
+        leaveGroup: 'Покинуть группу', deleteGroup: 'Удалить группу',
+        inviteLink: 'Приглашение', copyLink: 'Копировать',
+        editGroup: 'Редактировать', groupProfile: 'О группе', userProfile: 'Профиль',
+        forward: 'Переслать', reply: 'Ответить', edit: 'Редактировать', copy: 'Копировать', delMsg: 'Удалить',
+        forwarded: 'Переслано', noMsgs: 'Сообщений пока нет',
+        channelOnly: 'Только @usonance может писать.',
+        settings: 'Настройки', theme: 'Тема', language: 'Язык',
+        light: 'Светлая', dark: 'Тёмная', bio: 'О себе', displayName: 'Имя',
+        msgDeleted: 'Сообщение удалено.', edited: 'изменено',
+        today: 'Сегодня', yesterday: 'Вчера',
+        changeAvatar: 'Сменить аватар'
       }
-      openCustomModal({title:p.type==='channel'?'Channel':t('groupProfile'),message:'',html,buttons:btns,onAction(v){
-        if(v==='close'||!v){closeModal(null);return}
-        if(v==='invite'){closeModal(null);getInviteLink(activeConversationId);return}
-        if(v==='edit'){closeModal(null);editGroupUI(activeConversationId);return}
-        if(v==='leave'){closeModal(null);doLeaveGroup(activeConversationId);return}
-        if(v==='deleteGroup'){closeModal(null);doDeleteGroup(activeConversationId);return}
-        closeModal(null);
-      }});
-    }).withFailureHandler(e=>console.error(e)).getGroupProfile(sessionToken,activeConversationId);
-  }
-}
+    };
 
-/* ========================= Groups ========================= */
-function createGroupUI(){
-  const html=`<div class="field"><label>${t('groupName')}</label><input id="newGroupTitle" type="text" maxlength="60"></div><div class="field"><label>${t('groupDescription')}</label><textarea id="newGroupDesc" rows="3" maxlength="500"></textarea></div>`;
-  openCustomModal({title:t('createGroup'),message:'',html,buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('createGroup'),className:'primary-btn',value:'create'}],onAction(v){if(v!=='create'){closeModal(null);return}const title=document.getElementById('newGroupTitle').value.trim();const desc=document.getElementById('newGroupDesc').value.trim();if(!title){return}closeModal(null);google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert('Error',(r&&r.error)||'Failed.');return}if(Array.isArray(r.conversations)){conversations=r.conversations;renderSidebar()}if(r.conversationId)selectConversation(r.conversationId)}).withFailureHandler(e=>{console.error(e);showAlert('Error','Failed.')}).createGroup(sessionToken,{title,description:desc})}});
-}
-function editGroupUI(cid){
-  const c=getConversationById(cid);if(!c)return;
-  const html=`<div class="field"><label>${t('groupName')}</label><input id="editGroupTitle" type="text" maxlength="60" value="${escapeAttr(c.title||'')}"></div><div class="field"><label>${t('groupDescription')}</label><textarea id="editGroupDesc" rows="3" maxlength="500">${escapeHtml(c.description||'')}</textarea></div>`;
-  openCustomModal({title:t('editGroup'),message:'',html,buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('save'),className:'primary-btn',value:'save'}],onAction(v){if(v!=='save'){closeModal(null);return}closeModal(null);google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert('Error',(r&&r.error)||'Failed.');return}if(Array.isArray(r.conversations)){conversations=r.conversations;activeConversation=getConversationById(activeConversationId);renderSidebar();renderActiveTopbar()}}).withFailureHandler(e=>console.error(e)).updateGroup(sessionToken,{conversationId:cid,title:document.getElementById('editGroupTitle').value.trim(),description:document.getElementById('editGroupDesc').value.trim()})}});
-}
-function doLeaveGroup(cid){showConfirm(t('leaveGroup'),t('leaveGroup')+'?',t('confirm'),false).then(ok=>{if(!ok)return;google.script.run.withSuccessHandler(r=>{if(Array.isArray(r&&r.conversations)){conversations=r.conversations;renderSidebar()}showPlaceholder()}).withFailureHandler(e=>console.error(e)).leaveGroup(sessionToken,cid)})}
-function doDeleteGroup(cid){showConfirm(t('deleteGroup'),t('deleteGroup')+'?',t('delete'),true).then(ok=>{if(!ok)return;google.script.run.withSuccessHandler(r=>{if(Array.isArray(r&&r.conversations)){conversations=r.conversations;renderSidebar()}showPlaceholder()}).withFailureHandler(e=>console.error(e)).deleteGroup(sessionToken,cid)})}
-function getInviteLink(cid){
-  google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert('Error',(r&&r.error)||'Failed.');return}const link=SCRIPT_URL+'?invite='+encodeURIComponent(r.inviteCode);const html=`<div class="field"><input id="inviteLinkInput" type="text" value="${escapeAttr(link)}" readonly onclick="this.select()"></div>`;openCustomModal({title:t('inviteLink'),message:'',html,buttons:[{text:t('copyLink'),className:'primary-btn',value:'copy'},{text:t('close'),className:'secondary-btn',value:'close'}],onAction(v){if(v==='copy'){const inp=document.getElementById('inviteLinkInput');inp.select();navigator.clipboard?navigator.clipboard.writeText(inp.value):document.execCommand('copy')}closeModal(null)}})}).withFailureHandler(e=>console.error(e)).generateGroupInvite(sessionToken,cid);
-}
+    let lang = localStorage.getItem('heyo_lang') || 'en';
+    function t(key) {
+      return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
+    }
 
-/* ========================= Block / Unblock ========================= */
-function doBlock(userId){closeModal(null);google.script.run.withSuccessHandler(r=>{if(r&&r.ok)showAlert(t('block'),'✓')}).withFailureHandler(e=>console.error(e)).blockUser(sessionToken,userId)}
-function doUnblock(userId){closeModal(null);google.script.run.withSuccessHandler(r=>{if(r&&r.ok)showAlert(t('unblock'),'✓')}).withFailureHandler(e=>console.error(e)).unblockUser(sessionToken,userId)}
+    /* ============================================================
+       google.script.run HTTP adapter
+       ============================================================ */
+    (function initAdapter() {
+      function createRunner(successHandler, failureHandler) {
+        const chain = {
+          withSuccessHandler(cb) {
+            return createRunner(typeof cb === 'function' ? cb : null, failureHandler);
+          },
+          withFailureHandler(cb) {
+            return createRunner(successHandler, typeof cb === 'function' ? cb : null);
+          }
+        };
 
-/* ========================= Settings ========================= */
-function openSettings(){
-  if(!currentUser)return;
-  const html=`<div class="field"><label>${t('displayName')}</label><input id="settingsDisplayName" type="text" maxlength="40" value="${escapeAttr(currentUser.displayName||'')}"></div><div class="field"><label>${t('username')}</label><input id="settingsUsername" type="text" disabled value="@${escapeAttr(currentUser.username||'')}"></div><div class="field"><label>${t('bio')}</label><textarea id="settingsBio" rows="4" maxlength="240">${escapeHtml(currentUser.bio||'')}</textarea></div><div class="field-row"><div class="field"><label>${t('theme')}</label><select id="settingsTheme"><option value="light"${currentUser.theme==='light'?' selected':''}>${t('light')}</option><option value="dark"${currentUser.theme==='dark'?' selected':''}>${t('dark')}</option></select></div><div class="field"><label>${t('language')}</label><select id="settingsLang"><option value="en"${lang==='en'?' selected':''}>English</option><option value="ru"${lang==='ru'?' selected':''}>Русский</option></select></div></div>`;
-  openCustomModal({title:t('settings'),message:'',html,buttons:[{text:t('deleteAccount'),className:'danger-btn',value:'deleteAccount'},{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('save'),className:'primary-btn',value:'save'}],onAction(v){
-    if(v==='deleteAccount'){closeModal(null);doDeleteAccount();return}
-    if(v!=='save'){closeModal(null);return}
-    const payload={displayName:document.getElementById('settingsDisplayName').value.trim(),bio:document.getElementById('settingsBio').value.trim(),theme:document.getElementById('settingsTheme').value,language:document.getElementById('settingsLang').value};
-    google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert(t('settings'),(r&&r.error)||'Failed.');return}closeModal(true);currentUser=r.user||currentUser;lang=currentUser.language||'en';localStorage.setItem('heyo_lang',lang);if(Array.isArray(r.conversations))conversations=r.conversations;applyTheme(currentUser.theme||'light');applyI18n();renderCurrentUser();activeConversation=getConversationById(activeConversationId);renderSidebar();renderActiveTopbar();renderMessages(false)}).withFailureHandler(e=>{console.error(e);showAlert(t('settings'),'Failed.')}).updateProfile(sessionToken,payload);
-  }});
-}
+        return new Proxy(chain, {
+          get(target, prop) {
+            if (prop in target) return target[prop];
+            if (typeof prop !== 'string') return undefined;
+            return function(...args) {
+              callServer(prop, args, successHandler, failureHandler);
+            };
+          }
+        });
+      }
 
-function doDeleteAccount(){
-  showConfirm(t('deleteAccount'),t('deleteAccountConfirm'),t('delete'),true).then(ok=>{if(!ok)return;google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert('Error',(r&&r.error)||'Failed.');return}localStorage.removeItem('heyo_token');sessionToken='';currentUser=null;resetAppState();showAuthScreen()}).withFailureHandler(e=>{console.error(e);showAlert('Error','Failed.')}).deleteAccount(sessionToken)});
-}
+      async function callServer(action, args, successHandler, failureHandler) {
+        try {
+          const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: action, data: args })
+          });
+          const raw = await response.text();
+          let result;
+          try { result = raw ? JSON.parse(raw) : null; } catch (e) { throw new Error('Bad JSON'); }
+          if (typeof successHandler === 'function') successHandler(result);
+        } catch (error) {
+          if (typeof failureHandler === 'function') failureHandler(error);
+          else console.error('API error:', error);
+        }
+      }
 
-function applyTheme(theme){document.body.classList.remove('light','dark');document.body.classList.add(theme==='dark'?'dark':'light')}
+      window.google = window.google || {};
+      window.google.script = window.google.script || {};
+      window.google.script.run = createRunner(null, null);
+    })();
 
-/* ========================= Search ========================= */
-function performUserSearch(){
-  const q=document.getElementById('userSearchInput').value.trim();
-  if(!q){clearSearchResults();return}
-  google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){clearSearchResults();return}renderSearchResults(Array.isArray(r.users)?r.users:[])}).withFailureHandler(()=>clearSearchResults()).searchUsers(sessionToken,q);
-}
-function renderSearchResults(users){
-  const w=document.getElementById('searchResults');
-  if(!users.length){w.innerHTML=`<div class="search-item"><div class="search-item-meta"><div class="search-item-title">No users found</div></div></div>`;w.classList.add('open');return}
-  w.innerHTML=users.map(u=>`<div class="search-item" onclick="startDirectMessage('${escapeJs(u.userId)}')">${avatarHtml(u.initials,u.avatarFileId,'',u.isOnline)}<div class="search-item-meta"><div class="search-item-title">${escapeHtml(u.displayName||'User')}</div><div class="search-item-sub">@${escapeHtml(u.username||'')}</div></div></div>`).join('');
-  w.classList.add('open');
-}
-function clearSearchResults(){const w=document.getElementById('searchResults');w.classList.remove('open');w.innerHTML=''}
-function startDirectMessage(userId){clearSearchResults();document.getElementById('userSearchInput').value='';google.script.run.withSuccessHandler(r=>{if(!r||!r.ok){showAlert('DM',(r&&r.error)||'Failed.');return}if(Array.isArray(r.conversations)){conversations=r.conversations;renderSidebar()}if(r.conversationId)selectConversation(r.conversationId)}).withFailureHandler(e=>{console.error(e);showAlert('DM','Failed.')}).openDirectConversation(sessionToken,userId)}
+    /* ============================================================
+       State
+       ============================================================ */
+    let sessionToken = localStorage.getItem('heyo_token') || '';
+    let CU = null; // current user
+    let convos = []; // conversation list
+    let aCid = ''; // active conversation ID
+    let aCon = null; // active conversation object
 
-/* ========================= Sidebar / Mobile ========================= */
-function openMobileSidebar(){document.getElementById('sidebar').classList.add('mobile-open');document.getElementById('mobileSidebarBackdrop').classList.add('open')}
-function closeMobileSidebar(){document.getElementById('sidebar').classList.remove('mobile-open');document.getElementById('mobileSidebarBackdrop').classList.remove('open')}
-function doLogout(){const tk=sessionToken;localStorage.removeItem('heyo_token');sessionToken='';currentUser=null;resetAppState();showAuthScreen();if(tk)google.script.run.logout(tk)}
-function handleAppError(r){const e=(r&&r.error)||'Error';if(/session|auth|expired|invalid/i.test(e))showAlert('Session',e).then(doLogout)}
+    const convoVersions = new Map();
+    const convoMessages = new Map();
 
-/* ========================= Modal ========================= */
-function openCustomModal(cfg){return new Promise(res=>{activeModalResolver=res;document.getElementById('modalTitle').textContent=cfg.title||'';document.getElementById('modalBody').textContent=cfg.message||'';document.getElementById('modalContent').innerHTML=cfg.html||'';const act=document.getElementById('modalActions');act.innerHTML='';(cfg.buttons||[]).forEach(b=>{const btn=document.createElement('button');btn.className=b.className||'secondary-btn';btn.textContent=b.text||'OK';btn.onclick=()=>{if(typeof cfg.onAction==='function')cfg.onAction(b.value);else closeModal(b.value)};act.appendChild(btn)});document.getElementById('modalOverlay').classList.add('open')})}
-function closeModal(result){document.getElementById('modalOverlay').classList.remove('open');document.getElementById('modalContent').innerHTML='';document.getElementById('modalActions').innerHTML='';const r=activeModalResolver;activeModalResolver=null;if(r)r(result)}
-function showAlert(title,msg){return openCustomModal({title,message:msg,buttons:[{text:'OK',className:'primary-btn',value:true}]})}
-function showConfirm(title,msg,okText,danger){return openCustomModal({title,message:msg,buttons:[{text:t('cancel'),className:'secondary-btn',value:false},{text:okText||'OK',className:danger?'danger-btn':'primary-btn',value:true}]})}
-function showPrompt(title,msg,val){return openCustomModal({title,message:msg,html:`<div class="field"><textarea id="promptInput" rows="4">${escapeHtml(val||'')}</textarea></div>`,buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('save'),className:'primary-btn',value:'save'}],onAction(v){if(v!=='save'){closeModal(null);return}closeModal(document.getElementById('promptInput').value)}})}
+    let pollHandle = null;
+    let isLoadingConvo = false;
+    let needReloadConvo = false;
+    let searchDebounce = null;
+    let replyTarget = null;
+    let modalResolver = null;
+    let profileModalOpen = false;
 
-/* ========================= Helpers ========================= */
-function autoGrowTextarea(el){if(!el)return;el.style.height='auto';el.style.height=Math.min(el.scrollHeight,180)+'px'}
-function findMessageCardNode(target){return target?target.closest('.message-card[data-message-id]'):null}
-function escapeHtml(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
-function escapeAttr(v){return escapeHtml(v).replace(/\n/g,'&#10;')}
-function escapeJs(v){return String(v||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/</g,'\\x3C')}
-function truncate(v,m){const t=String(v||'');return t.length<=m?t:t.slice(0,m-1)+'…'}
-function getInitial(v){const s=String(v||'').trim();return s?s.charAt(0).toUpperCase():'U'}
-function formatMsgTime(iso){const d=new Date(iso);return isNaN(d)?'':d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
-function formatSidebarTime(iso){const d=new Date(iso);if(isNaN(d))return'';const now=new Date();if(d.toDateString()===now.toDateString())return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});return d.toLocaleDateString([],{month:'short',day:'numeric'})}
-function formatFileSize(b){const v=Number(b);if(!Number.isFinite(v)||v<=0)return'0 B';const u=['B','KB','MB','GB','TB'];let s=v,i=0;while(s>=1024&&i<u.length-1){s/=1024;i++}return(s>=10||i===0?s.toFixed(0):s.toFixed(1))+' '+u[i]}
-function detectCategory(m){const t=String(m||'').toLowerCase();if(t.startsWith('image/'))return'image';if(t.startsWith('video/'))return'video';if(t.startsWith('audio/'))return'audio';return'file'}
-function buildAttMeta(a){const p=[];const cat=detectCategory(a.mimeType);if(cat==='image')p.push('Photo');else if(cat==='video')p.push('Video');else if(cat==='audio')p.push('Audio');else p.push('File');if(a.size>0)p.push(formatFileSize(a.size));return p.join(' • ')}
-function getIcon(a){const cat=detectCategory(a&&a.mimeType);if(cat==='image')return'🖼';if(cat==='video')return'🎬';if(cat==='audio')return'🎵';const ext=(a&&a.name||'').split('.').pop().toLowerCase();if(['pdf'].includes(ext))return'📕';if(['doc','docx','txt','md'].includes(ext))return'📄';if(['zip','rar','7z'].includes(ext))return'🗜';return'📎'}
+    // Dropdown state
+    let ddOpen = false;
+    let ddMessageId = '';
+    let longPressTimer = null;
+    let longPressFired = false;
 
-/* ========================= Event Listeners ========================= */
-document.getElementById('composerInput').addEventListener('input',function(){autoGrowTextarea(this)});
-document.getElementById('composerInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessageFromUI()}});
-document.getElementById('fileInput').addEventListener('change',function(e){const f=e.target.files;if(f&&f[0])handleFileSelection(f[0]);e.target.value=''});
-document.getElementById('userSearchInput').addEventListener('input',function(){clearTimeout(searchDebounce);searchDebounce=setTimeout(performUserSearch,220)});
-document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this&&activeModalResolver)closeModal(null)});
+    // Online status map { userId: boolean }
+    let onlineMap = {};
 
-const messagesEl=document.getElementById('messages');
-messagesEl.addEventListener('contextmenu',function(e){const c=findMessageCardNode(e.target);if(!c)return;e.preventDefault();openMessageDropdownAt(e.clientX,e.clientY,c.getAttribute('data-message-id'))});
-messagesEl.addEventListener('touchstart',function(e){const c=findMessageCardNode(e.target);if(!c)return;longPressTriggered=false;const touch=e.touches&&e.touches[0];if(!touch)return;clearTimeout(longPressTimer);longPressTimer=setTimeout(()=>{longPressTriggered=true;openMessageDropdownAt(touch.clientX,touch.clientY,c.getAttribute('data-message-id'))},550)},{passive:true});
-messagesEl.addEventListener('touchend',()=>clearTimeout(longPressTimer),{passive:true});
-messagesEl.addEventListener('touchcancel',()=>clearTimeout(longPressTimer),{passive:true});
-messagesEl.addEventListener('touchmove',()=>clearTimeout(longPressTimer),{passive:true});
-messagesEl.addEventListener('click',function(e){if(longPressTriggered){e.preventDefault();longPressTriggered=false}});
-document.addEventListener('click',function(e){if(dropdownState.open&&!document.getElementById('messageDropdown').contains(e.target))closeMessageDropdown();const sw=document.getElementById('searchResults');if(sw.classList.contains('open')&&!document.getElementById('userSearchInput').contains(e.target)&&!sw.contains(e.target))clearSearchResults()});
-document.addEventListener('scroll',()=>closeMessageDropdown(),true);
-window.addEventListener('resize',()=>{closeMessageDropdown();if(window.innerWidth>900)closeMobileSidebar()});
+    // Upload state
+    let uploadState = {
+      active: false, file: null, xhr: null,
+      uploadToken: '', uploadUrl: '', fileId: '',
+      conversationId: '', progress: 0
+    };
 
-verifySession();
-applyI18n();
-</script>
+    // Prevents polling from overwriting user's theme choice mid-save
+    let localThemeOverride = null;
+
+    /* ============================================================
+       Drive URL helpers
+       ============================================================ */
+    function driveImgUrl(fileId) {
+      return 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(fileId);
+    }
+    function drivePreviewUrl(fileId) {
+      return 'https://drive.google.com/file/d/' + encodeURIComponent(fileId) + '/preview';
+    }
+    function driveViewUrl(fileId) {
+      return 'https://drive.google.com/file/d/' + encodeURIComponent(fileId) + '/view';
+    }
+    function driveDownloadUrl(fileId) {
+      return 'https://drive.google.com/uc?id=' + encodeURIComponent(fileId) + '&export=download';
+    }
+
+    /* ============================================================
+       Avatar HTML helper
+       ============================================================ */
+    function avatarHTML(initials, avatarFileId, extraClass, isOnline, onclickAttr) {
+      extraClass = extraClass || '';
+      var inner = escapeHtml(initials || 'U');
+
+      if (avatarFileId) {
+        var imgSrc = driveImgUrl(avatarFileId) + '=s200';
+        inner = '<img src="' + escapeAttr(imgSrc) + '" alt="" loading="lazy" ' +
+          'onerror="this.parentNode.innerHTML=\'' + escapeHtml(initials || 'U') + '\'">';
+      }
+
+      var dot = isOnline ? '<div class="online-dot"></div>' : '';
+      var ocAttr = onclickAttr ? ' onclick="' + onclickAttr + '"' : '';
+
+      return '<div class="avatar ' + extraClass + '"' + ocAttr + '>' +
+        '<div class="avatar-inner">' + inner + '</div>' + dot + '</div>';
+    }
+
+    /* ============================================================
+       Auth UI
+       ============================================================ */
+    function switchAuth(mode) {
+      document.getElementById('loginTabBtn').classList.toggle('active', mode === 'login');
+      document.getElementById('registerTabBtn').classList.toggle('active', mode !== 'login');
+      document.getElementById('loginBlock').classList.toggle('active', mode === 'login');
+      document.getElementById('registerBlock').classList.toggle('active', mode !== 'login');
+      document.getElementById('authSub').textContent = (mode === 'login') ? t('authSubLogin') : t('authSubReg');
+      document.getElementById('authStatus').textContent = '';
+    }
+
+    function switchRegMethod(method) {
+      document.getElementById('regEmailBtn').classList.toggle('active', method === 'email');
+      document.getElementById('regPhoneBtn').classList.toggle('active', method !== 'email');
+      document.getElementById('regEmailW').style.display = (method === 'email') ? '' : 'none';
+      document.getElementById('regPhoneW').style.display = (method !== 'email') ? '' : 'none';
+    }
+
+    function doLogin() {
+      var identifier = document.getElementById('loginId').value.trim();
+      var password = document.getElementById('loginPw').value;
+
+      if (!identifier || !password) {
+        document.getElementById('authStatus').textContent = 'Identifier and password are required.';
+        return;
+      }
+
+      document.getElementById('authStatus').textContent = 'Logging in...';
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            document.getElementById('authStatus').textContent = (res && res.error) || 'Login failed.';
+            return;
+          }
+          sessionToken = res.token;
+          localStorage.setItem('heyo_token', sessionToken);
+          CU = res.user;
+          lang = CU.language || 'en';
+          localStorage.setItem('heyo_lang', lang);
+          document.getElementById('loginPw').value = '';
+          document.getElementById('authStatus').textContent = '';
+          startApp();
+        })
+        .withFailureHandler(function() {
+          document.getElementById('authStatus').textContent = 'Login failed.';
+        })
+        .login(identifier, password);
+    }
+
+    function doRegister() {
+      var payload = {
+        displayName: document.getElementById('regDN').value.trim(),
+        username: document.getElementById('regUN').value.trim(),
+        password: document.getElementById('regPw').value,
+        email: document.getElementById('regEmailW').style.display !== 'none' ? document.getElementById('regEmail').value.trim() : '',
+        phoneCountry: document.getElementById('regPhoneW').style.display !== 'none' ? document.getElementById('regPhCo').value : '',
+        phone: document.getElementById('regPhoneW').style.display !== 'none' ? document.getElementById('regPh').value.trim() : '',
+        bio: document.getElementById('regBio').value.trim(),
+        theme: 'light',
+        language: lang
+      };
+
+      if (!payload.displayName || !payload.username || !payload.password) {
+        document.getElementById('authStatus').textContent = 'Display name, username and password are required.';
+        return;
+      }
+
+      document.getElementById('authStatus').textContent = 'Creating account...';
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            document.getElementById('authStatus').textContent = (res && res.error) || 'Registration failed.';
+            return;
+          }
+          sessionToken = res.token;
+          localStorage.setItem('heyo_token', sessionToken);
+          CU = res.user;
+          lang = CU.language || 'en';
+          localStorage.setItem('heyo_lang', lang);
+          document.getElementById('authStatus').textContent = '';
+          startApp();
+        })
+        .withFailureHandler(function() {
+          document.getElementById('authStatus').textContent = 'Registration failed.';
+        })
+        .registerAccount(payload);
+    }
+
+    function verifySession() {
+      if (!sessionToken) { showAuthScreen(); return; }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            localStorage.removeItem('heyo_token');
+            sessionToken = '';
+            showAuthScreen();
+            return;
+          }
+          CU = res.user;
+          lang = CU.language || 'en';
+          localStorage.setItem('heyo_lang', lang);
+          startApp();
+        })
+        .withFailureHandler(function() {
+          localStorage.removeItem('heyo_token');
+          sessionToken = '';
+          showAuthScreen();
+        })
+        .getSession(sessionToken);
+    }
+
+    function showAuthScreen() {
+      stopPolling();
+      document.getElementById('authScreen').classList.add('active');
+      document.getElementById('appScreen').classList.remove('active');
+      switchAuth('login');
+    }
+
+    function showAppScreen() {
+      document.getElementById('authScreen').classList.remove('active');
+      document.getElementById('appScreen').classList.add('active');
+    }
+
+    /* ============================================================
+       App Lifecycle
+       ============================================================ */
+    function startApp() {
+      // Reset state
+      convos = [];
+      aCid = '';
+      aCon = null;
+      convoVersions.clear();
+      convoMessages.clear();
+      replyTarget = null;
+      localThemeOverride = null;
+
+      showAppScreen();
+      applyTheme(CU.theme || 'light');
+      renderCurrentUser();
+      autoGrowTextarea(document.getElementById('composerIn'));
+      fetchAppData(true);
+      startPolling();
+      checkPendingInvite();
+    }
+
+    function renderCurrentUser() {
+      if (!CU) return;
+      document.getElementById('meDN').textContent = CU.displayName || 'User';
+      document.getElementById('meUN').textContent = '@' + (CU.username || '');
+
+      var avatarInner = document.getElementById('meAvatar').querySelector('.avatar-inner');
+      if (CU.avatarFileId) {
+        avatarInner.innerHTML = '<img src="' + driveImgUrl(CU.avatarFileId) + '=s100" ' +
+          'onerror="this.parentNode.innerHTML=\'' + escapeHtml(CU.initials || 'U') + '\'">';
+      } else {
+        avatarInner.textContent = CU.initials || 'U';
+      }
+    }
+
+    function fetchAppData(isInitial) {
+      if (!sessionToken) return;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) { handleAppError(res); return; }
+
+          CU = res.user;
+          convos = Array.isArray(res.conversations) ? res.conversations : [];
+          if (res.online) onlineMap = res.online;
+
+          // Only apply theme from server if user hasn't overridden locally
+          if (!localThemeOverride) {
+            applyTheme(CU.theme || 'light');
+          }
+
+          lang = CU.language || 'en';
+          renderCurrentUser();
+          renderSidebar();
+
+          if (isInitial) {
+            showPlaceholder();
+          } else if (aCid) {
+            aCon = getConvoById(aCid);
+            if (!aCon) showPlaceholder();
+            else renderTopbar();
+          }
+        })
+        .withFailureHandler(function(err) { console.error(err); })
+        .getAppData(sessionToken);
+    }
+
+    function applyTheme(theme) {
+      document.body.className = (theme === 'dark') ? 'dark' : 'light';
+    }
+
+    function getConvoById(id) {
+      return convos.find(function(c) { return c.conversationId === id; }) || null;
+    }
+
+    /* ============================================================
+       Polling — single combined call
+       ============================================================ */
+    function startPolling() {
+      stopPolling();
+      pollHandle = setInterval(doPoll, 2500);
+      doPoll(); // immediate first poll
+    }
+
+    function stopPolling() {
+      if (pollHandle) { clearInterval(pollHandle); pollHandle = null; }
+    }
+
+    function doPoll() {
+      if (!sessionToken || document.hidden) return;
+
+      var currentCid = aCid;
+      var sinceVersion = currentCid ? Number(convoVersions.get(currentCid) || 0) : 0;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) return;
+
+          if (res.online) onlineMap = res.online;
+
+          if (res.conversations) {
+            convos = res.conversations;
+            aCon = getConvoById(aCid);
+            renderSidebar();
+            renderTopbar();
+          }
+
+          // Process messages if returned
+          if (res.messagesData && String(res.messagesData.conversationId) === aCid) {
+            var md = res.messagesData;
+            if (typeof md.version === 'number') convoVersions.set(aCid, md.version);
+
+            if (md.reset || !convoMessages.has(aCid)) {
+              convoMessages.set(aCid, []);
+            }
+            if (md.messages && md.messages.length) {
+              mergeMessages(aCid, md.messages, !!md.reset);
+            } else if (md.reset) {
+              convoMessages.set(aCid, []);
+            }
+
+            renderMessages(false);
+          }
+        })
+        .withFailureHandler(function() {})
+        .pollUpdates(sessionToken, currentCid, sinceVersion);
+    }
+
+    function checkPendingInvite() {
+      var invite = localStorage.getItem('heyo_pending_invite');
+      if (!invite) return;
+      localStorage.removeItem('heyo_pending_invite');
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            showAlert('Invite', (res && res.error) || 'Failed to join group.');
+            return;
+          }
+          if (res.conversations) {
+            convos = res.conversations;
+            renderSidebar();
+          }
+          if (res.conversationId) selectConversation(res.conversationId);
+        })
+        .withFailureHandler(function() {
+          showAlert('Invite', 'Failed to join group.');
+        })
+        .joinGroupByInvite(sessionToken, invite);
+    }
+
+    /* ============================================================
+       Sidebar
+       ============================================================ */
+    function renderSidebar() {
+      var channels = convos.filter(function(c) { return c.type === 'channel'; });
+      var groups = convos.filter(function(c) { return c.type === 'group'; });
+      var directs = convos.filter(function(c) { return c.type === 'direct'; });
+
+      document.getElementById('chList').innerHTML = channels.map(renderConvoItem).join('');
+      document.getElementById('grList').innerHTML = groups.map(renderConvoItem).join('');
+      document.getElementById('dmList').innerHTML = directs.length
+        ? directs.map(renderConvoItem).join('')
+        : '<div class="empty-state" style="padding:14px;margin:0;font-size:13px">' + t('noMsgs') + '</div>';
+    }
+
+    function renderConvoItem(c) {
+      var isActive = (c.conversationId === aCid) ? 'active' : '';
+      var subtitle = c.subtitle ? '<div class="ci-sub">' + escapeHtml(c.subtitle) + '</div>' : '';
+      var lastMsg = c.lastMessageText ? '<div class="ci-last">' + escapeHtml(c.lastMessageText) + '</div>' : '';
+      var time = c.lastMessageAt ? formatSidebarTime(c.lastMessageAt) : '';
+
+      return '<div class="ci ' + isActive + '" onclick="selectConversation(\'' + escapeJsStr(c.conversationId) + '\')">' +
+        avatarHTML(c.initials, c.avatarFileId, '', false) +
+        '<div class="ci-meta">' +
+          '<div class="ci-line">' +
+            '<div class="ci-title">' + escapeHtml(c.title || 'Chat') + '</div>' +
+            '<div class="ci-time">' + escapeHtml(time) + '</div>' +
+          '</div>' +
+          subtitle + lastMsg +
+        '</div></div>';
+    }
+
+    /* ============================================================
+       Conversation Selection
+       ============================================================ */
+    function selectConversation(id) {
+      aCid = id;
+      aCon = getConvoById(id);
+      replyTarget = null;
+      renderReplyBanner();
+      renderSidebar();
+      renderTopbar();
+      showConversationView();
+      closeMobSB();
+      resetUploadState(true);
+
+      if (!convoVersions.has(id)) convoVersions.set(id, 0);
+      if (!convoMessages.has(id)) convoMessages.set(id, []);
+
+      updateComposerVisibility();
+      loadConversation(true);
+    }
+
+    function renderTopbar() {
+      var titleEl = document.getElementById('chatTitle');
+      var subtitleEl = document.getElementById('chatSub');
+      var avatarInner = document.getElementById('topAv').querySelector('.avatar-inner');
+
+      if (!aCon) {
+        titleEl.textContent = 'Heyo';
+        subtitleEl.textContent = '';
+        avatarInner.textContent = 'H';
+        return;
+      }
+
+      titleEl.textContent = aCon.title || 'Chat';
+      subtitleEl.textContent = aCon.subtitle || '';
+
+      if (aCon.avatarFileId) {
+        avatarInner.innerHTML = '<img src="' + driveImgUrl(aCon.avatarFileId) + '=s100" ' +
+          'onerror="this.textContent=\'' + escapeHtml(aCon.initials || 'C') + '\'">';
+      } else {
+        avatarInner.textContent = aCon.initials || 'C';
+      }
+    }
+
+    function showPlaceholder() {
+      aCid = '';
+      aCon = null;
+      renderTopbar();
+      renderSidebar();
+      document.getElementById('phView').style.display = 'flex';
+      document.getElementById('convoView').classList.remove('active');
+    }
+
+    function showConversationView() {
+      document.getElementById('phView').style.display = 'none';
+      document.getElementById('convoView').classList.add('active');
+    }
+
+    function updateComposerVisibility() {
+      var wrap = document.getElementById('composerWrap');
+      if (!aCon) { wrap.style.display = ''; return; }
+
+      // Hide composer for channels unless user is the channel poster
+      if (aCon.type === 'channel' && (!CU || CU.username !== 'usonance')) {
+        wrap.style.display = 'none';
+      } else {
+        wrap.style.display = '';
+      }
+    }
+
+    /* ============================================================
+       Load Conversation Messages
+       ============================================================ */
+    function loadConversation(forceScroll) {
+      if (!sessionToken || !aCid) return;
+      if (isLoadingConvo) { needReloadConvo = true; return; }
+
+      isLoadingConvo = true;
+      var requestedId = aCid;
+      var sinceVersion = Number(convoVersions.get(requestedId) || 0);
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          isLoadingConvo = false;
+          if (!res || !res.ok) { handleAppError(res); return; }
+
+          var md = res.messagesData;
+          if (!md || String(md.conversationId) !== requestedId) return;
+
+          if (typeof md.version === 'number') convoVersions.set(requestedId, md.version);
+          if (md.reset || !convoMessages.has(requestedId)) convoMessages.set(requestedId, []);
+
+          if (md.messages && md.messages.length) {
+            mergeMessages(requestedId, md.messages, !!md.reset);
+          } else if (md.reset) {
+            convoMessages.set(requestedId, []);
+          }
+
+          if (aCid === requestedId) renderMessages(forceScroll);
+          if (needReloadConvo) { needReloadConvo = false; loadConversation(false); }
+        })
+        .withFailureHandler(function(err) {
+          console.error(err);
+          isLoadingConvo = false;
+        })
+        .getConversationMessages(sessionToken, requestedId, sinceVersion);
+    }
+
+    function mergeMessages(conversationId, incoming, reset) {
+      var current = reset ? [] : (convoMessages.get(conversationId) || []);
+      var byId = new Map();
+      current.forEach(function(m) { byId.set(m.messageId, m); });
+      incoming.forEach(function(m) { byId.set(m.messageId, m); });
+
+      var merged = Array.from(byId.values()).sort(function(a, b) {
+        var ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        var tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        if (ta !== tb) return ta - tb;
+        return String(a.messageId).localeCompare(String(b.messageId));
+      });
+
+      convoMessages.set(conversationId, merged);
+    }
+
+    /* ============================================================
+       Render Messages (with date separators)
+       ============================================================ */
+    function renderMessages(forceScroll) {
+      var el = document.getElementById('messages');
+      var list = convoMessages.get(aCid) || [];
+      var nearBottom = Math.abs(el.scrollHeight - el.scrollTop - el.clientHeight) < 90;
+
+      if (!list.length) {
+        el.innerHTML = '<div class="empty-state">' + t('noMsgs') + '</div>';
+        return;
+      }
+
+      var html = '';
+      var lastDateStr = '';
+
+      for (var i = 0; i < list.length; i++) {
+        var msg = list[i];
+        var dateStr = getDateString(msg.createdAt);
+
+        if (dateStr && dateStr !== lastDateStr) {
+          html += '<div class="date-sep">' + escapeHtml(formatDateSeparator(msg.createdAt)) + '</div>';
+          lastDateStr = dateStr;
+        }
+
+        html += renderMessage(msg);
+      }
+
+      el.innerHTML = html;
+      if (forceScroll || nearBottom) el.scrollTop = el.scrollHeight;
+    }
+
+    function getDateString(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    }
+
+    function formatDateSeparator(iso) {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+
+      var now = new Date();
+      if (d.toDateString() === now.toDateString()) return t('today');
+
+      var yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (d.toDateString() === yesterday.toDateString()) return t('yesterday');
+
+      return d.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-US', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+    }
+
+    function renderMessage(msg) {
+      var mineClass = msg.isMine ? 'mine' : '';
+      var isOnline = onlineMap[msg.userId] || false;
+      var avatarClick = "openProfile('" + escapeJsStr(msg.userId) + "')";
+
+      var forwardedHtml = msg.forwardedFromMessageId
+        ? '<div class="m-fwd">↗ ' + t('forwarded') + '</div>'
+        : '';
+
+      var replyHtml = msg.replyToMessageId
+        ? '<div class="m-reply">' +
+            '<div class="m-reply-name">' + escapeHtml(msg.replyDisplayName || '') + '</div>' +
+            '<div class="m-reply-text">' + escapeHtml(msg.replyPreview || '') + '</div>' +
+          '</div>'
+        : '';
+
+      var attachmentsHtml = renderAttachments(msg.attachments || []);
+
+      var textHtml = msg.deletedAt
+        ? '<div class="m-text del">' + t('msgDeleted') + '</div>'
+        : (msg.text ? '<div class="m-text">' + escapeHtml(msg.text) + '</div>' : '');
+
+      var metaParts = [];
+      if (msg.createdAt) metaParts.push(formatMessageTime(msg.createdAt));
+      if (msg.editedAt && !msg.deletedAt) metaParts.push(t('edited'));
+
+      var metaHtml = metaParts.map(function(x) {
+        return '<span>' + escapeHtml(x) + '</span>';
+      }).join('');
+
+      return '<div class="mr ' + mineClass + '">' +
+        avatarHTML(msg.initials, msg.avatarFileId || '', '', isOnline, avatarClick) +
+        '<div class="mc" data-mid="' + escapeAttr(msg.messageId) + '" ' +
+          'data-own="' + (msg.isMine ? '1' : '0') + '" data-del="' + (msg.deletedAt ? '1' : '0') + '">' +
+          '<div class="mh">' +
+            '<div class="mh-author" onclick="openProfile(\'' + escapeJsStr(msg.userId) + '\')">' +
+              escapeHtml(msg.displayName || 'User') +
+            '</div>' +
+            '<div class="mh-user">@' + escapeHtml(msg.username || '') + '</div>' +
+          '</div>' +
+          forwardedHtml + replyHtml + attachmentsHtml + textHtml +
+          '<div class="m-meta">' + metaHtml + '</div>' +
+        '</div></div>';
+    }
+
+    /* ============================================================
+       Attachment Rendering (working inline previews)
+       ============================================================ */
+    function renderAttachments(attachments) {
+      if (!attachments || !attachments.length) return '';
+      return '<div class="m-atts">' + attachments.map(renderSingleAttachment).join('') + '</div>';
+    }
+
+    function renderSingleAttachment(att) {
+      var name = escapeHtml(att.name || 'file');
+      var meta = escapeHtml(buildAttachmentMeta(att));
+      var fileId = att.fileId;
+      var category = detectCategory(att.mimeType);
+      var viewLink = escapeAttr(driveViewUrl(fileId));
+      var downloadLink = escapeAttr(driveDownloadUrl(fileId));
+
+      if (category === 'image') {
+        var imgSrc = escapeAttr(driveImgUrl(fileId));
+        return '<div class="att-card">' +
+          '<img class="att-img" src="' + imgSrc + '" alt="' + name + '" loading="lazy" ' +
+            'onclick="previewImage(\'' + escapeJsStr(imgSrc) + '\')" ' +
+            'onerror="this.style.display=\'none\'">' +
+          '<div class="att-caption">' +
+            '<div class="att-caption-name">' + name + '</div>' +
+            '<div class="att-caption-meta">' + meta + '</div>' +
+            '<div class="att-actions">' +
+              '<a class="att-link" href="' + viewLink + '" target="_blank" rel="noopener">Open</a>' +
+              '<a class="att-link" href="' + downloadLink + '" target="_blank" rel="noopener">Download</a>' +
+            '</div>' +
+          '</div></div>';
+      }
+
+      if (category === 'video') {
+        var previewSrc = escapeAttr(drivePreviewUrl(fileId));
+        return '<div class="att-card">' +
+          '<div class="att-vid-wrap">' +
+            '<iframe src="' + previewSrc + '" allow="autoplay" allowfullscreen></iframe>' +
+          '</div>' +
+          '<div class="att-caption">' +
+            '<div class="att-caption-name">' + name + '</div>' +
+            '<div class="att-caption-meta">' + meta + '</div>' +
+            '<div class="att-actions">' +
+              '<a class="att-link" href="' + viewLink + '" target="_blank" rel="noopener">Open</a>' +
+              '<a class="att-link" href="' + downloadLink + '" target="_blank" rel="noopener">Download</a>' +
+            '</div>' +
+          '</div></div>';
+      }
+
+      if (category === 'audio') {
+        var audioPreview = escapeAttr(drivePreviewUrl(fileId));
+        return '<div class="att-card">' +
+          '<div class="att-audio-wrap">' +
+            '<iframe src="' + audioPreview + '" allow="autoplay"></iframe>' +
+          '</div>' +
+          '<div class="att-caption">' +
+            '<div class="att-caption-name">' + name + '</div>' +
+            '<div class="att-caption-meta">' + meta + '</div>' +
+            '<div class="att-actions">' +
+              '<a class="att-link" href="' + downloadLink + '" target="_blank" rel="noopener">Download</a>' +
+            '</div>' +
+          '</div></div>';
+      }
+
+      // Generic file
+      return '<div class="att-card">' +
+        '<div class="att-file">' +
+          '<div class="att-icon">' + getAttachmentIcon(att) + '</div>' +
+          '<div class="att-body">' +
+            '<div class="att-name">' + name + '</div>' +
+            '<div class="att-meta">' + meta + '</div>' +
+            '<div class="att-actions">' +
+              '<a class="att-link" href="' + viewLink + '" target="_blank" rel="noopener">Open</a>' +
+              '<a class="att-link" href="' + downloadLink + '" target="_blank" rel="noopener">Download</a>' +
+            '</div>' +
+          '</div>' +
+        '</div></div>';
+    }
+
+    function previewImage(src) {
+      var overlay = document.createElement('div');
+      overlay.className = 'img-ov';
+      overlay.innerHTML = '<img src="' + src + '">';
+      overlay.onclick = function() { overlay.remove(); };
+      document.body.appendChild(overlay);
+    }
+
+    /* ============================================================
+       Send Message
+       ============================================================ */
+    function sendMsg() {
+      if (!sessionToken || !aCid || uploadState.active) return;
+
+      var input = document.getElementById('composerIn');
+      var text = input.value.trim();
+      if (!text) return;
+
+      var requestedId = aCid;
+      document.getElementById('sendBtn').disabled = true;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          document.getElementById('sendBtn').disabled = false;
+
+          if (!res || !res.ok) {
+            showAlert('Error', (res && res.error) || 'Send failed.');
+            return;
+          }
+
+          input.value = '';
+          autoGrowTextarea(input);
+          clearReply();
+
+          if (res.conversations) {
+            convos = res.conversations;
+            aCon = getConvoById(aCid);
+            renderSidebar();
+            renderTopbar();
+          }
+
+          if (res.message && String(res.conversationId) === requestedId) {
+            convoVersions.set(requestedId, res.version);
+            mergeMessages(requestedId, [res.message], false);
+            renderMessages(true);
+          }
+        })
+        .withFailureHandler(function() {
+          document.getElementById('sendBtn').disabled = false;
+          showAlert('Error', 'Send failed.');
+        })
+        .sendMessage(
+          sessionToken,
+          requestedId,
+          text,
+          replyTarget ? replyTarget.messageId : ''
+        );
+    }
+
+    /* ============================================================
+       File Upload
+       ============================================================ */
+    function openFilePicker() {
+      if (!sessionToken || !aCid || uploadState.active) return;
+      document.getElementById('fileIn').click();
+    }
+
+    function handleFileSelection(file) {
+      if (!file || !sessionToken || !aCid || uploadState.active) return;
+      if (file.size > MAX_UPLOAD_BYTES) { showAlert('Upload', 'File exceeds 1 GB.'); return; }
+
+      var conversationId = aCid;
+      var text = document.getElementById('composerIn').value.trim();
+
+      uploadState = {
+        active: true, file: file, conversationId: conversationId,
+        progress: 0, xhr: null, uploadToken: '', uploadUrl: '', fileId: ''
+      };
+
+      showUploadBanner('Preparing: ' + file.name, 0, true);
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!uploadState.active) return;
+          if (!res || !res.ok) {
+            showAlert('Upload', (res && res.error) || 'Failed.');
+            resetUploadState();
+            return;
+          }
+
+          uploadState.uploadToken = res.uploadToken;
+          uploadState.uploadUrl = res.uploadUrl;
+
+          uploadFileResumable(file, res.uploadUrl, function onProgress(percent, xhr) {
+            uploadState.xhr = xhr;
+            uploadState.progress = percent;
+            showUploadBanner('Uploading ' + file.name + ' — ' + percent + '%', percent, true);
+          }).then(function(fileId) {
+            if (!uploadState.active) return;
+
+            uploadState.fileId = fileId || '';
+            showUploadBanner('Finalizing...', 100, false);
+
+            var doFinalize = function(resolvedFileId) {
+              google.script.run
+                .withSuccessHandler(function(finalRes) {
+                  if (!finalRes || !finalRes.ok) {
+                    showAlert('Upload', (finalRes && finalRes.error) || 'Finalize failed.');
+                    resetUploadState();
+                    return;
+                  }
+
+                  document.getElementById('composerIn').value = '';
+                  autoGrowTextarea(document.getElementById('composerIn'));
+                  clearReply();
+
+                  if (finalRes.conversations) {
+                    convos = finalRes.conversations;
+                    aCon = getConvoById(aCid);
+                    renderSidebar();
+                    renderTopbar();
+                  }
+
+                  if (finalRes.message && String(finalRes.conversationId) === conversationId) {
+                    convoVersions.set(conversationId, finalRes.version);
+                    mergeMessages(conversationId, [finalRes.message], false);
+                    renderMessages(true);
+                  }
+
+                  resetUploadState();
+                })
+                .withFailureHandler(function() {
+                  showAlert('Upload', 'Finalize failed.');
+                  resetUploadState();
+                })
+                .finalizeUploadedMessage(sessionToken, {
+                  uploadToken: uploadState.uploadToken,
+                  fileId: resolvedFileId,
+                  fileName: file.name,
+                  mimeType: file.type || 'application/octet-stream',
+                  fileSize: file.size,
+                  text: text,
+                  replyToMessageId: replyTarget ? replyTarget.messageId : ''
+                });
+            };
+
+            if (fileId) {
+              doFinalize(fileId);
+            } else {
+              google.script.run
+                .withSuccessHandler(function(resolveRes) {
+                  if (!resolveRes || !resolveRes.ok) {
+                    showAlert('Upload', 'Could not resolve file.');
+                    resetUploadState();
+                    return;
+                  }
+                  doFinalize(resolveRes.fileId);
+                })
+                .withFailureHandler(function() {
+                  showAlert('Upload', 'Resolve failed.');
+                  resetUploadState();
+                })
+                .resolveUploadedFileId(sessionToken, uploadState.uploadToken);
+            }
+          }).catch(function(err) {
+            console.error(err);
+            showAlert('Upload', err.message || 'Upload failed.');
+            resetUploadState();
+          });
+        })
+        .withFailureHandler(function() {
+          showAlert('Upload', 'Session creation failed.');
+          resetUploadState();
+        })
+        .createDriveUploadSession(sessionToken, {
+          conversationId: conversationId,
+          fileName: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          fileSize: file.size,
+          text: text,
+          replyToMessageId: replyTarget ? replyTarget.messageId : ''
+        });
+    }
+
+    async function uploadFileResumable(file, uploadUrl, onProgress) {
+      var start = 0;
+      var fileId = '';
+
+      while (start < file.size) {
+        var end = Math.min(start + CHUNK_SIZE, file.size);
+        var chunk = file.slice(start, end);
+        var contentRange = 'bytes ' + start + '-' + (end - 1) + '/' + file.size;
+
+        var result = await sendUploadChunk(uploadUrl, chunk, file.type || 'application/octet-stream', contentRange, onProgress, start, end, file.size);
+
+        if (result.status === 308) {
+          var rangeHeader = result.xhr.getResponseHeader('Range');
+          if (rangeHeader) {
+            var match = rangeHeader.match(/bytes=0-(\d+)$/i);
+            start = match ? (parseInt(match[1], 10) + 1) : end;
+          } else {
+            start = end;
+          }
+          var pct = Math.min(99, Math.floor((start / file.size) * 100));
+          onProgress(pct, result.xhr);
+          continue;
+        }
+
+        if (result.status >= 200 && result.status < 300) {
+          try {
+            var body = JSON.parse(result.xhr.responseText || '{}');
+            fileId = body.id || '';
+          } catch (e) {}
+          onProgress(100, result.xhr);
+          return fileId;
+        }
+
+        if (result.status === 0 && end >= file.size) {
+          onProgress(100, result.xhr);
+          return '';
+        }
+
+        throw new Error('Upload failed with HTTP ' + result.status);
+      }
+
+      return fileId;
+    }
+
+    function sendUploadChunk(url, blob, mime, contentRange, onProgress, chunkStart, chunkEnd, totalSize) {
+      return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('PUT', url, true);
+        xhr.setRequestHeader('Content-Type', mime);
+        xhr.setRequestHeader('Content-Range', contentRange);
+
+        xhr.upload.onprogress = function(event) {
+          if (!event.lengthComputable) return;
+          var totalLoaded = Math.min(totalSize, chunkStart + event.loaded);
+          var pct = Math.min(99, Math.floor((totalLoaded / totalSize) * 100));
+          onProgress(pct, xhr);
+        };
+
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            resolve({ status: xhr.status, xhr: xhr });
+          }
+        };
+        xhr.onerror = function() { reject(new Error('Network error.')); };
+        xhr.onabort = function() { reject(new Error('Upload cancelled.')); };
+        xhr.send(blob);
+      });
+    }
+
+    function cancelUpload() {
+      if (!uploadState.active) return;
+      if (uploadState.xhr) try { uploadState.xhr.abort(); } catch (e) {}
+      resetUploadState();
+    }
+
+    function resetUploadState(clearBanner) {
+      if (clearBanner !== false) hideUploadBanner();
+      uploadState = { active: false, file: null, xhr: null, uploadToken: '', uploadUrl: '', fileId: '', conversationId: '', progress: 0 };
+      document.getElementById('fileIn').value = '';
+    }
+
+    function showUploadBanner(text, percent, canCancel) {
+      var banner = document.getElementById('uploadBanner');
+      var label = document.getElementById('uplLabel');
+      var valueEl = document.getElementById('uplText');
+      var progressWrap = document.getElementById('uplProgW');
+      var progressEl = document.getElementById('uplProg');
+      var cancelBtn = document.getElementById('uplCancel');
+
+      banner.classList.add('active');
+      label.textContent = 'Upload';
+      valueEl.textContent = text || '';
+
+      if (typeof percent === 'number') {
+        progressWrap.style.display = '';
+        progressEl.value = Math.max(0, Math.min(100, percent));
+      } else {
+        progressWrap.style.display = 'none';
+      }
+
+      cancelBtn.style.display = canCancel ? '' : 'none';
+    }
+
+    function hideUploadBanner() {
+      document.getElementById('uploadBanner').classList.remove('active');
+    }
+
+    /* ============================================================
+       Reply
+       ============================================================ */
+    function clearReply() {
+      replyTarget = null;
+      renderReplyBanner();
+    }
+
+    function renderReplyBanner() {
+      var banner = document.getElementById('replyBanner');
+      var label = document.getElementById('replyLabel');
+      var textEl = document.getElementById('replyText');
+
+      if (!replyTarget) {
+        banner.classList.remove('active');
+        return;
+      }
+
+      banner.classList.add('active');
+      label.textContent = t('reply') + ': ' + (replyTarget.displayName || '');
+      textEl.textContent = truncate(replyTarget.text || '', 140);
+    }
+
+    function getMsgFromActive(messageId) {
+      var list = convoMessages.get(aCid) || [];
+      return list.find(function(m) { return m.messageId === messageId; }) || null;
+    }
+
+    /* ============================================================
+       Message Context Menu (Dropdown)
+       ============================================================ */
+    function openDropdownAt(x, y, messageId) {
+      var msg = getMsgFromActive(messageId);
+      if (!msg) return;
+
+      closeDD();
+      ddOpen = true;
+      ddMessageId = messageId;
+
+      var menu = document.getElementById('msgDD');
+      var backdrop = document.getElementById('ddBD');
+      var items = [];
+
+      if (!msg.deletedAt) {
+        items.push('<button onclick="replyToMsg(\'' + escapeJsStr(messageId) + '\')">' + t('reply') + '</button>');
+        items.push('<button onclick="copyMsgText(\'' + escapeJsStr(messageId) + '\')">' + t('copy') + '</button>');
+        items.push('<button onclick="forwardMsgUI(\'' + escapeJsStr(messageId) + '\')">' + t('forward') + '</button>');
+      }
+
+      if (msg.isMine && !msg.deletedAt) {
+        items.push('<button onclick="editMsgUI(\'' + escapeJsStr(messageId) + '\')">' + t('edit') + '</button>');
+        items.push('<button class="danger" onclick="deleteMsgUI(\'' + escapeJsStr(messageId) + '\')">' + t('delMsg') + '</button>');
+      }
+
+      if (!items.length) {
+        items.push('<button onclick="closeDD()">' + t('close') + '</button>');
+      }
+
+      menu.innerHTML = items.join('');
+      menu.classList.add('open');
+      backdrop.classList.add('open');
+
+      // Position
+      menu.style.left = '0px';
+      menu.style.top = '0px';
+      var rect = menu.getBoundingClientRect();
+      var left = x;
+      var top = y;
+      if (left + rect.width > window.innerWidth - 8) left = window.innerWidth - rect.width - 8;
+      if (top + rect.height > window.innerHeight - 8) top = window.innerHeight - rect.height - 8;
+      if (left < 8) left = 8;
+      if (top < 8) top = 8;
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+    }
+
+    function closeDD() {
+      ddOpen = false;
+      document.getElementById('msgDD').classList.remove('open');
+      document.getElementById('ddBD').classList.remove('open');
+    }
+
+    function replyToMsg(messageId) {
+      var msg = getMsgFromActive(messageId);
+      closeDD();
+      if (!msg || msg.deletedAt) return;
+      replyTarget = msg;
+      renderReplyBanner();
+      document.getElementById('composerIn').focus();
+    }
+
+    function copyMsgText(messageId) {
+      var msg = getMsgFromActive(messageId);
+      closeDD();
+      if (!msg || !msg.text) return;
+      if (navigator.clipboard) navigator.clipboard.writeText(msg.text);
+    }
+
+    function editMsgUI(messageId) {
+      var msg = getMsgFromActive(messageId);
+      closeDD();
+      if (!msg) return;
+
+      showPrompt(t('edit'), '', msg.text || '').then(function(value) {
+        if (value === null) return;
+        var newText = String(value || '').trim();
+        if (!newText) return;
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res || !res.ok) { showAlert('Error', (res && res.error) || 'Edit failed.'); return; }
+            if (res.message) { mergeMessages(aCid, [res.message], false); renderMessages(false); }
+            if (res.conversations) { convos = res.conversations; renderSidebar(); }
+          })
+          .withFailureHandler(function() { showAlert('Error', 'Edit failed.'); })
+          .editMessage(sessionToken, messageId, newText);
+      });
+    }
+
+    function deleteMsgUI(messageId) {
+      closeDD();
+      showConfirm(t('delMsg'), t('delMsg') + '?', t('delete'), true).then(function(confirmed) {
+        if (!confirmed) return;
+
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res || !res.ok) { showAlert('Error', (res && res.error) || 'Delete failed.'); return; }
+            if (res.message) { mergeMessages(aCid, [res.message], false); renderMessages(false); }
+            if (res.conversations) { convos = res.conversations; renderSidebar(); }
+          })
+          .withFailureHandler(function() { showAlert('Error', 'Delete failed.'); })
+          .deleteMessage(sessionToken, messageId);
+      });
+    }
+
+    /* ============================================================
+       Forward Message
+       ============================================================ */
+    function forwardMsgUI(messageId) {
+      closeDD();
+      var targets = convos.filter(function(c) { return c.type !== 'channel'; });
+      if (!targets.length) { showAlert(t('forward'), 'No conversations available.'); return; }
+
+      var html = '<div style="max-height:280px;overflow-y:auto">';
+      targets.forEach(function(c) {
+        html += '<div class="search-item" onclick="doForward(\'' + escapeJsStr(messageId) + '\',\'' + escapeJsStr(c.conversationId) + '\')">' +
+          avatarHTML(c.initials, c.avatarFileId) +
+          '<div class="search-item-meta"><div class="search-item-title">' + escapeHtml(c.title) + '</div></div></div>';
+      });
+      html += '</div>';
+
+      openModal({
+        title: t('forward'),
+        html: html,
+        buttons: [{ text: t('cancel'), cls: 'secondary-btn', val: 'cancel' }]
+      });
+    }
+
+    function doForward(messageId, targetConversationId) {
+      closeModal(null);
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res && res.conversations) { convos = res.conversations; renderSidebar(); }
+        })
+        .withFailureHandler(function() { showAlert('Error', 'Forward failed.'); })
+        .forwardMessage(sessionToken, { messageId: messageId, targetConversationId: targetConversationId });
+    }
+
+    /* ============================================================
+       User Profile Modal
+       ============================================================ */
+    function openProfile(userId) {
+      if (!userId || profileModalOpen) return;
+      profileModalOpen = true;
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          profileModalOpen = false;
+          if (!res || !res.ok) return;
+
+          var p = res.profile;
+          var html = '<div class="profile-header">' +
+            avatarHTML(p.initials, p.avatarFileId, 'xl', p.isOnline) +
+            '<div class="profile-name">' + escapeHtml(p.displayName) + '</div>';
+
+          if (p.username) {
+            html += '<div class="profile-username">@' + escapeHtml(p.username) + '</div>';
+          }
+
+          html += '<div class="profile-status ' + (p.isOnline ? 'on' : 'off') + '">' +
+            (p.isOnline ? t('online') : t('offline')) + '</div>';
+
+          if (p.bio) {
+            html += '<div class="profile-bio">' + escapeHtml(p.bio) + '</div>';
+          }
+
+          html += '<div class="profile-actions">';
+
+          if (p.isSelf) {
+            html += '<button class="secondary-btn" onclick="closeModal(null);changeAvatarUI(\'user\',\'\')">' + t('changeAvatar') + '</button>';
+          }
+
+          if (!p.isSelf && !p.isDeleted) {
+            html += '<button class="primary-btn" onclick="closeModal(null);startDirectMessage(\'' + escapeJsStr(p.userId) + '\')">' + t('sendMsg') + '</button>';
+            if (p.blockedByMe) {
+              html += '<button class="secondary-btn" onclick="doUnblock(\'' + escapeJsStr(p.userId) + '\')">' + t('unblock') + '</button>';
+            } else {
+              html += '<button class="danger-btn" onclick="doBlock(\'' + escapeJsStr(p.userId) + '\')">' + t('block') + '</button>';
+            }
+          }
+
+          html += '</div></div>';
+
+          openModal({
+            title: t('userProfile'),
+            html: html,
+            buttons: [{ text: t('close'), cls: 'secondary-btn', val: 'close' }]
+          });
+        })
+        .withFailureHandler(function() { profileModalOpen = false; })
+        .getUserProfile(sessionToken, userId);
+    }
+
+    /* ============================================================
+       Conversation/Group Profile
+       ============================================================ */
+    function openConvoProfile() {
+      if (!aCon) return;
+
+      if (aCon.type === 'group' || aCon.type === 'channel') {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res || !res.ok) return;
+            var p = res.profile;
+
+            var html = '<div class="profile-header">' +
+              avatarHTML(p.initials, p.avatarFileId, 'xl') +
+              '<div class="profile-name">' + escapeHtml(p.title) + '</div>';
+
+            if (p.description) {
+              html += '<div class="profile-bio">' + escapeHtml(p.description) + '</div>';
+            }
+
+            html += '<div class="profile-username">' + p.memberCount + ' ' + t('members') + '</div>';
+
+            if (p.type === 'group' && p.isCreator) {
+              html += '<div style="margin-top:6px"><button class="secondary-btn" onclick="closeModal(null);changeAvatarUI(\'group\',\'' + escapeJsStr(p.conversationId) + '\')">' + t('changeAvatar') + '</button></div>';
+            }
+
+            html += '</div>';
+
+            // Members list
+            html += '<div style="padding:0 4px"><div class="section-title">' + t('members') + '</div>';
+            p.members.forEach(function(m) {
+              html += '<div class="search-item" onclick="closeModal(null);openProfile(\'' + escapeJsStr(m.userId) + '\')">' +
+                avatarHTML(m.initials, m.avatarFileId) +
+                '<div class="search-item-meta">' +
+                  '<div class="search-item-title">' + escapeHtml(m.displayName) + '</div>' +
+                  '<div class="search-item-sub">@' + escapeHtml(m.username) + '</div>' +
+                '</div></div>';
+            });
+            html += '</div>';
+
+            var buttons = [{ text: t('close'), cls: 'secondary-btn', val: 'close' }];
+
+            if (p.type === 'group') {
+              buttons.unshift({ text: t('inviteLink'), cls: 'secondary-btn', val: 'invite' });
+              if (p.isCreator) {
+                buttons.unshift({ text: t('editGroup'), cls: 'primary-btn', val: 'edit' });
+                buttons.push({ text: t('deleteGroup'), cls: 'danger-btn', val: 'delGroup' });
+              }
+              buttons.push({ text: t('leaveGroup'), cls: 'secondary-btn', val: 'leave' });
+            }
+
+            openModal({
+              title: p.type === 'channel' ? 'Channel' : t('groupProfile'),
+              html: html,
+              buttons: buttons,
+              onAction: function(val) {
+                if (val === 'invite') { closeModal(null); getInviteLink(aCid); }
+                else if (val === 'edit') { closeModal(null); editGroupUI(aCid); }
+                else if (val === 'leave') { closeModal(null); doLeaveGroup(aCid); }
+                else if (val === 'delGroup') { closeModal(null); doDeleteGroup(aCid); }
+                else closeModal(null);
+              }
+            });
+          })
+          .withFailureHandler(function() {})
+          .getGroupProfile(sessionToken, aCid);
+      }
+    }
+
+    /* ============================================================
+       Avatar Change
+       ============================================================ */
+    function changeAvatarUI(targetType, targetId) {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+
+      input.onchange = function() {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        if (file.size > 10 * 1024 * 1024) {
+          showAlert('Avatar', 'Max 10 MB for avatar.');
+          return;
+        }
+
+        // Upload file to Drive, then save the fileId as avatar
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (!res || !res.ok) {
+              showAlert('Avatar', (res && res.error) || 'Upload session failed.');
+              return;
+            }
+
+            var uploadToken = res.uploadToken;
+            var uploadUrl = res.uploadUrl;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('PUT', uploadUrl, true);
+            xhr.setRequestHeader('Content-Type', file.type);
+            xhr.setRequestHeader('Content-Range', 'bytes 0-' + (file.size - 1) + '/' + file.size);
+
+            xhr.onreadystatechange = function() {
+              if (xhr.readyState !== 4) return;
+
+              var fileId = '';
+              try {
+                fileId = JSON.parse(xhr.responseText || '{}').id || '';
+              } catch (e) {}
+
+              if (!fileId) {
+                // Try to resolve
+                google.script.run
+                  .withSuccessHandler(function(rr) {
+                    if (rr && rr.ok && rr.fileId) {
+                      saveAvatarFileId(rr.fileId, targetType, targetId);
+                    } else {
+                      showAlert('Avatar', 'Could not resolve file.');
+                    }
+                  })
+                  .withFailureHandler(function() { showAlert('Avatar', 'Resolve failed.'); })
+                  .resolveUploadedFileId(sessionToken, uploadToken);
+                return;
+              }
+
+              saveAvatarFileId(fileId, targetType, targetId);
+            };
+
+            xhr.send(file);
+          })
+          .withFailureHandler(function() { showAlert('Avatar', 'Upload failed.'); })
+          .createDriveUploadSession(sessionToken, {
+            conversationId: aCid || HEYO_CHANNEL_ID || 'cnv_heyo_channel',
+            fileName: file.name,
+            mimeType: file.type,
+            fileSize: file.size,
+            text: '',
+            replyToMessageId: ''
+          });
+      };
+
+      input.click();
+    }
+
+    function saveAvatarFileId(fileId, targetType, targetId) {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            showAlert('Avatar', (res && res.error) || 'Save failed.');
+            return;
+          }
+          if (res.user) {
+            CU = res.user;
+            renderCurrentUser();
+          }
+          if (res.conversations) {
+            convos = res.conversations;
+            aCon = getConvoById(aCid);
+            renderSidebar();
+            renderTopbar();
+          }
+        })
+        .withFailureHandler(function() { showAlert('Avatar', 'Save failed.'); })
+        .updateAvatar(sessionToken, {
+          avatarFileId: fileId,
+          targetType: targetType || 'user',
+          targetId: targetId || ''
+        });
+    }
+
+    /* ============================================================
+       Groups
+       ============================================================ */
+    function createGroupUI() {
+      var html = '<div class="field"><label>' + t('groupName') + '</label>' +
+        '<input id="newGroupTitle" type="text" maxlength="60"></div>' +
+        '<div class="field"><label>' + t('groupDesc') + '</label>' +
+        '<textarea id="newGroupDesc" rows="2" maxlength="500"></textarea></div>';
+
+      openModal({
+        title: t('createGroup'),
+        html: html,
+        buttons: [
+          { text: t('cancel'), cls: 'secondary-btn', val: 'cancel' },
+          { text: t('createGroup'), cls: 'primary-btn', val: 'create' }
+        ],
+        onAction: function(val) {
+          if (val !== 'create') { closeModal(null); return; }
+          var title = document.getElementById('newGroupTitle').value.trim();
+          if (!title) return;
+          var desc = document.getElementById('newGroupDesc').value.trim();
+          closeModal(null);
+
+          google.script.run
+            .withSuccessHandler(function(res) {
+              if (res && res.conversations) { convos = res.conversations; renderSidebar(); }
+              if (res && res.conversationId) selectConversation(res.conversationId);
+            })
+            .withFailureHandler(function() { showAlert('Error', 'Failed.'); })
+            .createGroup(sessionToken, { title: title, description: desc });
+        }
+      });
+    }
+
+    function editGroupUI(conversationId) {
+      var c = getConvoById(conversationId);
+      if (!c) return;
+
+      var html = '<div class="field"><label>' + t('groupName') + '</label>' +
+        '<input id="editGroupTitle" type="text" maxlength="60" value="' + escapeAttr(c.title || '') + '"></div>' +
+        '<div class="field"><label>' + t('groupDesc') + '</label>' +
+        '<textarea id="editGroupDesc" rows="2" maxlength="500">' + escapeHtml(c.description || '') + '</textarea></div>';
+
+      openModal({
+        title: t('editGroup'),
+        html: html,
+        buttons: [
+          { text: t('cancel'), cls: 'secondary-btn', val: 'cancel' },
+          { text: t('save'), cls: 'primary-btn', val: 'save' }
+        ],
+        onAction: function(val) {
+          if (val !== 'save') { closeModal(null); return; }
+          closeModal(null);
+
+          google.script.run
+            .withSuccessHandler(function(res) {
+              if (res && res.conversations) {
+                convos = res.conversations;
+                aCon = getConvoById(aCid);
+                renderSidebar();
+                renderTopbar();
+              }
+            })
+            .withFailureHandler(function() {})
+            .updateGroup(sessionToken, {
+              conversationId: conversationId,
+              title: document.getElementById('editGroupTitle').value.trim(),
+              description: document.getElementById('editGroupDesc').value.trim()
+            });
+        }
+      });
+    }
+
+    function doLeaveGroup(conversationId) {
+      showConfirm(t('leaveGroup'), t('leaveGroup') + '?', t('confirm'), false).then(function(ok) {
+        if (!ok) return;
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.conversations) { convos = res.conversations; renderSidebar(); }
+            showPlaceholder();
+          })
+          .withFailureHandler(function() {})
+          .leaveGroup(sessionToken, conversationId);
+      });
+    }
+
+    function doDeleteGroup(conversationId) {
+      showConfirm(t('deleteGroup'), t('deleteGroup') + '?', t('delete'), true).then(function(ok) {
+        if (!ok) return;
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.conversations) { convos = res.conversations; renderSidebar(); }
+            showPlaceholder();
+          })
+          .withFailureHandler(function() {})
+          .deleteGroup(sessionToken, conversationId);
+      });
+    }
+
+    function getInviteLink(conversationId) {
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) return;
+
+          var link = SCRIPT_URL + '?invite=' + encodeURIComponent(res.inviteCode);
+          var html = '<div class="field"><input id="inviteLinkInput" type="text" value="' +
+            escapeAttr(link) + '" readonly onclick="this.select()"></div>';
+
+          openModal({
+            title: t('inviteLink'),
+            html: html,
+            buttons: [
+              { text: t('copyLink'), cls: 'primary-btn', val: 'copy' },
+              { text: t('close'), cls: 'secondary-btn', val: 'close' }
+            ],
+            onAction: function(val) {
+              if (val === 'copy') {
+                var inp = document.getElementById('inviteLinkInput');
+                inp.select();
+                if (navigator.clipboard) navigator.clipboard.writeText(inp.value);
+                else document.execCommand('copy');
+              }
+              closeModal(null);
+            }
+          });
+        })
+        .withFailureHandler(function() {})
+        .generateGroupInvite(sessionToken, conversationId);
+    }
+
+    /* ============================================================
+       Block / Unblock
+       ============================================================ */
+    function doBlock(userId) {
+      closeModal(null);
+      google.script.run.withSuccessHandler(function() {}).blockUser(sessionToken, userId);
+    }
+
+    function doUnblock(userId) {
+      closeModal(null);
+      google.script.run.withSuccessHandler(function() {}).unblockUser(sessionToken, userId);
+    }
+
+    /* ============================================================
+       Settings
+       ============================================================ */
+    function openSettings() {
+      if (!CU) return;
+
+      var html = '<div class="field"><label>' + t('displayName') + '</label>' +
+        '<input id="settingsDN" type="text" maxlength="40" value="' + escapeAttr(CU.displayName || '') + '"></div>' +
+        '<div class="field"><label>' + t('bio') + '</label>' +
+        '<textarea id="settingsBio" rows="3" maxlength="240">' + escapeHtml(CU.bio || '') + '</textarea></div>' +
+        '<div class="field-row">' +
+          '<div class="field"><label>' + t('theme') + '</label>' +
+            '<select id="settingsTheme"><option value="light"' + (CU.theme === 'light' ? ' selected' : '') + '>' + t('light') + '</option>' +
+            '<option value="dark"' + (CU.theme === 'dark' ? ' selected' : '') + '>' + t('dark') + '</option></select></div>' +
+          '<div class="field"><label>' + t('language') + '</label>' +
+            '<select id="settingsLang"><option value="en"' + (lang === 'en' ? ' selected' : '') + '>English</option>' +
+            '<option value="ru"' + (lang === 'ru' ? ' selected' : '') + '>Русский</option></select></div>' +
+        '</div>';
+
+      openModal({
+        title: t('settings'),
+        html: html,
+        buttons: [
+          { text: t('deleteAccount'), cls: 'danger-btn', val: 'deleteAccount' },
+          { text: t('cancel'), cls: 'secondary-btn', val: 'cancel' },
+          { text: t('save'), cls: 'primary-btn', val: 'save' }
+        ],
+        onAction: function(val) {
+          if (val === 'deleteAccount') {
+            closeModal(null);
+            doDeleteAccount();
+            return;
+          }
+          if (val !== 'save') { closeModal(null); return; }
+
+          var payload = {
+            displayName: document.getElementById('settingsDN').value.trim(),
+            bio: document.getElementById('settingsBio').value.trim(),
+            theme: document.getElementById('settingsTheme').value,
+            language: document.getElementById('settingsLang').value
+          };
+
+          // Set localThemeOverride so polling doesn't flash the old theme
+          localThemeOverride = payload.theme;
+          applyTheme(payload.theme);
+
+          google.script.run
+            .withSuccessHandler(function(res) {
+              if (!res || !res.ok) {
+                showAlert(t('settings'), (res && res.error) || 'Failed.');
+                localThemeOverride = null;
+                return;
+              }
+
+              closeModal(null);
+              CU = res.user;
+              lang = CU.language || 'en';
+              localStorage.setItem('heyo_lang', lang);
+              localThemeOverride = null; // clear override now that server is synced
+
+              renderCurrentUser();
+              if (res.conversations) {
+                convos = res.conversations;
+                aCon = getConvoById(aCid);
+                renderSidebar();
+                renderTopbar();
+              }
+              renderMessages(false);
+            })
+            .withFailureHandler(function() {
+              showAlert(t('settings'), 'Failed.');
+              localThemeOverride = null;
+            })
+            .updateProfile(sessionToken, payload);
+        }
+      });
+    }
+
+    function doDeleteAccount() {
+      showConfirm(t('deleteAccount'), t('deleteAccountMsg'), t('delete'), true).then(function(ok) {
+        if (!ok) return;
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.ok) {
+              localStorage.removeItem('heyo_token');
+              sessionToken = '';
+              CU = null;
+              showAuthScreen();
+            }
+          })
+          .withFailureHandler(function() { showAlert('Error', 'Failed.'); })
+          .deleteAccount(sessionToken);
+      });
+    }
+
+    /* ============================================================
+       User Search
+       ============================================================ */
+    function performSearch() {
+      var query = document.getElementById('searchIn').value.trim();
+      if (!query) { clearSearchResults(); return; }
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) { clearSearchResults(); return; }
+          var users = Array.isArray(res.users) ? res.users : [];
+          var wrap = document.getElementById('searchRes');
+
+          if (!users.length) {
+            wrap.innerHTML = '<div class="search-item"><div class="search-item-meta"><div class="search-item-title">No users found</div></div></div>';
+            wrap.classList.add('open');
+            return;
+          }
+
+          wrap.innerHTML = users.map(function(u) {
+            return '<div class="search-item" onclick="startDirectMessage(\'' + escapeJsStr(u.userId) + '\')">' +
+              avatarHTML(u.initials, u.avatarFileId, '', u.isOnline) +
+              '<div class="search-item-meta">' +
+                '<div class="search-item-title">' + escapeHtml(u.displayName) + '</div>' +
+                '<div class="search-item-sub">@' + escapeHtml(u.username) + '</div>' +
+              '</div></div>';
+          }).join('');
+
+          wrap.classList.add('open');
+        })
+        .withFailureHandler(function() { clearSearchResults(); })
+        .searchUsers(sessionToken, query);
+    }
+
+    function clearSearchResults() {
+      var wrap = document.getElementById('searchRes');
+      wrap.classList.remove('open');
+      wrap.innerHTML = '';
+    }
+
+    function startDirectMessage(userId) {
+      clearSearchResults();
+      document.getElementById('searchIn').value = '';
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) return;
+          if (res.conversations) { convos = res.conversations; renderSidebar(); }
+          if (res.conversationId) selectConversation(res.conversationId);
+        })
+        .withFailureHandler(function() { showAlert('Error', 'Failed.'); })
+        .openDirectConversation(sessionToken, userId);
+    }
+
+    /* ============================================================
+       Mobile Sidebar
+       ============================================================ */
+    function openMobSB() {
+      document.getElementById('sidebar').classList.add('mob-open');
+      document.getElementById('mobBD').classList.add('open');
+    }
+
+    function closeMobSB() {
+      document.getElementById('sidebar').classList.remove('mob-open');
+      document.getElementById('mobBD').classList.remove('open');
+    }
+
+    /* ============================================================
+       Logout
+       ============================================================ */
+    function doLogout() {
+      var tok = sessionToken;
+      localStorage.removeItem('heyo_token');
+      sessionToken = '';
+      CU = null;
+      showAuthScreen();
+      if (tok) google.script.run.logout(tok);
+    }
+
+    function handleAppError(res) {
+      var error = (res && res.error) || '';
+      if (/session|auth|expired|invalid/i.test(error)) {
+        doLogout();
+      }
+    }
+
+    /* ============================================================
+       Modal
+       ============================================================ */
+    function openModal(config) {
+      return new Promise(function(resolve) {
+        modalResolver = resolve;
+
+        document.getElementById('modalTitle').textContent = config.title || '';
+        document.getElementById('modalBody').textContent = config.message || '';
+        document.getElementById('modalContent').innerHTML = config.html || '';
+
+        var actionsEl = document.getElementById('modalActions');
+        actionsEl.innerHTML = '';
+
+        (config.buttons || []).forEach(function(btnConfig) {
+          var btn = document.createElement('button');
+          btn.className = btnConfig.cls || 'secondary-btn';
+          btn.textContent = btnConfig.text || 'OK';
+          btn.onclick = function() {
+            if (typeof config.onAction === 'function') {
+              config.onAction(btnConfig.val);
+            } else {
+              closeModal(btnConfig.val);
+            }
+          };
+          actionsEl.appendChild(btn);
+        });
+
+        document.getElementById('modalOv').classList.add('open');
+      });
+    }
+
+    function closeModal(result) {
+      document.getElementById('modalOv').classList.remove('open');
+      document.getElementById('modalContent').innerHTML = '';
+      document.getElementById('modalActions').innerHTML = '';
+      var resolver = modalResolver;
+      modalResolver = null;
+      if (resolver) resolver(result);
+    }
+
+    function showAlert(title, message) {
+      return openModal({
+        title: title,
+        message: message,
+        buttons: [{ text: 'OK', cls: 'primary-btn', val: true }]
+      });
+    }
+
+    function showConfirm(title, message, okText, isDanger) {
+      return openModal({
+        title: title,
+        message: message,
+        buttons: [
+          { text: t('cancel'), cls: 'secondary-btn', val: false },
+          { text: okText || 'OK', cls: isDanger ? 'danger-btn' : 'primary-btn', val: true }
+        ]
+      });
+    }
+
+    function showPrompt(title, message, defaultValue) {
+      return openModal({
+        title: title,
+        message: message,
+        html: '<div class="field"><textarea id="promptInput" rows="4">' + escapeHtml(defaultValue || '') + '</textarea></div>',
+        buttons: [
+          { text: t('cancel'), cls: 'secondary-btn', val: 'cancel' },
+          { text: t('save'), cls: 'primary-btn', val: 'save' }
+        ],
+        onAction: function(val) {
+          if (val !== 'save') { closeModal(null); return; }
+          var input = document.getElementById('promptInput');
+          closeModal(input ? input.value : null);
+        }
+      });
+    }
+
+    /* ============================================================
+       Utility Functions
+       ============================================================ */
+    function autoGrowTextarea(el) {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+    }
+
+    function findMessageCard(target) {
+      return target ? target.closest('.mc[data-mid]') : null;
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/\n/g, '&#10;');
+    }
+
+    function escapeJsStr(value) {
+      return String(value || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\n/g, '\\n')
+        .replace(/</g, '\\x3C');
+    }
+
+    function truncate(value, maxLen) {
+      var text = String(value || '');
+      return text.length <= maxLen ? text : text.slice(0, maxLen - 1) + '…';
+    }
+
+    function formatMessageTime(iso) {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatSidebarTime(iso) {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      var now = new Date();
+      if (d.toDateString() === now.toDateString()) {
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    function formatFileSize(bytes) {
+      var v = Number(bytes);
+      if (!Number.isFinite(v) || v <= 0) return '0 B';
+      var units = ['B', 'KB', 'MB', 'GB'];
+      var size = v;
+      var unit = 0;
+      while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit++; }
+      return (size >= 10 || unit === 0 ? size.toFixed(0) : size.toFixed(1)) + ' ' + units[unit];
+    }
+
+    function detectCategory(mimeType) {
+      var type = String(mimeType || '').toLowerCase();
+      if (type.startsWith('image/')) return 'image';
+      if (type.startsWith('video/')) return 'video';
+      if (type.startsWith('audio/')) return 'audio';
+      return 'file';
+    }
+
+    function buildAttachmentMeta(att) {
+      var parts = [];
+      var cat = detectCategory(att.mimeType);
+      if (cat === 'image') parts.push('Photo');
+      else if (cat === 'video') parts.push('Video');
+      else if (cat === 'audio') parts.push('Audio');
+      else parts.push('File');
+      if (att.size > 0) parts.push(formatFileSize(att.size));
+      return parts.join(' • ');
+    }
+
+    function getAttachmentIcon(att) {
+      var cat = detectCategory(att && att.mimeType);
+      if (cat === 'image') return '🖼';
+      if (cat === 'video') return '🎬';
+      if (cat === 'audio') return '🎵';
+      var ext = (att && att.name || '').split('.').pop().toLowerCase();
+      if (ext === 'pdf') return '📕';
+      if (['doc', 'docx', 'txt', 'md'].indexOf(ext) !== -1) return '📄';
+      if (['zip', 'rar', '7z'].indexOf(ext) !== -1) return '🗜';
+      return '📎';
+    }
+
+    /* ============================================================
+       Event Listeners
+       ============================================================ */
+    document.getElementById('composerIn').addEventListener('input', function() {
+      autoGrowTextarea(this);
+    });
+
+    document.getElementById('composerIn').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMsg();
+      }
+    });
+
+    document.getElementById('fileIn').addEventListener('change', function(event) {
+      var files = event.target.files;
+      if (files && files[0]) handleFileSelection(files[0]);
+      event.target.value = '';
+    });
+
+    document.getElementById('searchIn').addEventListener('input', function() {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(performSearch, 250);
+    });
+
+    document.getElementById('modalOv').addEventListener('click', function(event) {
+      if (event.target === this && modalResolver) closeModal(null);
+    });
+
+    // Message context menu: right-click
+    var messagesEl = document.getElementById('messages');
+
+    messagesEl.addEventListener('contextmenu', function(event) {
+      var card = findMessageCard(event.target);
+      if (!card) return;
+      event.preventDefault();
+      openDropdownAt(event.clientX, event.clientY, card.getAttribute('data-mid'));
+    });
+
+    // Message context menu: long press (mobile)
+    messagesEl.addEventListener('touchstart', function(event) {
+      var card = findMessageCard(event.target);
+      if (!card) return;
+      longPressFired = false;
+      var touch = event.touches && event.touches[0];
+      if (!touch) return;
+      clearTimeout(longPressTimer);
+      longPressTimer = setTimeout(function() {
+        longPressFired = true;
+        openDropdownAt(touch.clientX, touch.clientY, card.getAttribute('data-mid'));
+      }, 550);
+    }, { passive: true });
+
+    messagesEl.addEventListener('touchend', function() { clearTimeout(longPressTimer); }, { passive: true });
+    messagesEl.addEventListener('touchcancel', function() { clearTimeout(longPressTimer); }, { passive: true });
+    messagesEl.addEventListener('touchmove', function() { clearTimeout(longPressTimer); }, { passive: true });
+
+    messagesEl.addEventListener('click', function(event) {
+      if (longPressFired) { event.preventDefault(); longPressFired = false; }
+    });
+
+    // Close dropdown/search on outside click
+    document.addEventListener('click', function(event) {
+      if (ddOpen && !document.getElementById('msgDD').contains(event.target)) closeDD();
+      var searchResults = document.getElementById('searchRes');
+      if (searchResults.classList.contains('open') &&
+          !document.getElementById('searchIn').contains(event.target) &&
+          !searchResults.contains(event.target)) {
+        clearSearchResults();
+      }
+    });
+
+    document.addEventListener('scroll', function() { closeDD(); }, true);
+
+    window.addEventListener('resize', function() {
+      closeDD();
+      if (window.innerWidth > 900) closeMobSB();
+    });
+
+    /* ============================================================
+       Init
+       ============================================================ */
+    verifySession();
+    switchAuth('login');
+  </script>
 </body>
 </html>
