@@ -208,6 +208,12 @@ input,textarea{user-select:text;font:inherit} button,select{font:inherit} textar
 .admin-row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .admin-inline{display:flex;gap:8px;align-items:center}
 .admin-inline input,.admin-inline select{flex:1;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:10px;outline:none;padding:10px 12px}
+.admin-drop{margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
+.admin-drop-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;cursor:pointer;font-weight:700}
+.admin-drop-body{display:none;margin-top:10px}
+.admin-drop.open .admin-drop-body{display:block}
+.admin-drop-caret{color:var(--muted);font-size:12px}
+  
 
 @media(max-width:900px){
   .app-shell{grid-template-columns:1fr}
@@ -1297,6 +1303,12 @@ function deleteMessageUI(messageId){
   });
 }
 
+  function toggleAdminDropdown(dropId){
+  var el=document.getElementById(dropId);
+  if(!el)return;
+  el.classList.toggle('open');
+}
+
 /* ======================== Forward ======================== */
 
 function forwardMessageUI(messageId){
@@ -1841,7 +1853,53 @@ function renderAdminPanel(stats,groups){
 }
 
 function renderAdminGroupRow(group){
-  return '<div class="admin-row">'+buildAvatarHTML(group.initials,group.avatarFileId,'',false,"adminOpenGroupProfile('"+escapeJsString(group.conversationId)+"')")+'<div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(group.title||'Group')+'</div><div class="admin-row-sub">'+escapeHtml((group.memberCount||0)+' '+t('members'))+'</div></div><div class="admin-row-actions"><button class="secondary-btn" onclick="adminOpenGroupProfile(\''+escapeJsString(group.conversationId)+'\')">Open</button></div></div>';
+  var dropId='adminGroupRowDrop_'+group.conversationId;
+  return '<div class="admin-row" style="display:block">'+
+    '<div style="display:flex;align-items:center;gap:10px">'+
+      buildAvatarHTML(group.initials,group.avatarFileId,'',false,"adminOpenGroupProfile('"+escapeJsString(group.conversationId)+"')")+
+      '<div class="admin-row-meta">'+
+        '<div class="admin-row-title">'+escapeHtml(group.title||'Group')+'</div>'+
+        '<div class="admin-row-sub">'+escapeHtml((group.memberCount||0)+' '+t('members'))+'</div>'+
+      '</div>'+
+      '<div class="admin-row-actions">'+
+        '<button class="secondary-btn" onclick="adminOpenGroupProfile(\''+escapeJsString(group.conversationId)+'\')">Open</button>'+
+        '<button class="secondary-btn" onclick="adminToggleGroupMembers(\''+escapeJsString(group.conversationId)+'\',\''+escapeJsString(dropId)+'\')">Members</button>'+
+      '</div>'+
+    '</div>'+
+    '<div id="'+escapeAttr(dropId)+'" class="admin-drop-body"></div>'+
+  '</div>';
+}
+
+  function adminToggleGroupMembers(conversationId,dropId){
+  var box=document.getElementById(dropId);
+  if(!box)return;
+
+  if(box.dataset.loaded==='1'){
+    box.style.display=box.style.display==='none'?'block':'none';
+    return;
+  }
+
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var profile=response.profile;
+    var membersHtml=(profile.members||[]).map(function(member){
+      return '<div class="admin-row">'+
+        buildAvatarHTML(member.initials,member.avatarFileId,'',false,"openProfile('"+escapeJsString(member.userId)+"')")+
+        '<div class="admin-row-meta">'+
+          '<div class="admin-row-title">'+escapeHtml(member.displayName||'User')+'</div>'+
+          '<div class="admin-row-sub">@'+escapeHtml(member.username||'')+
+            (member.isBanned?' • banned':'')+
+            (member.isDeleted?' • deleted':'')+
+            ' • '+escapeHtml(member.userId||'')+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+    box.innerHTML='<div class="admin-drop open" style="margin-top:10px"><div class="admin-list">'+membersHtml+'</div></div>';
+    box.dataset.loaded='1';
+    box.style.display='block';
+  }).withFailureHandler(function(){}).adminGetGroupProfile(sessionToken,conversationId);
 }
 
 function adminRunUserSearch(){
@@ -1859,13 +1917,59 @@ function adminOpenGroupProfile(conversationId){
   google.script.run.withSuccessHandler(function(response){
     if(!response||!response.ok){handleApplicationError(response);return}
     var profile=response.profile;
-    var membersHtml=profile.members.map(function(member){
-      return '<div class="admin-row">'+buildAvatarHTML(member.initials,member.avatarFileId,'',false,"openProfile('"+escapeJsString(member.userId)+"')")+'<div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(member.displayName||'User')+'</div><div class="admin-row-sub">@'+escapeHtml(member.username||'')+(member.isBanned?' • banned':'')+'</div></div><div class="admin-row-actions"><button class="danger-btn" onclick="adminRemoveUserFromGroupUI(\''+escapeJsString(profile.conversationId)+'\',\''+escapeJsString(member.userId)+'\')">'+t('removeFromGroup')+'</button></div></div>';
-    }).join('');
-    var html='<div class="p-hdr">'+buildAvatarHTML(profile.initials,profile.avatarFileId,'xl')+'<div class="p-name">'+escapeHtml(profile.title)+'</div><div class="p-un">'+escapeHtml((profile.memberCount||0)+' '+t('members'))+'</div></div>'+
-      '<div class="admin-box" style="margin-bottom:12px"><h3>'+t('addToGroup')+'</h3><div class="admin-inline"><input id="adminAddToGroupUserId" type="text" placeholder="userId"><button class="primary-btn" onclick="adminAddUserToGroupUI(\''+escapeJsString(profile.conversationId)+'\')">'+t('addToGroup')+'</button></div></div>'+
-      '<div class="admin-box" style="margin-bottom:12px"><h3>'+t('recentMessages')+'</h3><div class="admin-inline"><button class="secondary-btn" onclick="adminLoadRecentMessages(\''+escapeJsString(profile.conversationId)+'\')">'+t('recentMessages')+'</button></div><div id="adminRecentMessagesBox" class="admin-list" style="margin-top:10px"></div></div>'+
-      '<div class="admin-box"><h3>'+t('members')+'</h3><div class="admin-list">'+membersHtml+'</div></div>';
+var membersHtml=profile.members.map(function(member){
+  return '<div class="admin-row">'+
+    buildAvatarHTML(member.initials,member.avatarFileId,'',false,"openProfile('"+escapeJsString(member.userId)+"')")+
+    '<div class="admin-row-meta">'+
+      '<div class="admin-row-title">'+escapeHtml(member.displayName||'User')+'</div>'+
+      '<div class="admin-row-sub">@'+escapeHtml(member.username||'')+
+        (member.isBanned?' • banned':'')+
+        (member.isDeleted?' • deleted':'')+
+        ' • '+escapeHtml(member.userId||'')+
+      '</div>'+
+    '</div>'+
+    '<div class="admin-row-actions">'+
+      '<button class="secondary-btn" onclick="openProfile(\''+escapeJsString(member.userId)+'\')">Open</button>'+
+      '<button class="danger-btn" onclick="adminRemoveUserFromGroupUI(\''+escapeJsString(profile.conversationId)+'\',\''+escapeJsString(member.userId)+'\')">'+t('removeFromGroup')+'</button>'+
+    '</div>'+
+  '</div>';
+}).join('');
+var dropId='adminMembersDrop_'+profile.conversationId;
+
+var html='<div class="p-hdr">'+
+  buildAvatarHTML(profile.initials,profile.avatarFileId,'xl')+
+  '<div class="p-name">'+escapeHtml(profile.title)+'</div>'+
+  '<div class="p-un">'+escapeHtml((profile.memberCount||0)+' '+t('members'))+'</div>'+
+'</div>'+
+
+'<div class="admin-box" style="margin-bottom:12px">'+
+  '<h3>'+t('addToGroup')+'</h3>'+
+  '<div class="admin-inline">'+
+    '<input id="adminAddToGroupUserId" type="text" placeholder="userId">'+
+    '<button class="primary-btn" onclick="adminAddUserToGroupUI(\''+escapeJsString(profile.conversationId)+'\')">'+t('addToGroup')+'</button>'+
+  '</div>'+
+'</div>'+
+
+'<div class="admin-box" style="margin-bottom:12px">'+
+  '<h3>'+t('recentMessages')+'</h3>'+
+  '<div class="admin-inline">'+
+    '<button class="secondary-btn" onclick="adminLoadRecentMessages(\''+escapeJsString(profile.conversationId)+'\')">'+t('recentMessages')+'</button>'+
+  '</div>'+
+  '<div id="adminRecentMessagesBox" class="admin-list" style="margin-top:10px"></div>'+
+'</div>'+
+
+'<div class="admin-box">'+
+  '<h3>'+t('members')+'</h3>'+
+  '<div id="'+escapeAttr(dropId)+'" class="admin-drop open">'+
+    '<button class="admin-drop-toggle" onclick="toggleAdminDropdown(\''+escapeJsString(dropId)+'\')">'+
+      '<span>All participants ('+escapeHtml(String(profile.memberCount||0))+')</span>'+
+      '<span class="admin-drop-caret">▼</span>'+
+    '</button>'+
+    '<div class="admin-drop-body">'+
+      '<div class="admin-list">'+membersHtml+'</div>'+
+    '</div>'+
+  '</div>'+
+'</div>';
     openModal({title:profile.title+' — '+t('adminPanel'),html:html,wide:true,buttons:[{text:t('close'),className:'secondary-btn',value:'close'}]});
   }).withFailureHandler(function(){}).adminGetGroupProfile(sessionToken,conversationId);
 }
