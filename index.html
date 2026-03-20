@@ -40,6 +40,15 @@ body.ac-green{--accent:#16a34a;--accent-soft:#f0fdf4} body.dark.ac-green{--accen
 html,body{height:100%;height:-webkit-fill-available}
 body{margin:0;font-family:'Ubuntu',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg)!important;color:var(--text);overflow:hidden;user-select:none;-webkit-font-smoothing:antialiased}
 input,textarea{user-select:text;font:inherit} button,select{font:inherit} textarea{resize:none} a{color:inherit;text-decoration:none}
+/* Dark theme icon fixes */
+body.dark .icon-btn{color:var(--text);border-color:var(--border)}
+body.dark .att-ico{color:var(--accent)}
+body.dark .admin-row{border-color:var(--border);background:var(--panel)}
+body.dark .ci.active{background:var(--accent-soft)}
+body.dark .modal{background:var(--panel);border-color:var(--border)}
+body.dark input,body.dark textarea,body.dark select{color:var(--text);background:var(--panel-2);border-color:var(--border)}
+body.dark .secondary-btn{color:var(--text);background:var(--panel-2);border-color:var(--border)}
+body.dark .p-st.off{color:var(--muted);background:var(--panel-2)}
 
 .screen{display:none;height:100vh;height:100dvh;width:100%;overflow:hidden}.screen.active{display:flex}
 .auth-screen{align-items:center;justify-content:center;padding:20px;background:var(--bg)!important;overflow-y:auto}
@@ -305,7 +314,7 @@ input,textarea{user-select:text;font:inherit} button,select{font:inherit} textar
 </head>
 <body class="light ac-indigo">
 
-<div id="authScreen" class="screen auth-screen active">
+<div id="authScreen" class="screen auth-screen">
   <div class="auth-card">
     <div class="auth-brand">Heyo</div>
     <div id="authSub" class="auth-sub"></div>
@@ -432,15 +441,15 @@ const SCRIPT_URL=(function(){
   }catch(e){}
   var loc=window.location.href;
   if(loc.indexOf('/macros/s/')!==-1)return loc.replace(/\?.*/,'');
-  return 'https://script.google.com/macros/s/AKfycbx4rYXko3itKu4UDIHDse4DM5hWcxEm4ITkaesdKSdAK_cqhna0FzI8y_KeyjeKEyuYvQ/exec';
+  return 'https://script.google.com/macros/s/AKfycbzfWbuQYe7w-zJv6y7J8KGEevzCYLMYrPf56L7Lviu4CLndu1J5_LeLcD6f45Cf9XZrDg/exec';
 })();
 const MAX_UPLOAD_BYTES=1024*1024*1024;
 const CHUNK_SIZE=8*1024*1024;
 const ACCENT_COLORS=['indigo','red','blue','orange','yellow','pink','purple','gray','green'];
-const FAST_POLL_MS=900;
-const NORMAL_POLL_MS=1600;
-const SLOW_POLL_MS=2600;
-const HIDDEN_POLL_MS=5000;
+const FAST_POLL_MS=600;
+const NORMAL_POLL_MS=1000;
+const SLOW_POLL_MS=2000;
+const HIDDEN_POLL_MS=4000;
 
 /* ======================== Device ID ======================== */
 
@@ -450,6 +459,21 @@ var deviceId=(function(){
   var id='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
   localStorage.setItem('heyo_device_id',id);
   return id;
+})();
+
+/* Build a better UA string using modern API when available */
+var friendlyUA=(function(){
+  try{
+    if(navigator.userAgentData){
+      var d=navigator.userAgentData;
+      var brands=(d.brands||[]).filter(function(b){return b.brand&&b.brand.indexOf('Not')!==0&&b.brand.indexOf('Chromium')===-1});
+      var browserName=brands.length?brands[0].brand+(brands[0].version?' '+brands[0].version:''):'Chrome';
+      var platform=d.platform||'';
+      var mobile=d.mobile?' Mobile':'';
+      return browserName+' on '+platform+mobile;
+    }
+  }catch(e){}
+  return navigator.userAgent||'';
 })();
 
 /* ======================== i18n ======================== */
@@ -661,23 +685,46 @@ function showBrowserNotification(title,body,conversationId){
 
 function checkForNewNotifications(response){
   if(!notificationsEnabled)return;
-  if(!response||!response.messagesData)return;
-  var messagesData=response.messagesData;
-  if(!messagesData.messages||!messagesData.messages.length)return;
-  messagesData.messages.forEach(function(msg){
-    if(!msg||msg.isDeletedEvent||msg.deletedAt)return;
-    if(msg.isMine)return;
-    if(notifiedMessageIds.has(msg.messageId))return;
-    notifiedMessageIds.add(msg.messageId);
-    if(notifiedMessageIds.size>200){
-      var arr=Array.from(notifiedMessageIds);
-      notifiedMessageIds=new Set(arr.slice(arr.length-100));
-    }
-    var convo=findConversationById(msg.conversationId);
-    var convoTitle=convo?convo.title:'Heyo';
-    var body=msg.displayName+': '+(msg.text||'[file]');
-    showBrowserNotification(convoTitle,body,msg.conversationId);
-  });
+  if(!response)return;
+  /* Check messages from current conversation poll */
+  if(response.messagesData&&response.messagesData.messages){
+    response.messagesData.messages.forEach(function(msg){
+      notifyIfNew_(msg);
+    });
+  }
+}
+
+function notifyIfNew_(msg){
+  if(!msg||msg.isDeletedEvent||msg.deletedAt)return;
+  if(msg.isMine)return;
+  if(notifiedMessageIds.has(msg.messageId))return;
+  notifiedMessageIds.add(msg.messageId);
+  if(notifiedMessageIds.size>500){
+    var arr=Array.from(notifiedMessageIds);
+    notifiedMessageIds=new Set(arr.slice(arr.length-250));
+  }
+  /* Skip notification if user is focused on this exact conversation */
+  if(document.hasFocus()&&activeConversationId===msg.conversationId)return;
+  var convo=findConversationById(msg.conversationId);
+  var convoTitle=convo?convo.title:'Heyo';
+  var body=(msg.displayName||'User')+': '+(msg.text||'[file]');
+  showBrowserNotification(convoTitle,body,msg.conversationId);
+}
+
+function pollBackgroundNotifications_(){
+  if(!notificationsEnabled||!sessionToken)return;
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok)return;
+    var notifications=response.notifications||[];
+    notifications.forEach(function(n){
+      if(!n||!n.messageId)return;
+      if(notifiedMessageIds.has(n.messageId))return;
+      notifiedMessageIds.add(n.messageId);
+      if(document.hasFocus()&&activeConversationId===n.conversationId)return;
+      showBrowserNotification(n.conversationTitle||'Heyo',(n.senderName||'User')+': '+(n.text||'[file]'),n.conversationId);
+    });
+    if(typeof response.globalMessageVersion==='number')lastNotificationVersion=response.globalMessageVersion;
+  }).withFailureHandler(function(){}).getNotificationPayload(sessionToken,lastNotificationVersion);
 }
 
 /* ======================== Avatar HTML Helper ======================== */
@@ -747,7 +794,7 @@ function doLogin(){
     document.getElementById('loginPw').value='';
     setAuthStatus('','ok');
     startApplication();
-  }).withFailureHandler(function(){setAuthStatus('Login failed.','error')}).login(identifier,password,deviceId,navigator.userAgent||'');
+  }).withFailureHandler(function(){setAuthStatus('Login failed.','error')}).login(identifier,password,deviceId,friendlyUA);
 }
 
 function doRegister(){
@@ -760,7 +807,7 @@ function doRegister(){
     phone:document.getElementById('regPhoneWrap').style.display!=='none'?document.getElementById('regPh').value.trim():'',
     bio:document.getElementById('regBio').value.trim(),
     theme:'light',accentColor:'indigo',language:currentLanguage,
-    deviceId:deviceId,userAgent:navigator.userAgent||''
+    deviceId:deviceId,userAgent:friendlyUA
   };
   if(!payload.displayName||!payload.username||!payload.password){setAuthStatus('Required fields missing.','error');return}
   setAuthStatus(t('creatingAccount'),'ok');
@@ -924,6 +971,13 @@ function executePoll(){
       }
       checkForNewNotifications(response);
     }
+
+    /* Background notification poll for OTHER conversations */
+    if(notificationsEnabled&&response.globalMessageVersion&&response.globalMessageVersion>lastNotificationVersion){
+      pollBackgroundNotifications_();
+      lastNotificationVersion=response.globalMessageVersion;
+    }
+
     scheduleNextPoll();
   }).withFailureHandler(function(){
     isPolling=false;
@@ -932,31 +986,20 @@ function executePoll(){
 }
 
 function checkPendingInvite(){
-  var pendingInvite='';
-  /* 1. Check URL query param ?invite=CODE (redirect from Apps Script doGet) */
-  try{
-    var urlParams=new URLSearchParams(window.location.search);
-    if(urlParams.has('invite'))pendingInvite=urlParams.get('invite')||'';
-  }catch(e){}
-  /* 2. Fallback: window global (legacy) */
-  if(!pendingInvite)pendingInvite=window.__HEYO_PENDING_INVITE__||'';
-  /* 3. Fallback: localStorage (legacy) */
-  if(!pendingInvite)pendingInvite=localStorage.getItem('heyo_pending_invite')||'';
+  var pendingInvite=localStorage.getItem('heyo_pending_invite')||'';
   if(!pendingInvite)return;
-  /* Clean up all sources */
-  delete window.__HEYO_PENDING_INVITE__;
   localStorage.removeItem('heyo_pending_invite');
-  /* Remove ?invite= from URL bar so refreshing doesn't re-join */
-  try{
-    var cleanUrl=window.location.origin+window.location.pathname;
-    window.history.replaceState(null,'',cleanUrl);
-  }catch(e){}
+  if(!sessionToken)return; /* Must be logged in */
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok)return;
-    if(response.conversations){conversations=response.conversations;renderSidebar()}
+    if(!response||!response.ok){if(response&&response.error)console.warn('Invite join failed:',response.error);return}
+    if(response.conversations){
+      conversations=response.conversations;
+      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      renderSidebar();
+    }
     if(response.conversationId)selectConversation(response.conversationId);
     boostFastPolling(10000);
-  }).withFailureHandler(function(){}).joinGroupByInvite(sessionToken,pendingInvite);
+  }).withFailureHandler(function(err){console.error('Invite join error:',err)}).joinGroupByInvite(sessionToken,pendingInvite);
 }
 
 /* ======================== Sidebar ======================== */
@@ -1142,6 +1185,9 @@ function renderSingleMessage(message){
   var mineClass=message.isMine?'mine':'';
   var isOnline=onlineStatusMap[message.userId]||false;
   var avatarClickHandler="openProfile('"+escapeJsString(message.userId)+"')";
+  /* Use currentUser avatar for own messages if message doesn't have one */
+  var msgAvatar=message.avatarFileId||'';
+  if(!msgAvatar&&message.isMine&&currentUser&&currentUser.avatarFileId)msgAvatar=currentUser.avatarFileId;
   var forwardedHtml='';
   if(message.forwardedFromMessageId){
     var sourceLabel=message.forwardedFromTitle?escapeHtml(message.forwardedFromTitle):'';
@@ -1162,7 +1208,7 @@ function renderSingleMessage(message){
   var metaHtml=metaParts.map(function(part){return '<span>'+escapeHtml(part)+'</span>'}).join('');
 
   return '<div class="mr '+mineClass+'">'+
-    buildAvatarHTML(message.initials,message.avatarFileId||'', '',isOnline,avatarClickHandler)+
+    buildAvatarHTML(message.initials,msgAvatar,'',isOnline,avatarClickHandler)+
     '<div class="mc" data-mid="'+escapeAttr(message.messageId)+'" data-own="'+(message.isMine?'1':'0')+'">'+
       '<div class="mh"><div class="mh-a" onclick="openProfile(\''+escapeJsString(message.userId)+'\')">'+escapeHtml(message.displayName||'User')+'</div><div class="mh-u">@'+escapeHtml(message.username||'')+'</div></div>'+
       forwardedHtml+replyHtml+specialHtml+attachmentsHtml+textHtml+
@@ -1857,6 +1903,27 @@ function changePasswordUI(){
   });
 }
 
+function parseUAFriendly_(ua){
+  ua=String(ua||'');if(!ua)return 'Unknown device';
+  var browser='Browser',os='';
+  if(/Edg[e\/]/i.test(ua))browser='Edge';
+  else if(/OPR|Opera/i.test(ua))browser='Opera';
+  else if(/YaBrowser/i.test(ua))browser='Yandex';
+  else if(/SamsungBrowser/i.test(ua))browser='Samsung';
+  else if(/Firefox/i.test(ua))browser='Firefox';
+  else if(/CriOS/i.test(ua))browser='Chrome iOS';
+  else if(/Chrome|Chromium/i.test(ua))browser='Chrome';
+  else if(/Safari/i.test(ua)&&!/Chrome/i.test(ua))browser='Safari';
+  if(/iPhone/i.test(ua))os='iPhone';
+  else if(/iPad/i.test(ua))os='iPad';
+  else if(/Android/i.test(ua))os='Android';
+  else if(/Mac OS X|Macintosh/i.test(ua))os='macOS';
+  else if(/Windows/i.test(ua))os='Windows';
+  else if(/Linux/i.test(ua))os='Linux';
+  else if(/CrOS/i.test(ua))os='ChromeOS';
+  return browser+(os?' on '+os:'');
+}
+
 function showSessionsUI(){
   google.script.run.withSuccessHandler(function(response){
     if(!response||!response.ok){handleApplicationError(response);return}
@@ -1864,11 +1931,10 @@ function showSessionsUI(){
     var html='<div class="admin-list">';
     sessions.forEach(function(s){
       var isCurrent=s.isCurrent;
-      var ua=s.userAgent||'Unknown device';
-      if(ua.length>60)ua=ua.slice(0,60)+'…';
+      var friendly=parseUAFriendly_(s.userAgent);
       var created=s.createdAt?new Date(s.createdAt).toLocaleString():'';
       var lastActive=s.lastActiveAt?new Date(s.lastActiveAt).toLocaleString():'';
-      html+='<div class="admin-row"><div class="admin-row-meta"><div class="admin-row-title">'+(isCurrent?'<b>This device</b>':escapeHtml(ua))+'</div><div class="admin-row-sub">Created: '+escapeHtml(created)+' • Active: '+escapeHtml(lastActive)+'</div></div>';
+      html+='<div class="admin-row"><div class="admin-row-meta"><div class="admin-row-title">'+(isCurrent?'<b>'+escapeHtml(friendly)+' (current)</b>':escapeHtml(friendly))+'</div><div class="admin-row-sub">'+escapeHtml(created)+' • '+escapeHtml(lastActive)+'</div></div>';
       if(!isCurrent) html+='<div class="admin-row-actions"><button class="danger-btn" onclick="doTerminateSession(\''+escapeJsString(s.deviceId||'')+'\')">'+t('terminateSession')+'</button></div>';
       html+='</div>';
     });
@@ -2189,6 +2255,28 @@ window.addEventListener('resize',function(){closeDropdown(); if(window.innerWidt
 document.addEventListener('visibilitychange',function(){scheduleNextPoll()});
 
 /* ======================== Initialize ======================== */
+
+/* Save invite code from URL BEFORE anything else — survives login/register flow */
+(function savePendingInviteFromUrl(){
+  try{
+    var urlParams=new URLSearchParams(window.location.search);
+    var invite=urlParams.get('invite');
+    if(invite){
+      localStorage.setItem('heyo_pending_invite',invite);
+      window.history.replaceState(null,'',window.location.origin+window.location.pathname);
+    }
+  }catch(e){}
+})();
+
+/* Show correct screen immediately — no flash */
+if(sessionToken){
+  /* Token exists — show nothing (blank) until session verified, then show app */
+  document.getElementById('authScreen').classList.remove('active');
+  document.getElementById('appScreen').classList.remove('active');
+}else{
+  /* No token — show auth immediately */
+  document.getElementById('authScreen').classList.add('active');
+}
 
 verifyExistingSession();
 applyAllLabels();
