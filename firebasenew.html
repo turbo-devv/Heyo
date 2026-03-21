@@ -459,20 +459,6 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
-
-const SCRIPT_URL = (function(){
-  try{
-    var scripts = document.getElementsByTagName('script');
-    for(var i=0;i<scripts.length;i++){
-      var s = scripts[i].src || '';
-      if(s.indexOf('/macros/s/')!==-1) return s.replace(/\?.*/,'');
-    }
-  }catch(e){}
-  var loc = window.location.href;
-  if(loc.indexOf('/macros/s/')!==-1) return loc.replace(/\?.*/,'');
-  return 'https://script.google.com/macros/s/AKfycbxbBS7RF1MWMURIJje9dMkqwyBXvlkcXGN0FktkflqnkEVuZQQxLMX5k4deB87CcJkxbA/exec';
-})();
-
 const MAX_UPLOAD_BYTES = 1024*1024*1024;
 const CHUNK_SIZE = 8*1024*1024;
 const ACCENT_COLORS = ['indigo','red','blue','orange','yellow','pink','purple','gray','green'];
@@ -609,46 +595,6 @@ function applyAllLabels(){
   document.getElementById('composerInput').placeholder=t('writeMessage');
   document.getElementById('groupInviteBtn').title=t('inviteToChat');
 }
-
-/* ======================== google.script.run Adapter ======================== */
-
-(function initGoogleScriptRunAdapter(){
-  function createRunner(successHandler,failureHandler){
-    var chain={
-      withSuccessHandler:function(callback){return createRunner(typeof callback==='function'?callback:null,failureHandler)},
-      withFailureHandler:function(callback){return createRunner(successHandler,typeof callback==='function'?callback:null)}
-    };
-    return new Proxy(chain,{
-      get:function(target,property){
-        if(property in target) return target[property];
-        if(typeof property!=='string') return undefined;
-        return function(){
-          var args=Array.from(arguments);
-          callServerAction(property,args,successHandler,failureHandler);
-        };
-      }
-    });
-  }
-  async function callServerAction(action,args,successHandler,failureHandler){
-    try{
-      var response=await fetch(SCRIPT_URL,{
-        method:'POST',
-        redirect:'follow',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({action:action,data:args})
-      });
-      var rawText=await response.text(), result;
-      try{ result=rawText?JSON.parse(rawText):null; }catch(parseError){ throw new Error('Invalid JSON response from server.'); }
-      if(typeof successHandler==='function') successHandler(result);
-    }catch(error){
-      if(typeof failureHandler==='function') failureHandler(error);
-      else console.error('API error:',error);
-    }
-  }
-  window.google=window.google||{};
-  window.google.script=window.google.script||{};
-  window.google.script.run=createRunner(null,null);
-})();
 
 /* ======================== Application State ======================== */
 
