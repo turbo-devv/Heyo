@@ -1,0 +1,2287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#4f46e5">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap');
+
+:root{
+  --bg:#f5f6fa; --panel:#fff; --panel-2:#f8f9fd; --text:#20242c; --muted:#6e7685;
+  --border:#e5e8f0; --danger:#d92d20; --success:#0f9d58; --warning:#ca8a04;
+  --overlay:rgba(15,23,42,.44); --my-msg:#edf2ff; --other-msg:#fff;
+  --reply-bg:#f4f6fb; --shadow:0 14px 34px rgba(15,23,42,.10);
+  --sidebar-width:310px; --online:#22c55e; --accent:#4f46e5; --accent-soft:#eef0ff;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+body.dark{
+  --bg:#0d1117; --panel:#151b23; --panel-2:#10161d; --text:#e6edf3; --muted:#98a5b7;
+  --border:#263041; --danger:#ff6b6b; --success:#39c57a; --warning:#facc15;
+  --overlay:rgba(0,0,0,.58); --my-msg:#1a2747; --other-msg:#161d28;
+  --reply-bg:#111824; --shadow:0 16px 36px rgba(0,0,0,.34);
+}
+
+body.ac-indigo{--accent:#4f46e5;--accent-soft:#eef0ff} body.dark.ac-indigo{--accent:#7c8cff;--accent-soft:#1d2442}
+body.ac-red{--accent:#dc2626;--accent-soft:#fef2f2} body.dark.ac-red{--accent:#f87171;--accent-soft:#3b1111}
+body.ac-blue{--accent:#2563eb;--accent-soft:#eff6ff} body.dark.ac-blue{--accent:#60a5fa;--accent-soft:#172554}
+body.ac-orange{--accent:#ea580c;--accent-soft:#fff7ed} body.dark.ac-orange{--accent:#fb923c;--accent-soft:#431407}
+body.ac-yellow{--accent:#ca8a04;--accent-soft:#fefce8} body.dark.ac-yellow{--accent:#facc15;--accent-soft:#422006}
+body.ac-pink{--accent:#db2777;--accent-soft:#fdf2f8} body.dark.ac-pink{--accent:#f472b6;--accent-soft:#500724}
+body.ac-purple{--accent:#7c3aed;--accent-soft:#f5f3ff} body.dark.ac-purple{--accent:#a78bfa;--accent-soft:#2e1065}
+body.ac-gray{--accent:#6b7280;--accent-soft:#f3f4f6} body.dark.ac-gray{--accent:#9ca3af;--accent-soft:#1f2937}
+body.ac-green{--accent:#16a34a;--accent-soft:#f0fdf4} body.dark.ac-green{--accent:#4ade80;--accent-soft:#052e16}
+
+*{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
+html,body{height:100%;height:-webkit-fill-available}
+body{margin:0;font-family:'Ubuntu',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg)!important;color:var(--text);overflow:hidden;user-select:none;-webkit-font-smoothing:antialiased}
+input,textarea{user-select:text;font:inherit} button,select{font:inherit} textarea{resize:none} a{color:inherit;text-decoration:none}
+/* Dark theme icon fixes */
+body.dark .icon-btn{color:var(--text);border-color:var(--border)}
+body.dark .att-ico{color:var(--accent)}
+body.dark .admin-row{border-color:var(--border);background:var(--panel)}
+body.dark .ci.active{background:var(--accent-soft)}
+body.dark .modal{background:var(--panel);border-color:var(--border)}
+body.dark input,body.dark textarea,body.dark select{color:var(--text);background:var(--panel-2);border-color:var(--border)}
+body.dark .secondary-btn{color:var(--text);background:var(--panel-2);border-color:var(--border)}
+body.dark .p-st.off{color:var(--muted);background:var(--panel-2)}
+
+.screen{display:none;height:100vh;height:100dvh;width:100%;overflow:hidden}.screen.active{display:flex}
+.auth-screen{align-items:center;justify-content:center;padding:20px;background:var(--bg)!important;overflow-y:auto}
+.auth-card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:20px}
+.auth-brand{font-size:24px;font-weight:700;margin-bottom:8px}
+.auth-sub{font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tabs button{flex:1;height:42px;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font-weight:700;cursor:pointer;font-size:14px;transition:background .15s,color .15s}
+.tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.auth-block{display:none}.auth-block.active{display:block}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:13px;color:var(--muted);font-weight:700;margin-bottom:5px}
+.field input,.field textarea,.field select{width:100%;border:1px solid var(--border);background:var(--panel-2);color:var(--text);border-radius:10px;outline:none;padding:11px 12px;font-size:15px;transition:border-color .15s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}
+.field-row{display:flex;gap:10px}.field-row>*{flex:1;min-width:0}
+.submit-btn,.primary-btn,.secondary-btn,.danger-btn,.warning-btn{border:none;border-radius:10px;cursor:pointer;font-weight:700;padding:11px 14px;font-size:14px;transition:opacity .15s,transform .1s}
+.submit-btn:active,.primary-btn:active,.secondary-btn:active,.danger-btn:active,.warning-btn:active{transform:scale(.97)}
+.submit-btn,.primary-btn{background:var(--accent);color:#fff}
+.secondary-btn{background:var(--panel-2);color:var(--text);border:1px solid var(--border)}
+.danger-btn{background:var(--danger);color:#fff}
+.warning-btn{background:var(--warning);color:#111}
+[disabled]{opacity:.6;cursor:not-allowed}
+.submit-btn{width:100%;margin-top:4px}
+.status{min-height:20px;margin-top:12px;font-size:14px;color:var(--muted)}
+.status.error{color:var(--danger)}
+.status.ok{color:var(--muted)}
+
+.app-shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;width:100%;height:100vh;height:100dvh;overflow:hidden;background:var(--bg)!important}
+.sidebar{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;min-width:0;height:100%;overflow:hidden}
+.sidebar-head{display:flex;align-items:center;gap:12px;padding:14px;padding-top:calc(14px + var(--safe-top));border-bottom:1px solid var(--border)}
+.avatar{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:700;border:1px solid var(--border);flex-shrink:0;position:relative;overflow:visible;cursor:pointer;font-size:14px}
+.avatar.lg{width:54px;height:54px;border-radius:16px;font-size:18px}
+.avatar.xl{width:80px;height:80px;border-radius:24px;font-size:28px}
+.av-inner{width:100%;height:100%;border-radius:inherit;overflow:hidden;display:grid;place-items:center;background:transparent}
+.av-inner img{width:100%;height:100%;object-fit:cover;display:block}
+.online-dot{width:11px;height:11px;border-radius:50%;background:var(--online);border:2.5px solid var(--panel);position:absolute;bottom:-2px;right:-2px;z-index:2}
+.user-box{min-width:0;flex:1}
+.user-box .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-box .meta{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{border:1px solid var(--border);background:var(--panel-2);color:var(--text);width:38px;height:38px;border-radius:10px;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:16px;transition:background .12s}
+.icon-btn:hover{background:var(--accent-soft)}
+.icon-btn.accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+.search-wrap{padding:12px 14px;border-bottom:1px solid var(--border);position:relative}
+.search-wrap input{width:100%;border:1px solid var(--border);background:var(--panel-2);color:var(--text);border-radius:10px;outline:none;padding:11px 12px;font-size:14px}
+.search-results{position:absolute;top:calc(100% - 4px);left:14px;right:14px;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);max-height:300px;overflow-y:auto;display:none;z-index:1200}
+.search-results.open{display:block}
+.si{display:flex;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.si:last-child{border-bottom:none}.si:hover{background:var(--panel-2)}
+.si-meta{min-width:0;flex:1}
+.si-title{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.si-sub{font-size:12px;color:var(--muted)}
+.sidebar-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px}
+.sec-title{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:8px 8px 6px;display:flex;align-items:center;justify-content:space-between}
+.sec-title .icon-btn{width:24px;height:24px;font-size:14px;border-radius:7px}
+.ci{display:flex;gap:10px;padding:10px;border-radius:12px;cursor:pointer;margin-bottom:4px;border:1px solid transparent;transition:background .12s}
+.ci:hover{background:var(--panel-2)}
+.ci.active{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 16%,transparent)}
+.ci-meta{min-width:0;flex:1}
+.ci-line{display:flex;gap:8px;align-items:center}
+.ci-t{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-tm{margin-left:auto;flex-shrink:0;font-size:11px;color:var(--muted)}
+.ci-sub,.ci-last{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+
+.chat-panel{display:flex;flex-direction:column;min-width:0;min-height:0;height:100%;overflow:hidden;background:var(--bg)!important}
+.chat-topbar{min-height:56px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;align-items:center;gap:12px;padding:10px 14px;padding-top:calc(10px + var(--safe-top));flex-shrink:0}
+.ct-box{min-width:0;flex:1;cursor:pointer}
+.ct-t{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.chat-main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)!important}
+.placeholder{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)!important}
+.ph-card{width:100%;max-width:600px;background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:24px;text-align:center}
+.ph-card h2{margin:0 0 8px;font-size:28px}.ph-card p{margin:0;color:var(--muted);line-height:1.6}
+.convo-view{display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden}.convo-view.active{display:flex}
+.messages{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px;display:flex;flex-direction:column;gap:6px;background:var(--bg)!important}
+.empty-st{margin:auto;color:var(--muted);text-align:center;padding:24px}
+.date-sep{display:flex;align-items:center;gap:12px;padding:6px 0;color:var(--muted);font-size:12px;font-weight:700}
+.date-sep::before,.date-sep::after{content:'';flex:1;height:1px;background:var(--border)}
+.mr{display:flex;gap:10px;align-items:flex-start;max-width:85%}
+.mr.mine{align-self:flex-end;flex-direction:row-reverse}
+.mr .avatar{width:34px;height:34px;border-radius:10px;font-size:13px;flex-shrink:0}
+.mc{min-width:0;max-width:100%;background:var(--other-msg);border:1px solid var(--border);border-radius:16px;padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.mr.mine .mc{background:var(--my-msg)}
+.mh{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.mh-a{font-size:13px;font-weight:700;cursor:pointer}.mh-a:hover{text-decoration:underline}
+.mh-u{font-size:12px;color:var(--muted)}
+.m-fwd{font-size:11px;color:var(--accent);font-weight:700;margin-bottom:4px}
+.m-rpl{border-left:3px solid var(--accent);background:var(--reply-bg);border-radius:10px;padding:7px 10px;margin-bottom:6px}
+.m-rpl-n{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:2px}
+.m-rpl-t{font-size:12px;color:var(--muted);white-space:pre-wrap;word-break:break-word}
+.m-txt{white-space:pre-wrap;word-break:break-word;line-height:1.55;user-select:text}
+.m-atts{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.att-card{border:1px solid var(--border);background:var(--panel-2);border-radius:14px;overflow:hidden}
+.att-img{display:block;width:100%;max-width:400px;max-height:340px;object-fit:contain;cursor:pointer}
+.att-vw{position:relative;width:100%;max-width:400px}.att-vw iframe{width:100%;height:240px;border:none}
+.att-aw{padding:12px}.att-aw iframe{width:100%;height:80px;border:none}
+.att-file{display:flex;align-items:flex-start;gap:10px;padding:12px}
+.att-ico{width:42px;height:42px;border-radius:12px;border:1px solid var(--border);background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:18px;flex-shrink:0}
+.att-body{min-width:0;flex:1}.att-name{font-size:14px;font-weight:700;word-break:break-word}
+.att-meta{margin-top:4px;font-size:12px;color:var(--muted)}
+.att-acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.att-lnk{display:inline-flex;align-items:center;min-height:32px;padding:6px 10px;border-radius:10px;text-decoration:none;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:12px;font-weight:700}
+.att-cap{padding:8px 12px;border-top:1px solid var(--border)}
+.att-cap-n{font-size:13px;font-weight:700}.att-cap-m{font-size:12px;color:var(--muted);margin-top:2px}
+.m-meta{display:flex;gap:8px;margin-top:6px;font-size:12px;color:var(--muted)}
+.inv-card{border:1px solid var(--border);background:var(--panel-2);border-radius:14px;padding:12px;margin-top:6px}
+.inv-head{display:flex;gap:10px;align-items:center}
+.inv-meta{min-width:0;flex:1}
+.inv-title{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.inv-acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.inv-btn{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:8px 12px;border-radius:10px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:700}
+.inv-sec{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:8px 12px;border-radius:10px;background:var(--panel);color:var(--text);border:1px solid var(--border);cursor:pointer;font-weight:700}
+
+.comp-wrap{background:var(--panel);border-top:1px solid var(--border);padding:12px 14px;padding-bottom:calc(14px + var(--safe-bottom));flex-shrink:0;max-height:40vh;overflow-y:auto}
+.rpl-banner,.upl-banner{display:none;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--border);background:var(--panel-2);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.rpl-banner.active,.upl-banner.active{display:flex}
+.rpl-meta,.upl-meta{min-width:0;flex:1}
+.rpl-label,.upl-label{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px}
+.rpl-text,.upl-text{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staged-file{display:none;align-items:center;gap:10px;border:1px solid var(--border);background:var(--panel-2);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.staged-file.active{display:flex}
+.staged-info{min-width:0;flex:1}.staged-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staged-meta{font-size:12px;color:var(--muted)}
+.staged-img{max-width:80px;max-height:60px;border-radius:8px;object-fit:cover}
+.upl-prog-w{margin-top:6px}.upl-prog{width:100%;height:8px;appearance:none;border:none;border-radius:99px;background:rgba(0,0,0,.08)}
+.upl-prog::-webkit-progress-bar{background:rgba(0,0,0,.08)} .upl-prog::-webkit-progress-value{background:var(--accent);border-radius:99px} .upl-prog::-moz-progress-bar{background:var(--accent)}
+.composer{display:flex;gap:10px;align-items:flex-end}
+.composer textarea{flex:1;border:1px solid var(--border);background:var(--panel-2);color:var(--text);border-radius:12px;outline:none;min-height:48px;max-height:180px;padding:12px;overflow-y:auto;font-size:15px}
+.comp-left,.comp-right{display:flex;gap:6px;align-items:flex-end}
+.comp-left .icon-btn,.comp-right .icon-btn{width:48px;height:48px;font-size:18px}
+#sendBtn{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.dd-bd,.modal-ov{position:fixed;inset:0;display:none}
+.dd-bd.open{display:block;z-index:9998}
+.msg-dd{position:fixed;min-width:180px;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:6px;display:none;z-index:9999}
+.msg-dd.open{display:block}
+.msg-dd button{width:100%;border:none;background:transparent;text-align:left;color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:500;font-size:14px}
+.msg-dd button:hover{background:var(--panel-2)}.msg-dd button.danger{color:var(--danger)}
+.modal-ov{background:var(--overlay);align-items:center;justify-content:center;padding:18px;z-index:12000}
+.modal-ov.open{display:flex}
+.modal{width:100%;max-width:500px;background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;max-height:90vh;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal.modal-wide{max-width:860px}
+.modal-hd{padding:16px 18px 8px;font-size:18px;font-weight:700}
+.modal-bd{padding:0 18px 12px;color:var(--muted);line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.modal-ct{padding:0 18px 12px}
+.modal-ac{display:flex;justify-content:flex-end;gap:10px;padding:0 18px 18px;flex-wrap:wrap}
+.p-hdr{display:flex;flex-direction:column;align-items:center;padding:16px;gap:10px}
+.p-name{font-size:20px;font-weight:700}.p-un{font-size:14px;color:var(--muted)}
+.p-bio{font-size:14px;color:var(--muted);text-align:center;max-width:300px;line-height:1.5}
+.p-info{font-size:13px;color:var(--muted);text-align:center}
+.p-st{font-size:13px;font-weight:700;padding:4px 10px;border-radius:8px}
+.p-st.on{color:var(--success);background:rgba(34,197,94,.1)} .p-st.off{color:var(--muted);background:var(--panel-2)}
+.p-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.ac-picker{display:flex;gap:8px;flex-wrap:wrap;padding:4px 0}
+.ac-dot{width:32px;height:32px;border-radius:10px;cursor:pointer;border:3px solid transparent;transition:border-color .15s}
+.ac-dot.sel{border-color:var(--text)}
+.ac-indigo{background:#4f46e5}.ac-red{background:#dc2626}.ac-blue{background:#2563eb}
+.ac-orange{background:#ea580c}.ac-yellow{background:#ca8a04}.ac-pink{background:#db2777}
+.ac-purple{background:#7c3aed}.ac-gray{background:#6b7280}.ac-green{background:#16a34a}
+.img-ov{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:20000;cursor:pointer}
+.img-ov img{max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px}
+.mobile-toggle{display:none}.mob-bd{display:none}
+
+.admin-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.admin-kpi{border:1px solid var(--border);background:var(--panel-2);border-radius:14px;padding:12px}
+.admin-kpi-v{font-size:22px;font-weight:700}
+.admin-kpi-l{font-size:12px;color:var(--muted);margin-top:4px}
+.admin-split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.admin-box{border:1px solid var(--border);background:var(--panel-2);border-radius:14px;padding:12px;min-height:120px}
+.admin-box h3{margin:0 0 10px;font-size:14px}
+.admin-list{display:flex;flex-direction:column;gap:8px;max-height:320px;overflow:auto;-webkit-overflow-scrolling:touch}
+.admin-row{display:flex;align-items:center;gap:10px;padding:8px;border:1px solid var(--border);background:var(--panel);border-radius:12px}
+.admin-row-meta{min-width:0;flex:1}
+.admin-row-title{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-row-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-row-actions{display:flex;gap:6px;flex-wrap:wrap}
+.admin-inline{display:flex;gap:8px;align-items:center}
+.admin-inline input,.admin-inline select{flex:1;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:10px;outline:none;padding:10px 12px;font-size:14px}
+.admin-drop{margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
+.admin-drop-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;cursor:pointer;font-weight:700}
+.admin-drop-body{display:none;margin-top:10px}
+.admin-drop.open .admin-drop-body{display:block}
+.admin-drop-caret{color:var(--muted);font-size:12px}
+.badge-admin{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;background:var(--accent);color:#fff;margin-left:6px;vertical-align:middle}
+
+/* ======================== Mobile-first responsive ======================== */
+
+@media(max-width:900px){
+  .app-shell{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .sidebar.mob-open{display:flex;position:fixed;inset:0 auto 0 0;width:min(88vw,360px);z-index:13000;box-shadow:var(--shadow);height:100vh;height:100dvh}
+  .mob-bd{position:fixed;inset:0;background:var(--overlay);display:none;z-index:12999}
+  .mob-bd.open{display:block}
+  .mobile-toggle{display:inline-flex}
+  .mr{max-width:100%}
+  .att-img,.att-vw{max-width:100%}
+  .admin-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .admin-split{grid-template-columns:1fr}
+  .modal{max-width:100%;max-height:95vh;max-height:95dvh;border-radius:14px;margin:8px}
+  .modal.modal-wide{max-width:100%}
+  .auth-card{padding:16px;border-radius:14px}
+  .ph-card{padding:18px}
+  .ph-card h2{font-size:22px}
+  .chat-topbar{min-height:48px;padding:8px 10px;padding-top:calc(8px + var(--safe-top))}
+  .comp-wrap{padding:10px 10px;padding-bottom:calc(10px + var(--safe-bottom))}
+  .messages{padding:10px}
+  .sidebar-head{padding:12px;padding-top:calc(12px + var(--safe-top))}
+  .search-wrap{padding:10px 12px}
+  .sidebar-body{padding:8px}
+}
+
+@media(max-width:480px){
+  .admin-kpi-grid{grid-template-columns:1fr 1fr}
+  .mr .avatar{width:30px;height:30px;font-size:12px}
+  .mc{padding:8px 10px}
+  .mh{gap:6px}
+  .p-hdr{padding:12px}
+  .p-acts{gap:6px}
+  .p-acts button{font-size:12px;padding:8px 10px}
+  .field-row{flex-direction:column;gap:8px}
+  .modal-ac{gap:6px}
+  .modal-ac button{flex:1;min-width:0;text-align:center}
+}
+
+@media(max-height:600px){
+  .auth-screen{padding:12px}
+  .auth-card{padding:14px}
+  .auth-brand{font-size:20px;margin-bottom:6px}
+  .auth-sub{margin-bottom:10px;font-size:13px}
+  .field{margin-bottom:8px}
+  .field input,.field textarea{padding:9px 10px}
+  .chat-topbar{min-height:44px;padding:6px 10px;padding-top:calc(6px + var(--safe-top));gap:8px}
+  .ct-t{font-size:14px}
+  .ct-s{font-size:11px}
+  .comp-wrap{padding:8px 10px;padding-bottom:calc(8px + var(--safe-bottom));max-height:35vh}
+  .composer textarea{min-height:38px;padding:8px 10px;font-size:14px}
+  .comp-left .icon-btn,.comp-right .icon-btn{width:38px;height:38px;font-size:16px}
+  .messages{padding:8px;gap:4px}
+  .mc{padding:8px 10px}
+  .mh{margin-bottom:2px}
+  .m-meta{margin-top:4px}
+  .modal{max-height:92vh;max-height:92dvh}
+  .sidebar-head{padding:10px;padding-top:calc(10px + var(--safe-top))}
+  .search-wrap{padding:8px 10px}
+  .search-wrap input{padding:8px 10px}
+  .sidebar-body{padding:6px}
+  .ci{padding:8px}
+  .avatar{width:34px;height:34px;font-size:13px}
+  .ph-card{padding:14px}
+  .ph-card h2{font-size:20px}
+}
+
+@media(max-height:500px){
+  .chat-topbar{min-height:40px;padding:4px 8px;padding-top:calc(4px + var(--safe-top))}
+  .comp-wrap{padding:6px 8px;padding-bottom:calc(6px + var(--safe-bottom));max-height:30vh}
+  .composer textarea{min-height:34px;padding:6px 8px}
+  .comp-left .icon-btn,.comp-right .icon-btn{width:34px;height:34px;font-size:14px}
+  .messages{padding:6px;gap:3px}
+  .mr .avatar{width:26px;height:26px;font-size:11px}
+  .mc{padding:6px 8px;border-radius:12px}
+}
+</style>
+</head>
+<body class="light ac-indigo">
+
+<div id="authScreen" class="screen auth-screen">
+  <div class="auth-card">
+    <div class="auth-brand">Heyo</div>
+    <div id="authSub" class="auth-sub"></div>
+    <div class="tabs">
+      <button id="loginTabBtn" class="active" onclick="switchAuth('login')">Login</button>
+      <button id="regTabBtn" onclick="switchAuth('register')">Create account</button>
+    </div>
+    <div id="loginBlock" class="auth-block active">
+      <div class="field"><label id="lbl_loginId">Email / phone / username</label><input id="loginId" type="text" autocomplete="username"></div>
+      <div class="field"><label id="lbl_loginPw">Password</label><input id="loginPw" type="password" autocomplete="current-password"></div>
+      <button id="loginBtn" class="submit-btn" onclick="doLogin()">Login</button>
+    </div>
+    <div id="regBlock" class="auth-block">
+      <div class="tabs" style="margin-bottom:12px"><button id="regEmailBtn" class="active" onclick="switchRegMethod('email')">Email</button><button id="regPhoneBtn" onclick="switchRegMethod('phone')">Phone</button></div>
+      <div class="field"><label id="lbl_regDN">Display name</label><input id="regDN" type="text" maxlength="40"></div>
+      <div class="field"><label id="lbl_regUN">Username</label><input id="regUN" type="text" maxlength="20"></div>
+      <div id="regEmailWrap" class="field"><label>Email</label><input id="regEmail" type="email"></div>
+      <div id="regPhoneWrap" style="display:none"><div class="field-row"><div class="field"><label>Country</label><select id="regPhCo"><option value="RU">Russia (+7)</option><option value="US">US (+1)</option></select></div><div class="field"><label>Phone</label><input id="regPh" type="text"></div></div></div>
+      <div class="field"><label id="lbl_regPw">Password</label><input id="regPw" type="password" autocomplete="new-password"></div>
+      <div class="field"><label>Bio</label><textarea id="regBio" maxlength="240" rows="2"></textarea></div>
+      <button id="regBtn" class="submit-btn" onclick="doRegister()">Create account</button>
+    </div>
+    <div id="authStatus" class="status"></div>
+  </div>
+</div>
+
+<div id="appScreen" class="screen">
+  <div id="mobBD" class="mob-bd" onclick="closeMobileSidebar()"></div>
+  <div class="app-shell">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-head">
+        <div id="meAvatar" class="avatar" onclick="openProfile(currentUser && currentUser.userId)"><div class="av-inner">U</div></div>
+        <div class="user-box" onclick="openProfile(currentUser && currentUser.userId)" style="cursor:pointer">
+          <div id="meDisplayName" class="name">User</div>
+          <div id="meUsername" class="meta">@user</div>
+        </div>
+        <button id="adminBtn" class="icon-btn" onclick="openAdminPanel()" title="Admin" style="display:none">🛡</button>
+        <button class="icon-btn" onclick="openSettings()" title="Settings">⚙</button>
+      </div>
+      <div class="search-wrap">
+        <input id="searchInput" type="text" placeholder="Search users">
+        <div id="searchResults" class="search-results"></div>
+      </div>
+      <div class="sidebar-body">
+        <div class="sec-title"><span id="lbl_channels">Channels</span></div>
+        <div id="channelList"></div>
+        <div class="sec-title"><span id="lbl_groups">Groups</span><button class="icon-btn" onclick="createGroupUI()">+</button></div>
+        <div id="groupList"></div>
+        <div class="sec-title"><span id="lbl_dms">Direct messages</span></div>
+        <div id="dmList"></div>
+      </div>
+    </aside>
+    <main class="chat-panel">
+      <div class="chat-topbar">
+        <button class="icon-btn mobile-toggle" onclick="openMobileSidebar()">☰</button>
+        <div id="topAvatar" class="avatar" onclick="openConversationProfile()"><div class="av-inner">H</div></div>
+        <div class="ct-box" onclick="openConversationProfile()">
+          <div id="chatTitle" class="ct-t">Heyo</div>
+          <div id="chatSubtitle" class="ct-s"></div>
+        </div>
+      </div>
+      <div class="chat-main">
+        <div id="placeholderView" class="placeholder">
+          <div class="ph-card">
+            <h2 id="lbl_welcome">Welcome to Heyo</h2>
+            <p id="lbl_welcomeP">Select a conversation to start chatting.</p>
+          </div>
+        </div>
+        <div id="conversationView" class="convo-view">
+          <div id="messagesContainer" class="messages"></div>
+          <div id="composerWrap" class="comp-wrap">
+            <div id="replyBanner" class="rpl-banner">
+              <div class="rpl-meta"><div id="replyLabel" class="rpl-label"></div><div id="replyText" class="rpl-text"></div></div>
+              <button class="icon-btn" onclick="clearReply()" style="width:32px;height:32px">✕</button>
+            </div>
+            <div id="uploadBanner" class="upl-banner">
+              <div class="upl-meta"><div id="uploadLabel" class="upl-label">Upload</div><div id="uploadText" class="upl-text"></div>
+              <div id="uploadProgressWrap" class="upl-prog-w" style="display:none"><progress id="uploadProgress" class="upl-prog" value="0" max="100"></progress></div></div>
+              <button id="uploadCancelBtn" class="icon-btn" onclick="cancelCurrentUpload()" style="display:none;width:32px;height:32px">✕</button>
+            </div>
+            <div id="stagedFileWrap" class="staged-file">
+              <div id="stagedPreview"></div>
+              <div class="staged-info"><div id="stagedFileName" class="staged-name"></div><div id="stagedFileMeta" class="staged-meta"></div></div>
+              <button class="icon-btn" onclick="clearStagedFile()" style="width:32px;height:32px">✕</button>
+            </div>
+            <div class="composer">
+              <div class="comp-left">
+                <input id="fileInput" type="file" style="display:none">
+                <button class="icon-btn" onclick="openFilePicker()">📎</button>
+              </div>
+              <textarea id="composerInput" rows="1"></textarea>
+              <div class="comp-right">
+                <button id="groupInviteBtn" class="icon-btn" onclick="sendGroupInviteUI()" title="Invite group">👥</button>
+                <button id="sendBtn" class="icon-btn" onclick="handleSend()">➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="dropdownBackdrop" class="dd-bd" onclick="closeDropdown()"></div>
+<div id="messageDropdown" class="msg-dd"></div>
+<div id="modalOverlay" class="modal-ov">
+  <div id="modalBox" class="modal">
+    <div id="modalTitle" class="modal-hd"></div>
+    <div id="modalBody" class="modal-bd"></div>
+    <div id="modalContent" class="modal-ct"></div>
+    <div id="modalActions" class="modal-ac"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Heyo Frontend — Complete JavaScript (Version 11)
+   ============================================================ */
+
+const SCRIPT_URL=(function(){
+  try{
+    var scripts=document.getElementsByTagName('script');
+    for(var i=0;i<scripts.length;i++){var s=scripts[i].src||'';if(s.indexOf('/macros/s/')!==-1)return s.replace(/\?.*/,'');}
+  }catch(e){}
+  var loc=window.location.href;
+  if(loc.indexOf('/macros/s/')!==-1)return loc.replace(/\?.*/,'');
+  return 'https://script.google.com/macros/s/AKfycbwvpTe0h2rBw7jTj3XX-0SHGye08vzXYWLnCHzyhsX9v4OSGv1ZlAPUZwhrE62KmKUPSg/exec';
+})();
+const MAX_UPLOAD_BYTES=1024*1024*1024;
+const CHUNK_SIZE=8*1024*1024;
+const ACCENT_COLORS=['indigo','red','blue','orange','yellow','pink','purple','gray','green'];
+const FAST_POLL_MS=600;
+const NORMAL_POLL_MS=1000;
+const SLOW_POLL_MS=2000;
+const HIDDEN_POLL_MS=4000;
+
+/* ======================== Device ID ======================== */
+
+var deviceId=(function(){
+  var stored=localStorage.getItem('heyo_device_id');
+  if(stored)return stored;
+  var id='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
+  localStorage.setItem('heyo_device_id',id);
+  return id;
+})();
+
+/* Build a better UA string using modern API when available */
+var friendlyUA=(function(){
+  try{
+    if(navigator.userAgentData){
+      var d=navigator.userAgentData;
+      var brands=(d.brands||[]).filter(function(b){return b.brand&&b.brand.indexOf('Not')!==0&&b.brand.indexOf('Chromium')===-1});
+      var browserName=brands.length?brands[0].brand+(brands[0].version?' '+brands[0].version:''):'Chrome';
+      var platform=d.platform||'';
+      var mobile=d.mobile?' Mobile':'';
+      return browserName+' on '+platform+mobile;
+    }
+  }catch(e){}
+  return navigator.userAgent||'';
+})();
+
+/* ======================== i18n ======================== */
+
+const I18N={
+  en:{
+    authSubLogin:'Welcome back. Log in to continue.',
+    authSubReg:'Welcome to Heyo. Sign up to continue.',
+    login:'Login',createAccount:'Create account',
+    save:'Save',cancel:'Cancel',delete:'Delete',close:'Close',confirm:'Confirm',
+    block:'Block',unblock:'Unblock',sendMessage:'Send message',
+    online:'online',offline:'offline',members:'members',
+    deleteAccount:'Delete account',
+    deleteAccountMsg:'This is permanent. Messages stay, profile removed.',
+    createGroup:'Create group',groupName:'Group name',groupDesc:'Description',
+    leaveGroup:'Leave group',deleteGroup:'Delete group',
+    inviteLink:'Invite link',copyLink:'Copy link',
+    editGroup:'Edit group',groupProfile:'Group info',userProfile:'Profile',
+    forward:'Forward',reply:'Reply',edit:'Edit',copy:'Copy text',deleteMsg:'Delete',
+    forwarded:'Forwarded from',noMessages:'No messages yet',
+    settings:'Settings',theme:'Theme',language:'Language',
+    light:'Light',dark:'Dark',bio:'Bio',birthday:'Birthday',
+    displayName:'Display name',username:'Username',password:'Password',
+    edited:'edited',today:'Today',yesterday:'Yesterday',
+    changeAvatar:'Change avatar',accentColor:'Accent color',
+    channels:'Channels',groups:'Groups',directMessages:'Direct messages',
+    welcome:'Welcome to Heyo',welcomeText:'Select a conversation to start chatting.',
+    changePassword:'Change password',currentPassword:'Current password',newPassword:'New password',
+    passwordChanged:'Password changed.',
+    logout:'Log out',emailPhoneUsername:'Email / phone / username',
+    searchUsers:'Search users',writeMessage:'Write a message...',
+    loggingIn:'Logging in...',creatingAccount:'Creating account...',
+    joinGroup:'Join group',openGroup:'Open group',inviteToChat:'Invite group to chat',
+    adminPanel:'Admin panel',users:'Users',messages:'Messages',groupsLabel:'Groups',
+    ban:'Ban',unban:'Unban',addToGroup:'Add to group',removeFromGroup:'Remove from group',
+    recentMessages:'Recent messages',stats:'Stats',
+    grantAdmin:'Grant admin',revokeAdmin:'Revoke admin',
+    sessions:'Sessions',terminateSession:'End session',
+    notifications:'Notifications',enableNotifications:'Enable notifications',
+    notificationsEnabled:'Notifications enabled',
+    addByUsername:'Add by @username'
+  },
+  ru:{
+    authSubLogin:'С возвращением. Войдите, чтобы продолжить.',
+    authSubReg:'Добро пожаловать. Зарегистрируйтесь.',
+    login:'Войти',createAccount:'Создать аккаунт',
+    save:'Сохранить',cancel:'Отмена',delete:'Удалить',close:'Закрыть',confirm:'Подтвердить',
+    block:'Заблокировать',unblock:'Разблокировать',sendMessage:'Написать',
+    online:'онлайн',offline:'не в сети',members:'участников',
+    deleteAccount:'Удалить аккаунт',
+    deleteAccountMsg:'Это необратимо. Сообщения останутся, профиль удалён.',
+    createGroup:'Создать группу',groupName:'Название',groupDesc:'Описание',
+    leaveGroup:'Покинуть группу',deleteGroup:'Удалить группу',
+    inviteLink:'Приглашение',copyLink:'Копировать',
+    editGroup:'Редактировать',groupProfile:'О группе',userProfile:'Профиль',
+    forward:'Переслать',reply:'Ответить',edit:'Редактировать',copy:'Копировать',deleteMsg:'Удалить',
+    forwarded:'Переслано из',noMessages:'Сообщений нет',
+    settings:'Настройки',theme:'Тема',language:'Язык',
+    light:'Светлая',dark:'Тёмная',bio:'О себе',birthday:'Дата рождения',
+    displayName:'Имя',username:'Имя пользователя',password:'Пароль',
+    edited:'изменено',today:'Сегодня',yesterday:'Вчера',
+    changeAvatar:'Сменить аватар',accentColor:'Цвет акцента',
+    channels:'Каналы',groups:'Группы',directMessages:'Личные сообщения',
+    welcome:'Добро пожаловать в Heyo',welcomeText:'Выберите чат слева.',
+    changePassword:'Сменить пароль',currentPassword:'Текущий пароль',newPassword:'Новый пароль',
+    passwordChanged:'Пароль изменён.',
+    logout:'Выйти',emailPhoneUsername:'Email / телефон / ник',
+    searchUsers:'Поиск пользователей',writeMessage:'Напишите сообщение...',
+    loggingIn:'Вход...',creatingAccount:'Создание аккаунта...',
+    joinGroup:'Вступить',openGroup:'Открыть группу',inviteToChat:'Отправить инвайт группы',
+    adminPanel:'Админ панель',users:'Пользователи',messages:'Сообщения',groupsLabel:'Группы',
+    ban:'Бан',unban:'Разбан',addToGroup:'Добавить в группу',removeFromGroup:'Убрать из группы',
+    recentMessages:'Последние сообщения',stats:'Статистика',
+    grantAdmin:'Дать админку',revokeAdmin:'Убрать админку',
+    sessions:'Сессии',terminateSession:'Завершить сессию',
+    notifications:'Уведомления',enableNotifications:'Включить уведомления',
+    notificationsEnabled:'Уведомления включены',
+    addByUsername:'Добавить по @username'
+  }
+};
+
+let currentLanguage=localStorage.getItem('heyo_lang')||'en';
+function t(key){return(I18N[currentLanguage]&&I18N[currentLanguage][key])||I18N.en[key]||key}
+
+function applyAllLabels(){
+  document.getElementById('authSub').textContent=(currentAuthMode==='login')?t('authSubLogin'):t('authSubReg');
+  document.getElementById('loginTabBtn').textContent=t('login');
+  document.getElementById('regTabBtn').textContent=t('createAccount');
+  document.getElementById('loginBtn').textContent=t('login');
+  document.getElementById('regBtn').textContent=t('createAccount');
+  document.getElementById('lbl_loginId').textContent=t('emailPhoneUsername');
+  document.getElementById('lbl_loginPw').textContent=t('password');
+  document.getElementById('lbl_regDN').textContent=t('displayName');
+  document.getElementById('lbl_regUN').textContent=t('username');
+  document.getElementById('lbl_regPw').textContent=t('password');
+  document.getElementById('lbl_channels').textContent=t('channels');
+  document.getElementById('lbl_groups').textContent=t('groups');
+  document.getElementById('lbl_dms').textContent=t('directMessages');
+  document.getElementById('lbl_welcome').textContent=t('welcome');
+  document.getElementById('lbl_welcomeP').textContent=t('welcomeText');
+  document.getElementById('searchInput').placeholder=t('searchUsers');
+  document.getElementById('composerInput').placeholder=t('writeMessage');
+  document.getElementById('groupInviteBtn').title=t('inviteToChat');
+}
+
+/* ======================== google.script.run Adapter ======================== */
+
+(function initGoogleScriptRunAdapter(){
+  function createRunner(successHandler,failureHandler){
+    var chain={
+      withSuccessHandler:function(callback){return createRunner(typeof callback==='function'?callback:null,failureHandler)},
+      withFailureHandler:function(callback){return createRunner(successHandler,typeof callback==='function'?callback:null)}
+    };
+    return new Proxy(chain,{get:function(target,property){
+      if(property in target)return target[property];
+      if(typeof property!=='string')return undefined;
+      return function(){var args=Array.from(arguments);callServerAction(property,args,successHandler,failureHandler)}
+    }});
+  }
+  async function callServerAction(action,args,successHandler,failureHandler){
+    try{
+      var response=await fetch(SCRIPT_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:action,data:args})});
+      var rawText=await response.text(), result;
+      try{result=rawText?JSON.parse(rawText):null}catch(parseError){throw new Error('Invalid JSON response from server.')}
+      if(typeof successHandler==='function')successHandler(result);
+    }catch(error){
+      if(typeof failureHandler==='function')failureHandler(error);
+      else console.error('API error:',error);
+    }
+  }
+  window.google=window.google||{};
+  window.google.script=window.google.script||{};
+  window.google.script.run=createRunner(null,null);
+})();
+
+/* ======================== Application State ======================== */
+
+var sessionToken=localStorage.getItem('heyo_token')||'';
+var currentUser=null;
+var conversations=[];
+var activeConversationId='';
+var activeConversation=null;
+var currentAuthMode='login';
+
+var conversationVersions=new Map();
+var conversationMessages=new Map();
+var lastRenderedVersion=new Map();
+var globalConversationVersion=0;
+var globalMessageVersion=0;
+
+var pollIntervalHandle=null;
+var isPolling=false;
+var isLoadingMessages=false;
+var needsMessageReload=false;
+var searchDebounceTimer=null;
+var replyTarget=null;
+var modalResolveFunction=null;
+var currentModalConfig=null;
+var isProfileModalOpen=false;
+
+var isDropdownOpen=false;
+var dropdownMessageId='';
+var longPressTimer=null;
+var longPressFired=false;
+
+var onlineStatusMap={};
+var stagedFile=null;
+var localThemeOverride=null;
+var lastPollAt=0;
+var fastPollBoostUntil=0;
+
+var notifiedMessageIds=new Set();
+var notificationsEnabled=false;
+var lastNotificationVersion=0;
+
+var uploadState={active:false,file:null,xhr:null,uploadToken:'',uploadUrl:'',fileId:'',conversationId:'',progress:0};
+
+/* ======================== URL Helpers ======================== */
+
+function driveImageUrl(fileId){return 'https://lh3.googleusercontent.com/d/'+encodeURIComponent(fileId)}
+function drivePreviewUrl(fileId){return 'https://drive.google.com/file/d/'+encodeURIComponent(fileId)+'/preview'}
+function driveViewUrl(fileId){return 'https://drive.google.com/file/d/'+encodeURIComponent(fileId)+'/view'}
+function driveDownloadUrl(fileId){return 'https://drive.google.com/uc?id='+encodeURIComponent(fileId)+'&export=download'}
+
+/* ======================== Notifications ======================== */
+
+function requestNotificationPermission(){
+  if(!('Notification' in window))return;
+  if(Notification.permission==='granted'){notificationsEnabled=true;return}
+  if(Notification.permission==='denied')return;
+  Notification.requestPermission().then(function(permission){
+    notificationsEnabled=(permission==='granted');
+  });
+}
+
+function showBrowserNotification(title,body,conversationId){
+  if(!notificationsEnabled||!('Notification' in window)||Notification.permission!=='granted')return;
+  if(document.hasFocus()&&activeConversationId===conversationId)return;
+  try{
+    var notification=new Notification(title,{body:body,icon:'/favicon.ico',tag:'heyo-'+conversationId,renotify:true,silent:false});
+    notification.onclick=function(){
+      window.focus();
+      if(conversationId)selectConversation(conversationId);
+      notification.close();
+    };
+    setTimeout(function(){try{notification.close()}catch(e){}},8000);
+  }catch(e){}
+}
+
+function checkForNewNotifications(response){
+  if(!notificationsEnabled)return;
+  if(!response)return;
+  /* Check messages from current conversation poll */
+  if(response.messagesData&&response.messagesData.messages){
+    response.messagesData.messages.forEach(function(msg){
+      notifyIfNew_(msg);
+    });
+  }
+}
+
+function notifyIfNew_(msg){
+  if(!msg||msg.isDeletedEvent||msg.deletedAt)return;
+  if(msg.isMine)return;
+  if(notifiedMessageIds.has(msg.messageId))return;
+  notifiedMessageIds.add(msg.messageId);
+  if(notifiedMessageIds.size>500){
+    var arr=Array.from(notifiedMessageIds);
+    notifiedMessageIds=new Set(arr.slice(arr.length-250));
+  }
+  /* Skip notification if user is focused on this exact conversation */
+  if(document.hasFocus()&&activeConversationId===msg.conversationId)return;
+  var convo=findConversationById(msg.conversationId);
+  var convoTitle=convo?convo.title:'Heyo';
+  var body=(msg.displayName||'User')+': '+(msg.text||'[file]');
+  showBrowserNotification(convoTitle,body,msg.conversationId);
+}
+
+function pollBackgroundNotifications_(){
+  if(!notificationsEnabled||!sessionToken)return;
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok)return;
+    var notifications=response.notifications||[];
+    notifications.forEach(function(n){
+      if(!n||!n.messageId)return;
+      if(notifiedMessageIds.has(n.messageId))return;
+      notifiedMessageIds.add(n.messageId);
+      if(document.hasFocus()&&activeConversationId===n.conversationId)return;
+      showBrowserNotification(n.conversationTitle||'Heyo',(n.senderName||'User')+': '+(n.text||'[file]'),n.conversationId);
+    });
+    if(typeof response.globalMessageVersion==='number')lastNotificationVersion=response.globalMessageVersion;
+  }).withFailureHandler(function(){}).getNotificationPayload(sessionToken,lastNotificationVersion);
+}
+
+/* ======================== Avatar HTML Helper ======================== */
+
+function buildAvatarHTML(initials,avatarFileId,extraClass,showOnline,onClickHandler){
+  extraClass=extraClass||'';
+  var innerContent=escapeHtml(initials||'U');
+  if(avatarFileId){
+    var imageSrc=driveImageUrl(avatarFileId)+'=s200';
+    innerContent='<img src="'+escapeAttr(imageSrc)+'" alt="" loading="lazy" onerror="this.onerror=null;this.parentNode.textContent=\''+escapeHtml(initials||'U')+'\'">';
+  }
+  var onlineDot=showOnline?'<div class="online-dot"></div>':'';
+  var onClickAttr=onClickHandler?' onclick="'+onClickHandler+'"':'';
+  return '<div class="avatar '+extraClass+'"'+onClickAttr+'><div class="av-inner">'+innerContent+'</div>'+onlineDot+'</div>';
+}
+
+function applyThemeAndAccent(theme,accentColor){
+  document.body.classList.remove('light','dark');
+  ACCENT_COLORS.forEach(function(color){document.body.classList.remove('ac-'+color)});
+  document.body.classList.add(theme==='dark'?'dark':'light');
+  document.body.classList.add('ac-'+(accentColor||'indigo'));
+  var metaTheme=document.querySelector('meta[name="theme-color"]');
+  if(metaTheme){
+    var colors={indigo:'#4f46e5',red:'#dc2626',blue:'#2563eb',orange:'#ea580c',yellow:'#ca8a04',pink:'#db2777',purple:'#7c3aed',gray:'#6b7280',green:'#16a34a'};
+    metaTheme.content=colors[accentColor||'indigo']||'#4f46e5';
+  }
+}
+
+/* ======================== Auth UI ======================== */
+
+function setAuthStatus(message,mode){
+  var el=document.getElementById('authStatus');
+  el.textContent=message||'';
+  el.className='status'+(mode?' '+mode:'');
+}
+
+function switchAuth(mode){
+  currentAuthMode=mode;
+  document.getElementById('loginTabBtn').classList.toggle('active',mode==='login');
+  document.getElementById('regTabBtn').classList.toggle('active',mode!=='login');
+  document.getElementById('loginBlock').classList.toggle('active',mode==='login');
+  document.getElementById('regBlock').classList.toggle('active',mode!=='login');
+  document.getElementById('authSub').textContent=(mode==='login')?t('authSubLogin'):t('authSubReg');
+  setAuthStatus('','ok');
+}
+
+function switchRegMethod(method){
+  document.getElementById('regEmailBtn').classList.toggle('active',method==='email');
+  document.getElementById('regPhoneBtn').classList.toggle('active',method!=='email');
+  document.getElementById('regEmailWrap').style.display=(method==='email')?'':'none';
+  document.getElementById('regPhoneWrap').style.display=(method!=='email')?'':'none';
+}
+
+function doLogin(){
+  var identifier=document.getElementById('loginId').value.trim();
+  var password=document.getElementById('loginPw').value;
+  if(!identifier||!password){setAuthStatus(t('emailPhoneUsername')+' & '+t('password')+' required.','error');return}
+  setAuthStatus(t('loggingIn'),'ok');
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){setAuthStatus((response&&response.error)||'Login failed.','error');return}
+    sessionToken=response.token;
+    localStorage.setItem('heyo_token',sessionToken);
+    if(response.deviceId)localStorage.setItem('heyo_device_id',response.deviceId);
+    currentUser=response.user;
+    currentLanguage=currentUser.language||'en';
+    localStorage.setItem('heyo_lang',currentLanguage);
+    document.getElementById('loginPw').value='';
+    setAuthStatus('','ok');
+    startApplication();
+  }).withFailureHandler(function(){setAuthStatus('Login failed.','error')}).login(identifier,password,deviceId,friendlyUA);
+}
+
+function doRegister(){
+  var payload={
+    displayName:document.getElementById('regDN').value.trim(),
+    username:document.getElementById('regUN').value.trim(),
+    password:document.getElementById('regPw').value,
+    email:document.getElementById('regEmailWrap').style.display!=='none'?document.getElementById('regEmail').value.trim():'',
+    phoneCountry:document.getElementById('regPhoneWrap').style.display!=='none'?document.getElementById('regPhCo').value:'',
+    phone:document.getElementById('regPhoneWrap').style.display!=='none'?document.getElementById('regPh').value.trim():'',
+    bio:document.getElementById('regBio').value.trim(),
+    theme:'light',accentColor:'indigo',language:currentLanguage,
+    deviceId:deviceId,userAgent:friendlyUA
+  };
+  if(!payload.displayName||!payload.username||!payload.password){setAuthStatus('Required fields missing.','error');return}
+  setAuthStatus(t('creatingAccount'),'ok');
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){setAuthStatus((response&&response.error)||'Registration failed.','error');return}
+    sessionToken=response.token;
+    localStorage.setItem('heyo_token',sessionToken);
+    if(response.deviceId)localStorage.setItem('heyo_device_id',response.deviceId);
+    currentUser=response.user;
+    currentLanguage=currentUser.language||'en';
+    localStorage.setItem('heyo_lang',currentLanguage);
+    setAuthStatus('','ok');
+    startApplication();
+  }).withFailureHandler(function(){setAuthStatus('Registration failed.','error')}).registerAccount(payload);
+}
+
+function verifyExistingSession(){
+  if(!sessionToken){showAuthScreen();return}
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){forceLogoutToAuth();return}
+    currentUser=response.user;
+    currentLanguage=currentUser.language||'en';
+    localStorage.setItem('heyo_lang',currentLanguage);
+    startApplication();
+  }).withFailureHandler(function(){forceLogoutToAuth()}).getSession(sessionToken);
+}
+
+function showAuthScreen(){
+  stopPolling();
+  document.getElementById('authScreen').classList.add('active');
+  document.getElementById('appScreen').classList.remove('active');
+  applyAllLabels();
+  switchAuth('login');
+}
+
+function showAppScreen(){
+  document.getElementById('authScreen').classList.remove('active');
+  document.getElementById('appScreen').classList.add('active');
+}
+
+/* ======================== Application Lifecycle ======================== */
+
+function startApplication(){
+  conversations=[];
+  activeConversationId='';
+  activeConversation=null;
+  conversationVersions.clear();
+  conversationMessages.clear();
+  lastRenderedVersion.clear();
+  replyTarget=null;
+  localThemeOverride=null;
+  stagedFile=null;
+  globalConversationVersion=0;
+  globalMessageVersion=0;
+  fastPollBoostUntil=Date.now()+10000;
+
+  showAppScreen();
+  applyThemeAndAccent((currentUser&&currentUser.theme)||'light',(currentUser&&currentUser.accentColor)||'indigo');
+  renderCurrentUserSidebar();
+  applyAllLabels();
+  autoGrowTextarea(document.getElementById('composerInput'));
+  fetchApplicationData(true);
+  startPolling();
+  checkPendingInvite();
+  requestNotificationPermission();
+}
+
+function renderCurrentUserSidebar(){
+  if(!currentUser)return;
+  document.getElementById('meDisplayName').textContent=currentUser.displayName||'User';
+  document.getElementById('meUsername').textContent='@'+(currentUser.username||'');
+  var avatar=document.getElementById('meAvatar'), avatarInner=avatar.querySelector('.av-inner');
+  avatar.onclick=function(){openProfile(currentUser&&currentUser.userId)};
+  if(currentUser.avatarFileId) avatarInner.innerHTML='<img src="'+driveImageUrl(currentUser.avatarFileId)+'=s100" alt="" onerror="this.onerror=null;this.parentNode.textContent=\''+escapeHtml(currentUser.initials||'U')+'\'">';
+  else avatarInner.textContent=currentUser.initials||'U';
+  document.getElementById('adminBtn').style.display=currentUser&&currentUser.isAdmin?'':'none';
+}
+
+function fetchApplicationData(isInitialLoad){
+  if(!sessionToken)return;
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    currentUser=response.user;
+    currentLanguage=currentUser.language||'en';
+    globalConversationVersion=Number(response.globalConversationVersion||0);
+    globalMessageVersion=Number(response.globalMessageVersion||0);
+    lastNotificationVersion=globalMessageVersion;
+    conversations=Array.isArray(response.conversations)?response.conversations:[];
+    if(response.online)onlineStatusMap=response.online;
+    if(!localThemeOverride)applyThemeAndAccent(currentUser.theme||'light',currentUser.accentColor||'indigo');
+    renderCurrentUserSidebar();
+    applyAllLabels();
+    renderSidebar();
+    if(isInitialLoad) showPlaceholder();
+    else if(activeConversationId){
+      activeConversation=findConversationById(activeConversationId);
+      if(!activeConversation) showPlaceholder();
+      else renderTopbar();
+    }
+  }).withFailureHandler(function(error){console.error(error)}).getAppData(sessionToken);
+}
+
+function findConversationById(conversationId){
+  return conversations.find(function(conversation){return conversation.conversationId===conversationId})||null;
+}
+
+/* ======================== Polling ======================== */
+
+function computePollDelay(){
+  if(document.hidden)return HIDDEN_POLL_MS;
+  if(Date.now()<fastPollBoostUntil)return FAST_POLL_MS;
+  if(activeConversationId)return NORMAL_POLL_MS;
+  return SLOW_POLL_MS;
+}
+
+function scheduleNextPoll(){
+  stopPolling();
+  pollIntervalHandle=setTimeout(executePoll,computePollDelay());
+}
+
+function startPolling(){scheduleNextPoll();executePoll()}
+function stopPolling(){if(pollIntervalHandle){clearTimeout(pollIntervalHandle);pollIntervalHandle=null}}
+
+function boostFastPolling(ms){fastPollBoostUntil=Math.max(fastPollBoostUntil,Date.now()+(ms||8000))}
+
+function executePoll(){
+  if(isPolling){scheduleNextPoll();return}
+  if(!sessionToken){scheduleNextPoll();return}
+  isPolling=true;
+  lastPollAt=Date.now();
+
+  var currentConvoId=activeConversationId;
+  var sinceVersion=currentConvoId?Number(conversationVersions.get(currentConvoId)||0):0;
+  var sinceConversationVersion=Number(globalConversationVersion||0);
+
+  google.script.run.withSuccessHandler(function(response){
+    isPolling=false;
+    if(!response||!response.ok){handleApplicationError(response);scheduleNextPoll();return}
+    if(response.online)onlineStatusMap=response.online;
+    if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||0);
+    if(typeof response.globalMessageVersion!=='undefined')globalMessageVersion=Number(response.globalMessageVersion||0);
+
+    if(response.conversations){
+      conversations=response.conversations;
+      activeConversation=findConversationById(activeConversationId);
+      renderSidebar();
+      renderTopbar();
+      updateComposerVisibility();
+    }
+
+    if(response.messagesData&&String(response.messagesData.conversationId)===activeConversationId){
+      var messagesData=response.messagesData;
+      if(typeof messagesData.version==='number') conversationVersions.set(activeConversationId,messagesData.version);
+      if(messagesData.reset||!conversationMessages.has(activeConversationId)) conversationMessages.set(activeConversationId,[]);
+      if(messagesData.messages&&messagesData.messages.length){
+        mergeIncomingMessages(activeConversationId,messagesData.messages,!!messagesData.reset);
+        smartRenderMessages();
+      }else if(messagesData.reset){
+        conversationMessages.set(activeConversationId,[]);
+        smartRenderMessages();
+      }
+      checkForNewNotifications(response);
+    }
+
+    /* Background notification poll for OTHER conversations */
+    if(notificationsEnabled&&response.globalMessageVersion&&response.globalMessageVersion>lastNotificationVersion){
+      pollBackgroundNotifications_();
+      lastNotificationVersion=response.globalMessageVersion;
+    }
+
+    scheduleNextPoll();
+  }).withFailureHandler(function(){
+    isPolling=false;
+    scheduleNextPoll();
+  }).pollUpdates(sessionToken,currentConvoId,sinceVersion,sinceConversationVersion);
+}
+
+function checkPendingInvite(){
+  var pendingInvite=localStorage.getItem('heyo_pending_invite')||'';
+  if(!pendingInvite)return;
+  localStorage.removeItem('heyo_pending_invite');
+  if(!sessionToken)return; /* Must be logged in */
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){if(response&&response.error)console.warn('Invite join failed:',response.error);return}
+    if(response.conversations){
+      conversations=response.conversations;
+      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      renderSidebar();
+    }
+    if(response.conversationId)selectConversation(response.conversationId);
+    boostFastPolling(10000);
+  }).withFailureHandler(function(err){console.error('Invite join error:',err)}).joinGroupByInvite(sessionToken,pendingInvite);
+}
+
+/* ======================== Sidebar ======================== */
+
+function renderSidebar(){
+  var channels=conversations.filter(function(c){return c.type==='channel'});
+  var groups=conversations.filter(function(c){return c.type==='group'});
+  var directs=conversations.filter(function(c){return c.type==='direct'});
+  document.getElementById('channelList').innerHTML=channels.map(renderConversationItem).join('');
+  document.getElementById('groupList').innerHTML=groups.map(renderConversationItem).join('');
+  document.getElementById('dmList').innerHTML=directs.length?directs.map(renderConversationItem).join(''):'<div class="empty-st" style="padding:14px;margin:0;font-size:13px">'+t('noMessages')+'</div>';
+}
+
+function renderConversationItem(conversation){
+  var isActive=(conversation.conversationId===activeConversationId)?'active':'';
+  var subtitleHtml=conversation.subtitle?'<div class="ci-sub">'+escapeHtml(conversation.subtitle)+'</div>':'';
+  var lastMsgHtml=conversation.lastMessageText?'<div class="ci-last">'+escapeHtml(conversation.lastMessageText)+'</div>':'';
+  var timeText=conversation.lastMessageAt?formatSidebarTime(conversation.lastMessageAt):'';
+  return '<div class="ci '+isActive+'" onclick="selectConversation(\''+escapeJsString(conversation.conversationId)+'\')">'+
+    buildAvatarHTML(conversation.initials,conversation.avatarFileId,'',false,"event.stopPropagation();openConversationProfileById('"+escapeJsString(conversation.conversationId)+"')")+
+    '<div class="ci-meta"><div class="ci-line"><div class="ci-t">'+escapeHtml(conversation.title||'Chat')+'</div><div class="ci-tm">'+escapeHtml(timeText)+'</div></div>'+subtitleHtml+lastMsgHtml+'</div></div>';
+}
+
+/* ======================== Conversation Selection ======================== */
+
+function selectConversation(conversationId){
+  activeConversationId=conversationId;
+  activeConversation=findConversationById(conversationId);
+  replyTarget=null;
+  renderReplyBanner();
+  renderSidebar();
+  renderTopbar();
+  showConversationView();
+  closeMobileSidebar();
+  resetUploadState(true);
+  clearStagedFile();
+
+  if(!conversationVersions.has(conversationId)) conversationVersions.set(conversationId,0);
+  if(!conversationMessages.has(conversationId)) conversationMessages.set(conversationId,[]);
+  lastRenderedVersion.delete(conversationId);
+
+  updateComposerVisibility();
+  boostFastPolling(12000);
+  loadConversationMessages(true);
+}
+
+function renderTopbar(){
+  var titleElement=document.getElementById('chatTitle');
+  var subtitleElement=document.getElementById('chatSubtitle');
+  var avatar=document.getElementById('topAvatar');
+  var avatarInner=avatar.querySelector('.av-inner');
+
+  if(!activeConversation){
+    titleElement.textContent='Heyo';
+    subtitleElement.textContent='';
+    avatarInner.textContent='H';
+    avatar.onclick=function(){};
+    return;
+  }
+
+  titleElement.textContent=activeConversation.title||'Chat';
+  subtitleElement.textContent=activeConversation.subtitle||'';
+  avatar.onclick=function(){openConversationProfile()};
+
+  if(activeConversation.avatarFileId) avatarInner.innerHTML='<img src="'+driveImageUrl(activeConversation.avatarFileId)+'=s100" alt="" onerror="this.onerror=null;this.parentNode.textContent=\''+escapeHtml(activeConversation.initials||'C')+'\'">';
+  else avatarInner.textContent=activeConversation.initials||'C';
+}
+
+function showPlaceholder(){
+  activeConversationId='';
+  activeConversation=null;
+  renderTopbar();
+  renderSidebar();
+  document.getElementById('placeholderView').style.display='flex';
+  document.getElementById('conversationView').classList.remove('active');
+}
+
+function showConversationView(){
+  document.getElementById('placeholderView').style.display='none';
+  document.getElementById('conversationView').classList.add('active');
+}
+
+function updateComposerVisibility(){
+  var composerWrap=document.getElementById('composerWrap');
+  var groupInviteBtn=document.getElementById('groupInviteBtn');
+  if(!activeConversation){composerWrap.style.display='';groupInviteBtn.style.display='';return}
+  if(activeConversation.type==='channel'&&(!currentUser||currentUser.username!=='usonance')) composerWrap.style.display='none';
+  else composerWrap.style.display='';
+  groupInviteBtn.style.display=(activeConversation&&activeConversation.type!=='channel')?'':'none';
+}
+
+/* ======================== Message Loading ======================== */
+
+function loadConversationMessages(forceScroll){
+  if(!sessionToken||!activeConversationId)return;
+  if(isLoadingMessages){needsMessageReload=true;return}
+  isLoadingMessages=true;
+  var requestedConvoId=activeConversationId;
+  var sinceVersion=Number(conversationVersions.get(requestedConvoId)||0);
+
+  google.script.run.withSuccessHandler(function(response){
+    isLoadingMessages=false;
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var messagesData=response.messagesData;
+    if(!messagesData||String(messagesData.conversationId)!==requestedConvoId)return;
+    if(typeof messagesData.version==='number') conversationVersions.set(requestedConvoId,messagesData.version);
+    if(messagesData.reset||!conversationMessages.has(requestedConvoId)) conversationMessages.set(requestedConvoId,[]);
+    if(messagesData.messages&&messagesData.messages.length) mergeIncomingMessages(requestedConvoId,messagesData.messages,!!messagesData.reset);
+    else if(messagesData.reset) conversationMessages.set(requestedConvoId,[]);
+    if(activeConversationId===requestedConvoId) renderAllMessages(forceScroll);
+    if(needsMessageReload){needsMessageReload=false;loadConversationMessages(false)}
+  }).withFailureHandler(function(error){console.error(error);isLoadingMessages=false}).getConversationMessages(sessionToken,requestedConvoId,sinceVersion);
+}
+
+function mergeIncomingMessages(conversationId,incomingMessages,isReset){
+  var currentMessages=isReset?[]:(conversationMessages.get(conversationId)||[]);
+  var messagesById=new Map();
+  currentMessages.forEach(function(message){messagesById.set(message.messageId,message)});
+  incomingMessages.forEach(function(message){
+    if(message&&message.isDeletedEvent){messagesById.delete(message.messageId);return}
+    messagesById.set(message.messageId,message);
+  });
+  var mergedMessages=[];
+  messagesById.forEach(function(message){if(!message.deletedAt) mergedMessages.push(message)});
+  mergedMessages.sort(function(a,b){
+    var timeA=a.createdAt?new Date(a.createdAt).getTime():0;
+    var timeB=b.createdAt?new Date(b.createdAt).getTime():0;
+    if(timeA!==timeB)return timeA-timeB;
+    return String(a.messageId).localeCompare(String(b.messageId));
+  });
+  conversationMessages.set(conversationId,mergedMessages);
+}
+
+function smartRenderMessages(){
+  var currentVersion=conversationVersions.get(activeConversationId)||0;
+  var lastVersion=lastRenderedVersion.get(activeConversationId)||0;
+  if(currentVersion!==lastVersion) renderAllMessages(false);
+}
+
+function renderAllMessages(forceScroll){
+  var messagesContainer=document.getElementById('messagesContainer');
+  var messageList=conversationMessages.get(activeConversationId)||[];
+  var isNearBottom=Math.abs(messagesContainer.scrollHeight-messagesContainer.scrollTop-messagesContainer.clientHeight)<120;
+
+  var currentVersion=conversationVersions.get(activeConversationId)||0;
+  lastRenderedVersion.set(activeConversationId,currentVersion);
+
+  if(!messageList.length){messagesContainer.innerHTML='<div class="empty-st">'+t('noMessages')+'</div>';return}
+
+  var htmlParts=[], previousDateString='';
+  for(var i=0;i<messageList.length;i++){
+    var message=messageList[i];
+    var dateString=getDateString(message.createdAt);
+    if(dateString&&dateString!==previousDateString){
+      htmlParts.push('<div class="date-sep">'+escapeHtml(formatDateSeparator(message.createdAt))+'</div>');
+      previousDateString=dateString;
+    }
+    htmlParts.push(renderSingleMessage(message));
+  }
+
+  messagesContainer.innerHTML=htmlParts.join('');
+  if(forceScroll||isNearBottom) messagesContainer.scrollTop=messagesContainer.scrollHeight;
+}
+
+function getDateString(isoString){
+  if(!isoString)return'';
+  var date=new Date(isoString);
+  if(isNaN(date.getTime()))return'';
+  return date.getFullYear()+'-'+(date.getMonth()+1)+'-'+date.getDate();
+}
+
+function formatDateSeparator(isoString){
+  var date=new Date(isoString);
+  if(isNaN(date.getTime()))return'';
+  var now=new Date();
+  if(date.toDateString()===now.toDateString()) return t('today');
+  var yesterday=new Date(now); yesterday.setDate(yesterday.getDate()-1);
+  if(date.toDateString()===yesterday.toDateString()) return t('yesterday');
+  return date.toLocaleDateString(currentLanguage==='ru'?'ru-RU':'en-US',{year:'numeric',month:'long',day:'numeric'});
+}
+
+function renderSingleMessage(message){
+  var mineClass=message.isMine?'mine':'';
+  var isOnline=onlineStatusMap[message.userId]||false;
+  var avatarClickHandler="openProfile('"+escapeJsString(message.userId)+"')";
+  /* Use currentUser avatar for own messages if message doesn't have one */
+  var msgAvatar=message.avatarFileId||'';
+  if(!msgAvatar&&message.isMine&&currentUser&&currentUser.avatarFileId)msgAvatar=currentUser.avatarFileId;
+  var forwardedHtml='';
+  if(message.forwardedFromMessageId){
+    var sourceLabel=message.forwardedFromTitle?escapeHtml(message.forwardedFromTitle):'';
+    forwardedHtml='<div class="m-fwd">↗ '+t('forwarded')+' '+sourceLabel+'</div>';
+  }
+
+  var replyHtml='';
+  if(message.replyToMessageId){
+    replyHtml='<div class="m-rpl"><div class="m-rpl-n">'+escapeHtml(message.replyDisplayName||'')+'</div><div class="m-rpl-t">'+escapeHtml(message.replyPreview||'')+'</div></div>';
+  }
+
+  var specialHtml=renderSpecialMessageContent(message);
+  var attachmentsHtml=renderMessageAttachments(message.attachments||[]);
+  var textHtml=message.text?'<div class="m-txt">'+escapeHtml(message.text)+'</div>':'';
+  var metaParts=[];
+  if(message.createdAt) metaParts.push(formatMessageTime(message.createdAt));
+  if(message.editedAt) metaParts.push(t('edited'));
+  var metaHtml=metaParts.map(function(part){return '<span>'+escapeHtml(part)+'</span>'}).join('');
+
+  return '<div class="mr '+mineClass+'">'+
+    buildAvatarHTML(message.initials,msgAvatar,'',isOnline,avatarClickHandler)+
+    '<div class="mc" data-mid="'+escapeAttr(message.messageId)+'" data-own="'+(message.isMine?'1':'0')+'">'+
+      '<div class="mh"><div class="mh-a" onclick="openProfile(\''+escapeJsString(message.userId)+'\')">'+escapeHtml(message.displayName||'User')+'</div><div class="mh-u">@'+escapeHtml(message.username||'')+'</div></div>'+
+      forwardedHtml+replyHtml+specialHtml+attachmentsHtml+textHtml+
+      '<div class="m-meta">'+metaHtml+'</div>'+
+    '</div></div>';
+}
+
+function renderSpecialMessageContent(message){
+  if(message.messageType==='group_invite'){
+    var meta=message.meta||{};
+    var title=meta.groupTitle||'Group';
+    var avatarFileId=meta.groupAvatarFileId||'';
+    var initials=meta.groupInitials||'G';
+    var memberCount=Number(meta.memberCount||0);
+    var conversationId=String(meta.groupConversationId||'');
+    var isAlreadyIn=!!findConversationById(conversationId);
+    return '<div class="inv-card"><div class="inv-head">'+buildAvatarHTML(initials,avatarFileId,'',false,"openConversationProfileById('"+escapeJsString(conversationId)+"')")+'<div class="inv-meta"><div class="inv-title">'+escapeHtml(title)+'</div><div class="inv-sub">'+escapeHtml(String(memberCount)+' '+t('members'))+'</div></div></div><div class="inv-acts">'+
+      (isAlreadyIn?'<button class="inv-sec" onclick="selectConversation(\''+escapeJsString(conversationId)+'\')">'+t('openGroup')+'</button>':'<button class="inv-btn" onclick="joinGroupFromMessage(\''+escapeJsString(meta.inviteCode||'')+'\')">'+t('joinGroup')+'</button>')+
+      '<button class="inv-sec" onclick="openConversationProfileById(\''+escapeJsString(conversationId)+'\')">'+t('groupProfile')+'</button>'+
+      '</div></div>';
+  }
+  return '';
+}
+
+/* ======================== Attachment Rendering ======================== */
+
+function renderMessageAttachments(attachments){
+  if(!attachments||!attachments.length)return'';
+  return '<div class="m-atts">'+attachments.map(renderSingleAttachment).join('')+'</div>';
+}
+
+function renderSingleAttachment(attachment){
+  var fileName=escapeHtml(attachment.name||'file');
+  var metaText=escapeHtml(buildAttachmentMetaText(attachment));
+  var fileId=attachment.fileId;
+  var category=detectFileCategory(attachment.mimeType);
+  var viewLink=escapeAttr(driveViewUrl(fileId));
+  var downloadLink=escapeAttr(driveDownloadUrl(fileId));
+
+  if(category==='image'){
+    var imageSrc=escapeAttr(driveImageUrl(fileId));
+    return '<div class="att-card"><img class="att-img" src="'+imageSrc+'" alt="'+fileName+'" loading="lazy" onclick="previewFullImage(\''+escapeJsString(imageSrc)+'\')" onerror="this.style.display=\'none\'"><div class="att-cap"><div class="att-cap-n">'+fileName+'</div><div class="att-cap-m">'+metaText+'</div><div class="att-acts"><a class="att-lnk" href="'+viewLink+'" target="_blank">Open</a><a class="att-lnk" href="'+downloadLink+'" target="_blank">Download</a></div></div></div>';
+  }
+  if(category==='video'){
+    var previewSrc=escapeAttr(drivePreviewUrl(fileId));
+    return '<div class="att-card"><div class="att-vw"><iframe src="'+previewSrc+'" allow="autoplay" allowfullscreen></iframe></div><div class="att-cap"><div class="att-cap-n">'+fileName+'</div><div class="att-cap-m">'+metaText+'</div><div class="att-acts"><a class="att-lnk" href="'+viewLink+'" target="_blank">Open</a><a class="att-lnk" href="'+downloadLink+'" target="_blank">Download</a></div></div></div>';
+  }
+  if(category==='audio'){
+    var audioSrc=escapeAttr(drivePreviewUrl(fileId));
+    return '<div class="att-card"><div class="att-aw"><iframe src="'+audioSrc+'" allow="autoplay"></iframe></div><div class="att-cap"><div class="att-cap-n">'+fileName+'</div><div class="att-cap-m">'+metaText+'</div><div class="att-acts"><a class="att-lnk" href="'+downloadLink+'" target="_blank">Download</a></div></div></div>';
+  }
+  return '<div class="att-card"><div class="att-file"><div class="att-ico">'+getFileIcon(attachment)+'</div><div class="att-body"><div class="att-name">'+fileName+'</div><div class="att-meta">'+metaText+'</div><div class="att-acts"><a class="att-lnk" href="'+viewLink+'" target="_blank">Open</a><a class="att-lnk" href="'+downloadLink+'" target="_blank">Download</a></div></div></div></div>';
+}
+
+function previewFullImage(imageSource){
+  var overlay=document.createElement('div');
+  overlay.className='img-ov';
+  overlay.innerHTML='<img src="'+imageSource+'">';
+  overlay.onclick=function(){overlay.remove()};
+  document.body.appendChild(overlay);
+}
+
+/* ======================== File Staging ======================== */
+
+function openFilePicker(){
+  if(!sessionToken||!activeConversationId||uploadState.active)return;
+  document.getElementById('fileInput').click();
+}
+
+function stageSelectedFile(file){
+  if(!file)return;
+  if(file.size>MAX_UPLOAD_BYTES){alert('File exceeds 1 GB limit.');return}
+  stagedFile=file;
+  var stagedWrap=document.getElementById('stagedFileWrap'), stagedNameEl=document.getElementById('stagedFileName'), stagedMetaEl=document.getElementById('stagedFileMeta'), stagedPreviewEl=document.getElementById('stagedPreview');
+  stagedNameEl.textContent=file.name;
+  stagedMetaEl.textContent=formatFileSize(file.size)+' • '+(file.type||'file');
+  stagedPreviewEl.innerHTML='';
+  if(file.type&&file.type.startsWith('image/')){
+    var previewImage=document.createElement('img');
+    previewImage.className='staged-img';
+    previewImage.src=URL.createObjectURL(file);
+    stagedPreviewEl.appendChild(previewImage);
+  }else stagedPreviewEl.innerHTML='<div class="att-ico">'+getFileIcon({mimeType:file.type,name:file.name})+'</div>';
+  stagedWrap.classList.add('active');
+}
+
+function clearStagedFile(){
+  stagedFile=null;
+  document.getElementById('stagedFileWrap').classList.remove('active');
+  document.getElementById('stagedPreview').innerHTML='';
+  document.getElementById('fileInput').value='';
+}
+
+/* ======================== Send Message ======================== */
+
+function handleSend(){
+  if(!sessionToken||!activeConversationId||uploadState.active)return;
+  var composerInput=document.getElementById('composerInput'), messageText=composerInput.value.trim();
+  if(!messageText&&!stagedFile)return;
+
+  if(stagedFile){uploadAndSendFile(stagedFile,messageText);return}
+
+  var requestedConvoId=activeConversationId;
+  document.getElementById('sendBtn').disabled=true;
+  google.script.run.withSuccessHandler(function(response){
+    document.getElementById('sendBtn').disabled=false;
+    if(!response||!response.ok){handleApplicationError(response); if(response&&response.error) alert(response.error); return}
+    composerInput.value='';
+    autoGrowTextarea(composerInput);
+    clearReply();
+    boostFastPolling(12000);
+    if(response.conversations){
+      conversations=response.conversations;
+      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      activeConversation=findConversationById(activeConversationId);
+      renderSidebar(); renderTopbar();
+    }
+    if(response.message&&String(response.conversationId)===requestedConvoId){
+      conversationVersions.set(requestedConvoId,response.version);
+      mergeIncomingMessages(requestedConvoId,[response.message],false);
+      renderAllMessages(true);
+    }
+  }).withFailureHandler(function(){
+    document.getElementById('sendBtn').disabled=false;
+    alert('Send failed.');
+  }).sendMessage(sessionToken,requestedConvoId,messageText,replyTarget?replyTarget.messageId:'');
+}
+
+function uploadAndSendFile(file,messageText){
+  var conversationId=activeConversationId;
+  uploadState={active:true,file:file,conversationId:conversationId,progress:0,xhr:null,uploadToken:'',uploadUrl:'',fileId:''};
+  showUploadBanner('Uploading '+file.name,0,true);
+  document.getElementById('sendBtn').disabled=true;
+
+  google.script.run.withSuccessHandler(function(sessionResponse){
+    if(!uploadState.active)return;
+    if(!sessionResponse||!sessionResponse.ok){alert((sessionResponse&&sessionResponse.error)||'Upload failed.');resetUploadState();return}
+    uploadState.uploadToken=sessionResponse.uploadToken;
+    uploadState.uploadUrl=sessionResponse.uploadUrl;
+
+    performResumableUpload(file,sessionResponse.uploadUrl,function onProgress(percent,xhr){
+      uploadState.xhr=xhr;
+      showUploadBanner('Uploading '+file.name+' — '+percent+'%',percent,true);
+    }).then(function(fileId){
+      if(!uploadState.active)return;
+      uploadState.fileId=fileId||'';
+      showUploadBanner('Finalizing...',100,false);
+
+      var finalizeWithFileId=function(resolvedFileId){
+        google.script.run.withSuccessHandler(function(finalizeResponse){
+          if(!finalizeResponse||!finalizeResponse.ok){handleApplicationError(finalizeResponse);alert((finalizeResponse&&finalizeResponse.error)||'Finalize failed.');resetUploadState();return}
+          document.getElementById('composerInput').value='';
+          autoGrowTextarea(document.getElementById('composerInput'));
+          clearReply();
+          clearStagedFile();
+          boostFastPolling(12000);
+          if(finalizeResponse.conversations){
+            conversations=finalizeResponse.conversations;
+            if(typeof finalizeResponse.globalConversationVersion!=='undefined')globalConversationVersion=Number(finalizeResponse.globalConversationVersion||globalConversationVersion);
+            activeConversation=findConversationById(activeConversationId);
+            renderSidebar(); renderTopbar();
+          }
+          if(finalizeResponse.message&&String(finalizeResponse.conversationId)===conversationId){
+            conversationVersions.set(conversationId,finalizeResponse.version);
+            mergeIncomingMessages(conversationId,[finalizeResponse.message],false);
+            renderAllMessages(true);
+          }
+          resetUploadState();
+        }).withFailureHandler(function(){alert('Finalize failed.');resetUploadState()}).finalizeUploadedMessage(sessionToken,{
+          uploadToken:uploadState.uploadToken,fileId:resolvedFileId,fileName:file.name,mimeType:file.type||'application/octet-stream',fileSize:file.size,text:messageText,replyToMessageId:replyTarget?replyTarget.messageId:''
+        });
+      };
+
+      if(fileId) finalizeWithFileId(fileId);
+      else google.script.run.withSuccessHandler(function(resolveResponse){
+        if(resolveResponse&&resolveResponse.ok) finalizeWithFileId(resolveResponse.fileId);
+        else resetUploadState();
+      }).withFailureHandler(function(){resetUploadState()}).resolveUploadedFileId(sessionToken,uploadState.uploadToken);
+    }).catch(function(){resetUploadState()});
+  }).withFailureHandler(function(){alert('Upload session failed.');resetUploadState()}).createDriveUploadSession(sessionToken,{
+    conversationId:conversationId,fileName:file.name,mimeType:file.type||'application/octet-stream',fileSize:file.size,text:messageText,replyToMessageId:replyTarget?replyTarget.messageId:''
+  });
+}
+
+async function performResumableUpload(file,uploadUrl,onProgress){
+  var startByte=0,resolvedFileId='';
+  while(startByte<file.size){
+    var endByte=Math.min(startByte+CHUNK_SIZE,file.size), chunk=file.slice(startByte,endByte), contentRange='bytes '+startByte+'-'+(endByte-1)+'/'+file.size;
+    var chunkResult=await new Promise(function(resolve,reject){
+      var xhr=new XMLHttpRequest();
+      xhr.open('PUT',uploadUrl,true);
+      xhr.setRequestHeader('Content-Type',file.type||'application/octet-stream');
+      xhr.setRequestHeader('Content-Range',contentRange);
+      xhr.upload.onprogress=function(event){
+        if(event.lengthComputable){
+          var totalLoaded=Math.min(file.size,startByte+event.loaded);
+          onProgress(Math.min(99,Math.floor((totalLoaded/file.size)*100)),xhr);
+        }
+      };
+      xhr.onreadystatechange=function(){if(xhr.readyState===4)resolve({status:xhr.status,xhr:xhr})};
+      xhr.onerror=function(){reject(new Error('Network error during upload.'))};
+      xhr.onabort=function(){reject(new Error('Upload cancelled.'))};
+      xhr.send(chunk);
+    });
+
+    if(chunkResult.status===308){
+      var rangeHeader=chunkResult.xhr.getResponseHeader('Range');
+      if(rangeHeader){
+        var rangeMatch=rangeHeader.match(/bytes=0-(\d+)$/i);
+        startByte=rangeMatch?(parseInt(rangeMatch[1],10)+1):endByte;
+      }else startByte=endByte;
+      continue;
+    }
+    if(chunkResult.status>=200&&chunkResult.status<300){
+      try{resolvedFileId=JSON.parse(chunkResult.xhr.responseText||'{}').id||''}catch(e){}
+      onProgress(100,chunkResult.xhr);
+      return resolvedFileId;
+    }
+    if(chunkResult.status===0&&endByte>=file.size){onProgress(100,chunkResult.xhr);return''}
+    throw new Error('Upload failed with HTTP '+chunkResult.status);
+  }
+  return resolvedFileId;
+}
+
+function cancelCurrentUpload(){ if(uploadState.active&&uploadState.xhr){try{uploadState.xhr.abort()}catch(e){}} resetUploadState(); }
+function resetUploadState(alsoHideBanner){ if(alsoHideBanner!==false)hideUploadBanner(); uploadState={active:false,file:null,xhr:null,uploadToken:'',uploadUrl:'',fileId:'',conversationId:'',progress:0}; document.getElementById('fileInput').value=''; document.getElementById('sendBtn').disabled=false; }
+function showUploadBanner(text,percent,showCancelButton){
+  document.getElementById('uploadBanner').classList.add('active');
+  document.getElementById('uploadLabel').textContent='Upload';
+  document.getElementById('uploadText').textContent=text;
+  if(typeof percent==='number'){document.getElementById('uploadProgressWrap').style.display='';document.getElementById('uploadProgress').value=Math.max(0,Math.min(100,percent))}
+  else document.getElementById('uploadProgressWrap').style.display='none';
+  document.getElementById('uploadCancelBtn').style.display=showCancelButton?'':'none';
+}
+function hideUploadBanner(){document.getElementById('uploadBanner').classList.remove('active')}
+
+/* ======================== Reply ======================== */
+
+function clearReply(){replyTarget=null;renderReplyBanner()}
+function renderReplyBanner(){
+  var banner=document.getElementById('replyBanner');
+  if(!replyTarget){banner.classList.remove('active');return}
+  banner.classList.add('active');
+  document.getElementById('replyLabel').textContent=t('reply')+': '+(replyTarget.displayName||'');
+  document.getElementById('replyText').textContent=truncateString(replyTarget.text||'',140);
+}
+function getMessageFromActiveConversation(messageId){
+  var messages=conversationMessages.get(activeConversationId)||[];
+  return messages.find(function(m){return m.messageId===messageId})||null;
+}
+
+/* ======================== Message Context Menu ======================== */
+
+function openDropdownAt(x,y,messageId){
+  var message=getMessageFromActiveConversation(messageId);
+  if(!message)return;
+  closeDropdown();
+  isDropdownOpen=true;
+  dropdownMessageId=messageId;
+  var menu=document.getElementById('messageDropdown'), backdrop=document.getElementById('dropdownBackdrop'), items=[];
+  items.push('<button onclick="replyToMessage(\''+escapeJsString(messageId)+'\')">'+t('reply')+'</button>');
+  items.push('<button onclick="copyMessageText(\''+escapeJsString(messageId)+'\')">'+t('copy')+'</button>');
+  if(message.messageType!=='group_invite') items.push('<button onclick="forwardMessageUI(\''+escapeJsString(messageId)+'\')">'+t('forward')+'</button>');
+  if(message.isMine||isAdminUser()) items.push('<button onclick="editMessageUI(\''+escapeJsString(messageId)+'\')">'+t('edit')+'</button>');
+  if(message.isMine||isAdminUser()) items.push('<button class="danger" onclick="deleteMessageUI(\''+escapeJsString(messageId)+'\')">'+t('deleteMsg')+'</button>');
+
+  menu.innerHTML=items.join('');
+  menu.classList.add('open');
+  backdrop.classList.add('open');
+  menu.style.left='0px'; menu.style.top='0px';
+  var menuRect=menu.getBoundingClientRect();
+  var left=Math.min(x,window.innerWidth-menuRect.width-8), top=Math.min(y,window.innerHeight-menuRect.height-8);
+  if(left<8)left=8;
+  if(top<8)top=8;
+  menu.style.left=left+'px';
+  menu.style.top=top+'px';
+}
+
+function closeDropdown(){isDropdownOpen=false;document.getElementById('messageDropdown').classList.remove('open');document.getElementById('dropdownBackdrop').classList.remove('open')}
+function replyToMessage(messageId){var message=getMessageFromActiveConversation(messageId);closeDropdown();if(!message)return;replyTarget=message;renderReplyBanner();document.getElementById('composerInput').focus()}
+function copyMessageText(messageId){var message=getMessageFromActiveConversation(messageId);closeDropdown();if(message&&message.text&&navigator.clipboard)navigator.clipboard.writeText(message.text)}
+
+function editMessageUI(messageId){
+  closeDropdown();
+  google.script.run.withSuccessHandler(function(loadResponse){
+    if(!loadResponse||!loadResponse.ok){handleApplicationError(loadResponse);return}
+    var currentText=(loadResponse.message&&loadResponse.message.text)||'';
+    showPrompt(t('edit'),'',currentText).then(function(newText){
+      if(newText===null)return;
+      var trimmedText=String(newText||'').trim();
+      if(!trimmedText)return;
+      google.script.run.withSuccessHandler(function(response){
+        if(!response||!response.ok){handleApplicationError(response);return}
+        boostFastPolling(8000);
+        if(response.message){mergeIncomingMessages(activeConversationId,[response.message],false);renderAllMessages(false)}
+        if(response.conversations){conversations=response.conversations; if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion); renderSidebar()}
+      }).withFailureHandler(function(){}).editMessage(sessionToken,messageId,trimmedText);
+    });
+  }).withFailureHandler(function(){}).getMessageForEdit(sessionToken,messageId);
+}
+
+function deleteMessageUI(messageId){
+  closeDropdown();
+  showConfirm(t('deleteMsg'),t('deleteMsg')+'?',t('delete'),true).then(function(confirmed){
+    if(!confirmed)return;
+    google.script.run.withSuccessHandler(function(response){
+      if(!response||!response.ok){handleApplicationError(response);return}
+      boostFastPolling(8000);
+      if(response.deletedMessageId){
+        var currentList=conversationMessages.get(activeConversationId)||[];
+        conversationMessages.set(activeConversationId,currentList.filter(function(m){return m.messageId!==response.deletedMessageId}));
+        renderAllMessages(false);
+      }
+      if(response.conversations){conversations=response.conversations; if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion); renderSidebar()}
+    }).withFailureHandler(function(){}).deleteMessage(sessionToken,messageId);
+  });
+}
+
+function toggleAdminDropdown(dropId){
+  var el=document.getElementById(dropId);
+  if(!el)return;
+  el.classList.toggle('open');
+}
+
+/* ======================== Forward ======================== */
+
+function forwardMessageUI(messageId){
+  closeDropdown();
+  var targets=conversations.filter(function(c){return c.type!=='channel'});
+  if(!targets.length)return;
+  var html='<div style="max-height:280px;overflow-y:auto">';
+  targets.forEach(function(convo){
+    html+='<div class="si" onclick="executeForward(\''+escapeJsString(messageId)+'\',\''+escapeJsString(convo.conversationId)+'\')">'+buildAvatarHTML(convo.initials,convo.avatarFileId)+'<div class="si-meta"><div class="si-title">'+escapeHtml(convo.title)+'</div></div></div>';
+  });
+  html+='</div>';
+  openModal({title:t('forward'),html:html,buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'}]});
+}
+
+function executeForward(messageId,targetConversationId){
+  closeModal(null);
+  google.script.run.withSuccessHandler(function(response){
+    if(response&&response.conversations){conversations=response.conversations; if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion); renderSidebar()}
+  }).withFailureHandler(function(){}).forwardMessage(sessionToken,{messageId:messageId,targetConversationId:targetConversationId});
+}
+
+/* ======================== Invite Card Message ======================== */
+
+function sendGroupInviteUI(){
+  if(!activeConversation||activeConversation.type==='channel')return;
+  var groups=conversations.filter(function(c){return c.type==='group'&&c.conversationId!==activeConversationId});
+  if(!groups.length){showAlert(t('inviteToChat'),'No other groups available.');return}
+  var html='<div style="max-height:320px;overflow-y:auto">';
+  groups.forEach(function(group){
+    html+='<div class="si" onclick="executeSendGroupInvite(\''+escapeJsString(group.conversationId)+'\')">'+buildAvatarHTML(group.initials,group.avatarFileId)+'<div class="si-meta"><div class="si-title">'+escapeHtml(group.title)+'</div><div class="si-sub">'+escapeHtml(group.memberCount+' '+t('members'))+'</div></div></div>';
+  });
+  html+='</div>';
+  openModal({title:t('inviteToChat'),html:html,buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'}]});
+}
+
+function executeSendGroupInvite(groupConversationId){
+  closeModal(null);
+  if(!activeConversationId)return;
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response); if(response&&response.error) alert(response.error); return}
+    boostFastPolling(10000);
+    if(response.conversations){
+      conversations=response.conversations;
+      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      activeConversation=findConversationById(activeConversationId);
+      renderSidebar(); renderTopbar();
+    }
+    if(response.message&&String(response.conversationId)===activeConversationId){
+      conversationVersions.set(activeConversationId,response.version);
+      mergeIncomingMessages(activeConversationId,[response.message],false);
+      renderAllMessages(true);
+    }
+  }).withFailureHandler(function(){alert('Failed.')}).sendGroupInviteMessage(sessionToken,{targetConversationId:activeConversationId,groupConversationId:groupConversationId});
+}
+
+function joinGroupFromMessage(inviteCode){
+  if(!inviteCode)return;
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response); if(response&&response.error) alert(response.error); return}
+    if(response.conversations){
+      conversations=response.conversations;
+      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      renderSidebar();
+    }
+    if(response.conversationId) selectConversation(response.conversationId);
+    boostFastPolling(10000);
+  }).withFailureHandler(function(){alert('Failed.')}).joinGroupByInvite(sessionToken,inviteCode);
+}
+
+/* ======================== User Profile ======================== */
+
+function openProfile(userId){
+  if(!userId||isProfileModalOpen)return;
+  isProfileModalOpen=true;
+  google.script.run.withSuccessHandler(function(response){
+    isProfileModalOpen=false;
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var profile=response.profile;
+    var html='<div class="p-hdr">'+buildAvatarHTML(profile.initials,profile.avatarFileId,'xl',profile.isOnline)+
+      '<div class="p-name">'+escapeHtml(profile.displayName)+(profile.isAppAdmin?'<span class="badge-admin">admin</span>':'')+'</div>';
+    if(profile.username) html+='<div class="p-un">@'+escapeHtml(profile.username)+'</div>';
+    html+='<div class="p-st '+(profile.isOnline?'on':'off')+'">'+t(profile.isOnline?'online':'offline')+'</div>';
+    if(profile.bio) html+='<div class="p-bio">'+escapeHtml(profile.bio)+'</div>';
+    if(profile.birthday) html+='<div class="p-info">🎂 '+escapeHtml(profile.birthday)+'</div>';
+    if(profile.isSelf&&(profile.email||profile.phone)) html+='<div class="p-info">'+(profile.email?'✉ '+escapeHtml(profile.email):'')+(profile.phone?' • 📱 '+escapeHtml(profile.phone):'')+'</div>';
+    html+='<div class="p-acts">';
+    if(profile.isSelf) html+='<button class="secondary-btn" onclick="closeModal(null);changeAvatarUI(\'user\',\'\')">'+t('changeAvatar')+'</button>';
+    if(!profile.isSelf&&!profile.isDeleted&&!profile.isBanned){
+      html+='<button class="primary-btn" onclick="closeModal(null);startDirectMessage(\''+escapeJsString(profile.userId)+'\')">'+t('sendMessage')+'</button>';
+      if(profile.blockedByMe) html+='<button class="secondary-btn" onclick="doUnblockUser(\''+escapeJsString(profile.userId)+'\')">'+t('unblock')+'</button>';
+      else html+='<button class="danger-btn" onclick="doBlockUser(\''+escapeJsString(profile.userId)+'\')">'+t('block')+'</button>';
+    }
+    if(isAdminUser()&&!profile.isSelf&&!profile.isDeleted){
+      if(profile.isBanned) html+='<button class="secondary-btn" onclick="adminUnbanUserUI(\''+escapeJsString(profile.userId)+'\')">'+t('unban')+'</button>';
+      else html+='<button class="warning-btn" onclick="adminBanUserUI(\''+escapeJsString(profile.userId)+'\')">'+t('ban')+'</button>';
+      if(isSuperAdminUser()){
+        if(profile.isAppAdmin) html+='<button class="danger-btn" onclick="adminRevokeAdminUI(\''+escapeJsString(profile.userId)+'\')">'+t('revokeAdmin')+'</button>';
+        else html+='<button class="secondary-btn" onclick="adminGrantAdminUI(\''+escapeJsString(profile.userId)+'\')">'+t('grantAdmin')+'</button>';
+      }
+    }
+    html+='</div></div>';
+    openModal({title:t('userProfile'),html:html,buttons:[{text:t('close'),className:'secondary-btn',value:'close'}]});
+  }).withFailureHandler(function(){isProfileModalOpen=false}).getUserProfile(sessionToken,userId);
+}
+
+/* ======================== Conversation/Group Profile ======================== */
+
+function openConversationProfile(){
+  if(!activeConversation)return;
+  if(activeConversation.type!=='group'&&activeConversation.type!=='channel')return;
+  loadConversationProfile(activeConversationId);
+}
+
+function openConversationProfileById(conversationId){
+  if(!conversationId)return;
+  loadConversationProfile(conversationId);
+}
+
+function loadConversationProfile(conversationId){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var profile=response.profile;
+    var html='<div class="p-hdr">'+buildAvatarHTML(profile.initials,profile.avatarFileId,'xl')+'<div class="p-name">'+escapeHtml(profile.title)+'</div>';
+    if(profile.description) html+='<div class="p-bio">'+escapeHtml(profile.description)+'</div>';
+    html+='<div class="p-un">'+profile.memberCount+' '+t('members')+'</div>';
+    if(profile.type==='group'&&(profile.isCreator||profile.isAdminViewer)) html+='<div style="margin-top:6px"><button class="secondary-btn" onclick="closeModal(null);changeAvatarUI(\'group\',\''+escapeJsString(profile.conversationId)+'\')">'+t('changeAvatar')+'</button></div>';
+    html+='</div>';
+    html+='<div style="padding:0 4px"><div class="sec-title">'+t('members')+'</div>';
+    profile.members.forEach(function(member){
+      html+='<div class="si" onclick="closeModal(null);openProfile(\''+escapeJsString(member.userId)+'\')">'+buildAvatarHTML(member.initials,member.avatarFileId)+'<div class="si-meta"><div class="si-title">'+escapeHtml(member.displayName)+(member.isAppAdmin?'<span class="badge-admin">admin</span>':'')+'</div><div class="si-sub">@'+escapeHtml(member.username||'')+(member.isBanned?' • banned':'')+'</div></div></div>';
+    });
+    html+='</div>';
+
+    var buttons=[{text:t('close'),className:'secondary-btn',value:'close'}];
+    if(profile.type==='group'){
+      buttons.unshift({text:t('inviteLink'),className:'secondary-btn',value:'invite'});
+      if(profile.isCreator||profile.isAdminViewer) buttons.unshift({text:t('editGroup'),className:'primary-btn',value:'edit'});
+      if(profile.isCreator||profile.isAdminViewer) buttons.push({text:t('deleteGroup'),className:'danger-btn',value:'deleteGroup'});
+      buttons.push({text:t('leaveGroup'),className:'secondary-btn',value:'leave'});
+    }
+
+    openModal({
+      title:profile.type==='channel'?'Channel':t('groupProfile'),
+      html:html,
+      buttons:buttons,
+      onAction:function(value){
+        if(value==='invite'){closeModal(null);showInviteLink(conversationId)}
+        else if(value==='edit'){closeModal(null);editGroupUI(conversationId)}
+        else if(value==='leave'){closeModal(null);doLeaveGroup(conversationId)}
+        else if(value==='deleteGroup'){closeModal(null);doDeleteGroup(conversationId)}
+        else closeModal(null);
+      }
+    });
+  }).withFailureHandler(function(){}).getGroupProfile(sessionToken,conversationId);
+}
+
+/* ======================== Avatar Upload ======================== */
+
+function changeAvatarUI(targetType,targetId){
+  var fileInput=document.createElement('input');
+  fileInput.type='file';
+  fileInput.accept='image/*';
+  fileInput.onchange=function(){
+    var file=fileInput.files&&fileInput.files[0];
+    if(!file||file.size>10*1024*1024)return;
+    var uploadConversationId=targetType==='group'&&targetId?targetId:(activeConversationId||'cnv_heyo_channel');
+    google.script.run.withSuccessHandler(function(sessionResponse){
+      if(!sessionResponse||!sessionResponse.ok)return;
+      var uploadToken=sessionResponse.uploadToken;
+      var xhr=new XMLHttpRequest();
+      xhr.open('PUT',sessionResponse.uploadUrl,true);
+      xhr.setRequestHeader('Content-Type',file.type);
+      xhr.setRequestHeader('Content-Range','bytes 0-'+(file.size-1)+'/'+file.size);
+      xhr.onreadystatechange=function(){
+        if(xhr.readyState!==4)return;
+        var resolvedFileId='';
+        try{resolvedFileId=JSON.parse(xhr.responseText||'{}').id||''}catch(e){}
+        if(!resolvedFileId){
+          google.script.run.withSuccessHandler(function(resolveResponse){
+            if(resolveResponse&&resolveResponse.ok) saveAvatarFileId(resolveResponse.fileId,targetType,targetId);
+          }).withFailureHandler(function(){}).resolveUploadedFileId(sessionToken,uploadToken);
+          return;
+        }
+        saveAvatarFileId(resolvedFileId,targetType,targetId);
+      };
+      xhr.send(file);
+    }).withFailureHandler(function(){}).createDriveUploadSession(sessionToken,{
+      conversationId:uploadConversationId,fileName:file.name,mimeType:file.type,fileSize:file.size,text:'',replyToMessageId:''
+    });
+  };
+  fileInput.click();
+}
+
+function saveAvatarFileId(fileId,targetType,targetId){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    if(response.user){currentUser=response.user;renderCurrentUserSidebar()}
+    if(response.conversations){
+      conversations=response.conversations;
+      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      activeConversation=findConversationById(activeConversationId);
+      renderSidebar(); renderTopbar();
+    }
+    renderAllMessages(false);
+    boostFastPolling(8000);
+  }).withFailureHandler(function(){}).updateAvatar(sessionToken,{avatarFileId:fileId,targetType:targetType||'user',targetId:targetId||''});
+}
+
+/* ======================== Groups ======================== */
+
+function createGroupUI(){
+  var html='<div class="field"><label>'+t('groupName')+'</label><input id="newGroupTitle" type="text" maxlength="60"></div><div class="field"><label>'+t('groupDesc')+'</label><textarea id="newGroupDesc" rows="2" maxlength="500"></textarea></div>';
+  openModal({
+    title:t('createGroup'),html:html,
+    buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('createGroup'),className:'primary-btn',value:'create'}],
+    onAction:function(value){
+      if(value!=='create'){closeModal(null);return}
+      var title=document.getElementById('newGroupTitle').value.trim();if(!title)return;
+      var description=document.getElementById('newGroupDesc').value.trim();
+      closeModal(null);
+      google.script.run.withSuccessHandler(function(response){
+        if(response&&response.conversations){conversations=response.conversations; if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion); renderSidebar()}
+        if(response&&response.conversationId)selectConversation(response.conversationId);
+      }).withFailureHandler(function(){}).createGroup(sessionToken,{title:title,description:description});
+    }
+  });
+}
+
+function editGroupUI(conversationId){
+  var conversation=findConversationById(conversationId);if(!conversation)return;
+  var html='<div class="field"><label>'+t('groupName')+'</label><input id="editGroupTitle" type="text" maxlength="60" value="'+escapeAttr(conversation.title||'')+'"></div><div class="field"><label>'+t('groupDesc')+'</label><textarea id="editGroupDesc" rows="2" maxlength="500">'+escapeHtml(conversation.description||'')+'</textarea></div>';
+  openModal({
+    title:t('editGroup'),html:html,
+    buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('save'),className:'primary-btn',value:'save'}],
+    onAction:function(value){
+      if(value!=='save'){closeModal(null);return}
+      var title=document.getElementById('editGroupTitle').value.trim();var description=document.getElementById('editGroupDesc').value.trim();
+      closeModal(null);
+      google.script.run.withSuccessHandler(function(response){
+        if(response&&response.ok&&response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);activeConversation=findConversationById(activeConversationId);renderSidebar();renderTopbar()}else handleApplicationError(response);
+      }).withFailureHandler(function(){}).updateGroup(sessionToken,{conversationId:conversationId,title:title,description:description});
+    }
+  });
+}
+
+function doLeaveGroup(conversationId){showConfirm(t('leaveGroup'),t('leaveGroup')+'?',t('confirm'),false).then(function(confirmed){if(!confirmed)return;google.script.run.withSuccessHandler(function(response){if(response&&response.ok&&response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);renderSidebar()}showPlaceholder()}).withFailureHandler(function(){}).leaveGroup(sessionToken,conversationId)})}
+
+function doDeleteGroup(conversationId){showConfirm(t('deleteGroup'),t('deleteGroup')+'?',t('delete'),true).then(function(confirmed){if(!confirmed)return;google.script.run.withSuccessHandler(function(response){if(response&&response.ok&&response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);renderSidebar()}showPlaceholder()}).withFailureHandler(function(){}).deleteGroup(sessionToken,conversationId)})}
+
+function showInviteLink(conversationId){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var link=response.inviteLink||(window.location.origin+window.location.pathname+'?invite='+encodeURIComponent(response.inviteCode));
+    openModal({
+      title:t('inviteLink'),
+      html:'<div class="field"><input id="inviteLinkInput" type="text" value="'+escapeAttr(link)+'" readonly onclick="this.select()"></div>',
+      buttons:[{text:t('copyLink'),className:'primary-btn',value:'copy'},{text:t('close'),className:'secondary-btn',value:'close'}],
+      onAction:function(value){
+        if(value==='copy'){var input=document.getElementById('inviteLinkInput');input.select();if(navigator.clipboard)navigator.clipboard.writeText(input.value);else document.execCommand('copy')}
+        closeModal(null);
+      }
+    });
+  }).withFailureHandler(function(){}).generateGroupInvite(sessionToken,conversationId);
+}
+
+/* ======================== Block / Unblock ======================== */
+
+function doBlockUser(userId){closeModal(null);google.script.run.withSuccessHandler(function(){}).blockUser(sessionToken,userId)}
+function doUnblockUser(userId){closeModal(null);google.script.run.withSuccessHandler(function(){}).unblockUser(sessionToken,userId)}
+
+/* ======================== Admin Grant/Revoke ======================== */
+
+function adminGrantAdminUI(userId){
+  closeModal(null);
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){alert((response&&response.error)||'Failed.');return}
+    boostFastPolling(5000);
+  }).withFailureHandler(function(){alert('Failed.')}).adminGrantAdmin(sessionToken,userId);
+}
+
+function adminRevokeAdminUI(userId){
+  closeModal(null);
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){alert((response&&response.error)||'Failed.');return}
+    boostFastPolling(5000);
+  }).withFailureHandler(function(){alert('Failed.')}).adminRevokeAdmin(sessionToken,userId);
+}
+
+/* ======================== Settings ======================== */
+
+function openSettings(){
+  if(!currentUser)return;
+  var accentPickerHtml='<div class="ac-picker">';
+  ACCENT_COLORS.forEach(function(color){
+    var selectedClass=(currentUser.accentColor===color)?' sel':'';
+    accentPickerHtml+='<div class="ac-dot ac-'+color+selectedClass+'" data-ac="'+color+'" onclick="selectAccentColor(\''+color+'\')"></div>';
+  });
+  accentPickerHtml+='</div>';
+
+  var notifStatus=('Notification' in window&&Notification.permission==='granted')?t('notificationsEnabled'):'';
+
+  var html='<div class="field"><label>'+t('displayName')+'</label><input id="settingsDisplayName" type="text" maxlength="40" value="'+escapeAttr(currentUser.displayName||'')+'"></div>'+
+    '<div class="field"><label>'+t('bio')+'</label><textarea id="settingsBio" rows="3" maxlength="240">'+escapeHtml(currentUser.bio||'')+'</textarea></div>'+
+    '<div class="field"><label>'+t('birthday')+'</label><input id="settingsBirthday" type="date" value="'+escapeAttr(currentUser.birthday||'')+'"></div>'+
+    '<div class="field-row"><div class="field"><label>'+t('theme')+'</label><select id="settingsTheme"><option value="light"'+(currentUser.theme==='light'?' selected':'')+'>'+t('light')+'</option><option value="dark"'+(currentUser.theme==='dark'?' selected':'')+'>'+t('dark')+'</option></select></div><div class="field"><label>'+t('language')+'</label><select id="settingsLanguage"><option value="en"'+(currentLanguage==='en'?' selected':'')+'>English</option><option value="ru"'+(currentLanguage==='ru'?' selected':'')+'>Русский</option></select></div></div>'+
+    '<div class="field"><label>'+t('accentColor')+'</label>'+accentPickerHtml+'</div>'+
+    (notifStatus?'<div class="p-info" style="margin-top:6px">🔔 '+escapeHtml(notifStatus)+'</div>':'<div style="margin-top:6px"><button class="secondary-btn" onclick="requestNotificationPermission()">🔔 '+t('enableNotifications')+'</button></div>');
+
+  openModal({
+    title:t('settings'),
+    html:html,
+    buttons:[
+      {text:t('changePassword'),className:'secondary-btn',value:'changePassword'},
+      {text:t('sessions'),className:'secondary-btn',value:'sessions'},
+      {text:t('logout'),className:'secondary-btn',value:'logout'},
+      {text:t('deleteAccount'),className:'danger-btn',value:'deleteAccount'},
+      {text:t('cancel'),className:'secondary-btn',value:'cancel'},
+      {text:t('save'),className:'primary-btn',value:'save'}
+    ],
+    onAction:function(value){
+      if(value==='deleteAccount'){closeModal(null);doDeleteAccount();return}
+      if(value==='logout'){closeModal(null);doLogout();return}
+      if(value==='changePassword'){closeModal(null);changePasswordUI();return}
+      if(value==='sessions'){closeModal(null);showSessionsUI();return}
+      if(value!=='save'){closeModal(null);return}
+
+      var selectedAccent='indigo';
+      var selectedDot=document.querySelector('.ac-dot.sel');
+      if(selectedDot) selectedAccent=selectedDot.dataset.ac||'indigo';
+
+      var profilePayload={displayName:document.getElementById('settingsDisplayName').value.trim(),bio:document.getElementById('settingsBio').value.trim(),birthday:document.getElementById('settingsBirthday').value||'',theme:document.getElementById('settingsTheme').value,language:document.getElementById('settingsLanguage').value,accentColor:selectedAccent};
+      localThemeOverride=profilePayload.theme;
+      applyThemeAndAccent(profilePayload.theme,selectedAccent);
+
+      google.script.run.withSuccessHandler(function(response){
+        if(!response||!response.ok){alert((response&&response.error)||'Save failed.');localThemeOverride=null;return}
+        closeModal(null);
+        currentUser=response.user;
+        currentLanguage=currentUser.language||'en';
+        localStorage.setItem('heyo_lang',currentLanguage);
+        localThemeOverride=null;
+        applyThemeAndAccent(currentUser.theme,currentUser.accentColor);
+        renderCurrentUserSidebar();
+        applyAllLabels();
+        if(response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);activeConversation=findConversationById(activeConversationId);renderSidebar();renderTopbar()}
+        renderAllMessages(false);
+        boostFastPolling(8000);
+      }).withFailureHandler(function(){localThemeOverride=null;alert('Save failed.')}).updateProfile(sessionToken,profilePayload);
+    }
+  });
+}
+
+function selectAccentColor(color){document.querySelectorAll('.ac-dot').forEach(function(dot){dot.classList.toggle('sel',dot.dataset.ac===color)})}
+
+function changePasswordUI(){
+  var html='<div class="field"><label>'+t('currentPassword')+'</label><input id="oldPasswordInput" type="password"></div><div class="field"><label>'+t('newPassword')+'</label><input id="newPasswordInput" type="password"></div>';
+  openModal({
+    title:t('changePassword'),html:html,
+    buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('save'),className:'primary-btn',value:'save'}],
+    onAction:function(value){
+      if(value!=='save'){closeModal(null);return}
+      var oldPassword=document.getElementById('oldPasswordInput').value;var newPassword=document.getElementById('newPasswordInput').value;if(!oldPassword||!newPassword)return;
+      google.script.run.withSuccessHandler(function(response){
+        if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
+        closeModal(null); alert(t('passwordChanged'));
+      }).withFailureHandler(function(){alert('Failed.')}).changePassword(sessionToken,{oldPassword:oldPassword,newPassword:newPassword});
+    }
+  });
+}
+
+function parseUAFriendly_(ua){
+  ua=String(ua||'');if(!ua)return 'Unknown device';
+  var browser='Browser',os='';
+  if(/Edg[e\/]/i.test(ua))browser='Edge';
+  else if(/OPR|Opera/i.test(ua))browser='Opera';
+  else if(/YaBrowser/i.test(ua))browser='Yandex';
+  else if(/SamsungBrowser/i.test(ua))browser='Samsung';
+  else if(/Firefox/i.test(ua))browser='Firefox';
+  else if(/CriOS/i.test(ua))browser='Chrome iOS';
+  else if(/Chrome|Chromium/i.test(ua))browser='Chrome';
+  else if(/Safari/i.test(ua)&&!/Chrome/i.test(ua))browser='Safari';
+  if(/iPhone/i.test(ua))os='iPhone';
+  else if(/iPad/i.test(ua))os='iPad';
+  else if(/Android/i.test(ua))os='Android';
+  else if(/Mac OS X|Macintosh/i.test(ua))os='macOS';
+  else if(/Windows/i.test(ua))os='Windows';
+  else if(/Linux/i.test(ua))os='Linux';
+  else if(/CrOS/i.test(ua))os='ChromeOS';
+  return browser+(os?' on '+os:'');
+}
+
+function showSessionsUI(){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var sessions=response.sessions||[];
+    var html='<div class="admin-list">';
+    sessions.forEach(function(s){
+      var isCurrent=s.isCurrent;
+      var friendly=parseUAFriendly_(s.userAgent);
+      var created=s.createdAt?new Date(s.createdAt).toLocaleString():'';
+      var lastActive=s.lastActiveAt?new Date(s.lastActiveAt).toLocaleString():'';
+      html+='<div class="admin-row"><div class="admin-row-meta"><div class="admin-row-title">'+(isCurrent?'<b>'+escapeHtml(friendly)+' (current)</b>':escapeHtml(friendly))+'</div><div class="admin-row-sub">'+escapeHtml(created)+' • '+escapeHtml(lastActive)+'</div></div>';
+      if(!isCurrent) html+='<div class="admin-row-actions"><button class="danger-btn" onclick="doTerminateSession(\''+escapeJsString(s.deviceId||'')+'\')">'+t('terminateSession')+'</button></div>';
+      html+='</div>';
+    });
+    html+='</div>';
+    openModal({title:t('sessions'),html:html,buttons:[{text:t('close'),className:'secondary-btn',value:'close'}]});
+  }).withFailureHandler(function(){}).getActiveSessions(sessionToken);
+}
+
+function doTerminateSession(targetDeviceId){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){alert((response&&response.error)||'Failed.');return}
+    closeModal(null);showSessionsUI();
+  }).withFailureHandler(function(){alert('Failed.')}).terminateSession(sessionToken,targetDeviceId);
+}
+
+function doDeleteAccount(){showConfirm(t('deleteAccount'),t('deleteAccountMsg'),t('delete'),true).then(function(confirmed){if(!confirmed)return;google.script.run.withSuccessHandler(function(response){if(response&&response.ok)forceLogoutToAuth()}).withFailureHandler(function(){alert('Failed.')}).deleteAccount(sessionToken)})}
+
+function doLogout(){
+  var savedToken=sessionToken;
+  forceLogoutToAuth();
+  if(savedToken) google.script.run.logout(savedToken);
+}
+
+function forceLogoutToAuth(){
+  stopPolling();
+  localStorage.removeItem('heyo_token');
+  sessionToken='';
+  currentUser=null;
+  showAuthScreen();
+}
+
+function handleApplicationError(response){
+  var errorMessage=(response&&response.error)||'';
+  if(/banned/i.test(errorMessage)){alert(errorMessage||'Banned.');forceLogoutToAuth();return}
+  if(/session|auth|expired|invalid|not authenticated|deleted/i.test(errorMessage)) forceLogoutToAuth();
+}
+
+/* ======================== Search ======================== */
+
+function performUserSearch(){
+  var query=document.getElementById('searchInput').value.trim();
+  if(!query){clearSearchResults();return}
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){clearSearchResults();return}
+    var resultsContainer=document.getElementById('searchResults'), users=response.users||[];
+    if(!users.length){resultsContainer.innerHTML='<div class="si"><div class="si-meta"><div class="si-title">—</div></div></div>';resultsContainer.classList.add('open');return}
+    resultsContainer.innerHTML=users.map(function(user){
+      return '<div class="si" onclick="startDirectMessage(\''+escapeJsString(user.userId)+'\')">'+buildAvatarHTML(user.initials,user.avatarFileId,'',user.isOnline,"event.stopPropagation();openProfile('"+escapeJsString(user.userId)+"')")+'<div class="si-meta"><div class="si-title">'+escapeHtml(user.displayName)+'</div><div class="si-sub">@'+escapeHtml(user.username)+'</div></div></div>';
+    }).join('');
+    resultsContainer.classList.add('open');
+  }).withFailureHandler(function(){clearSearchResults()}).searchUsers(sessionToken,query);
+}
+
+function clearSearchResults(){var container=document.getElementById('searchResults');container.classList.remove('open');container.innerHTML=''}
+function startDirectMessage(userId){
+  clearSearchResults();document.getElementById('searchInput').value='';
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    if(response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);renderSidebar()}
+    if(response.conversationId)selectConversation(response.conversationId);
+  }).withFailureHandler(function(){}).openDirectConversation(sessionToken,userId);
+}
+
+/* ======================== Mobile Sidebar ======================== */
+
+function openMobileSidebar(){document.getElementById('sidebar').classList.add('mob-open');document.getElementById('mobBD').classList.add('open')}
+function closeMobileSidebar(){document.getElementById('sidebar').classList.remove('mob-open');document.getElementById('mobBD').classList.remove('open')}
+
+/* ======================== Modal System ======================== */
+
+function openModal(config){
+  return new Promise(function(resolve){
+    modalResolveFunction=resolve;currentModalConfig=config||{};
+    document.getElementById('modalTitle').textContent=config.title||'';
+    document.getElementById('modalBody').textContent=config.message||'';
+    document.getElementById('modalContent').innerHTML=config.html||'';
+    document.getElementById('modalBox').className='modal'+(config.wide?' modal-wide':'');
+    var actionsContainer=document.getElementById('modalActions');actionsContainer.innerHTML='';
+    (config.buttons||[]).forEach(function(buttonConfig){
+      var button=document.createElement('button');button.className=buttonConfig.className||'secondary-btn';button.textContent=buttonConfig.text||'OK';
+      button.onclick=function(){if(typeof config.onAction==='function')config.onAction(buttonConfig.value);else closeModal(buttonConfig.value)};
+      actionsContainer.appendChild(button);
+    });
+    document.getElementById('modalOverlay').classList.add('open');
+  });
+}
+
+function closeModal(result){
+  document.getElementById('modalOverlay').classList.remove('open');document.getElementById('modalContent').innerHTML='';document.getElementById('modalActions').innerHTML='';document.getElementById('modalBox').className='modal';
+  var resolver=modalResolveFunction;modalResolveFunction=null;currentModalConfig=null;if(resolver)resolver(result);
+}
+
+function showAlert(title,message){return openModal({title:title,message:message,buttons:[{text:'OK',className:'primary-btn',value:true}]})}
+function showConfirm(title,message,okText,isDanger){return openModal({title:title,message:message,buttons:[{text:t('cancel'),className:'secondary-btn',value:false},{text:okText||'OK',className:isDanger?'danger-btn':'primary-btn',value:true}]})}
+function showPrompt(title,message,defaultValue){
+  return openModal({
+    title:title,message:message,html:'<div class="field"><textarea id="promptInput" rows="4">'+escapeHtml(defaultValue||'')+'</textarea></div>',
+    buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('save'),className:'primary-btn',value:'save'}],
+    onAction:function(value){if(value!=='save'){closeModal(null);return}var input=document.getElementById('promptInput');closeModal(input?input.value:null)}
+  });
+}
+
+/* ======================== Admin Panel ======================== */
+
+function isAdminUser(){return !!(currentUser&&currentUser.isAdmin)}
+function isSuperAdminUser(){return !!(currentUser&&currentUser.username==='usonance')}
+
+function openAdminPanel(){
+  if(!isAdminUser())return;
+  google.script.run.withSuccessHandler(function(statsResponse){
+    if(!statsResponse||!statsResponse.ok){handleApplicationError(statsResponse);return}
+    google.script.run.withSuccessHandler(function(groupsResponse){
+      if(!groupsResponse||!groupsResponse.ok){handleApplicationError(groupsResponse);return}
+      renderAdminPanel(statsResponse.stats,groupsResponse.groups||[]);
+    }).withFailureHandler(function(){}).adminGetAllGroups(sessionToken);
+  }).withFailureHandler(function(){}).adminGetStats(sessionToken);
+}
+
+function renderAdminPanel(stats,groups){
+  var html='<div class="admin-kpi-grid">'+
+    '<div class="admin-kpi"><div class="admin-kpi-v">'+escapeHtml(String(stats.totalUsers||0))+'</div><div class="admin-kpi-l">'+t('users')+'</div></div>'+
+    '<div class="admin-kpi"><div class="admin-kpi-v">'+escapeHtml(String(stats.totalMessages||0))+'</div><div class="admin-kpi-l">'+t('messages')+'</div></div>'+
+    '<div class="admin-kpi"><div class="admin-kpi-v">'+escapeHtml(String(stats.totalConversations||0))+'</div><div class="admin-kpi-l">'+t('groupsLabel')+'</div></div>'+
+    '</div>'+
+    '<div class="admin-kpi-grid">'+
+    '<div class="admin-kpi"><div class="admin-kpi-v">'+escapeHtml(String(stats.onlineUsers||0))+'</div><div class="admin-kpi-l">Online</div></div>'+
+    '<div class="admin-kpi"><div class="admin-kpi-v">'+escapeHtml(String(stats.bannedUsers||0))+'</div><div class="admin-kpi-l">Banned</div></div>'+
+    '<div class="admin-kpi"><div class="admin-kpi-v">'+escapeHtml(String(stats.deletedUsers||0))+'</div><div class="admin-kpi-l">Deleted</div></div>'+
+    '</div>'+
+    '<div class="admin-split">'+
+      '<div class="admin-box">'+
+        '<h3>'+t('users')+'</h3>'+
+        '<div class="admin-inline" style="margin-bottom:10px"><input id="adminUserSearchInput" type="text" placeholder="'+escapeAttr(t('searchUsers'))+'"><button class="primary-btn" onclick="adminRunUserSearch()">Find</button></div>'+
+        '<div id="adminUsersList" class="admin-list"></div>'+
+      '</div>'+
+      '<div class="admin-box">'+
+        '<h3>'+t('groupsLabel')+'</h3>'+
+        '<div id="adminGroupsList" class="admin-list">'+groups.map(renderAdminGroupRow).join('')+'</div>'+
+      '</div>'+
+    '</div>';
+
+  openModal({title:t('adminPanel'),html:html,wide:true,buttons:[{text:t('close'),className:'secondary-btn',value:'close'}]});
+}
+
+function renderAdminGroupRow(group){
+  var dropId='adminGroupRowDrop_'+group.conversationId;
+  return '<div class="admin-row" style="display:block">'+
+    '<div style="display:flex;align-items:center;gap:10px">'+
+      buildAvatarHTML(group.initials,group.avatarFileId,'',false,"adminOpenGroupProfile('"+escapeJsString(group.conversationId)+"')")+
+      '<div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(group.title||'Group')+'</div><div class="admin-row-sub">'+escapeHtml((group.memberCount||0)+' '+t('members'))+'</div></div>'+
+      '<div class="admin-row-actions"><button class="secondary-btn" onclick="adminOpenGroupProfile(\''+escapeJsString(group.conversationId)+'\')">Open</button><button class="secondary-btn" onclick="adminToggleGroupMembers(\''+escapeJsString(group.conversationId)+'\',\''+escapeJsString(dropId)+'\')">Members</button></div>'+
+    '</div>'+
+    '<div id="'+escapeAttr(dropId)+'" class="admin-drop-body"></div>'+
+  '</div>';
+}
+
+function adminToggleGroupMembers(conversationId,dropId){
+  var box=document.getElementById(dropId);if(!box)return;
+  if(box.dataset.loaded==='1'){box.style.display=box.style.display==='none'?'block':'none';return}
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var profile=response.profile;
+    var membersHtml=(profile.members||[]).map(function(member){
+      return '<div class="admin-row">'+buildAvatarHTML(member.initials,member.avatarFileId,'',false,"openProfile('"+escapeJsString(member.userId)+"')")+'<div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(member.displayName||'User')+'</div><div class="admin-row-sub">@'+escapeHtml(member.username||'')+(member.isBanned?' • banned':'')+(member.isDeleted?' • deleted':'')+' • '+escapeHtml(member.userId||'')+'</div></div></div>';
+    }).join('');
+    box.innerHTML='<div class="admin-drop open" style="margin-top:10px"><div class="admin-list">'+membersHtml+'</div></div>';
+    box.dataset.loaded='1';box.style.display='block';
+  }).withFailureHandler(function(){}).adminGetGroupProfile(sessionToken,conversationId);
+}
+
+function adminRunUserSearch(){
+  var query=(document.getElementById('adminUserSearchInput')||{}).value||'';
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var users=response.users||[];
+    document.getElementById('adminUsersList').innerHTML=users.map(function(user){
+      var adminBadge=user.isAppAdmin?'<span class="badge-admin">admin</span>':'';
+      return '<div class="admin-row">'+buildAvatarHTML(user.initials,user.avatarFileId,'',user.isOnline,"openProfile('"+escapeJsString(user.userId)+"')")+'<div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(user.displayName||'User')+adminBadge+' <span style="font-weight:400;color:var(--muted)">@'+escapeHtml(user.username||'')+'</span></div><div class="admin-row-sub">'+(user.isBanned?'Banned • ':'')+(user.isDeleted?'Deleted • ':'')+(user.isOnline?'Online':'Offline')+'</div></div><div class="admin-row-actions">'+(user.isBanned?'<button class="secondary-btn" onclick="adminUnbanUserUI(\''+escapeJsString(user.userId)+'\')">'+t('unban')+'</button>':'<button class="warning-btn" onclick="adminBanUserUI(\''+escapeJsString(user.userId)+'\')">'+t('ban')+'</button>')+'</div></div>';
+    }).join('')||'<div class="empty-st" style="margin:0;padding:12px">—</div>';
+  }).withFailureHandler(function(){}).adminSearchUsers(sessionToken,query);
+}
+
+function adminOpenGroupProfile(conversationId){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var profile=response.profile;
+    var membersHtml=profile.members.map(function(member){
+      return '<div class="admin-row">'+buildAvatarHTML(member.initials,member.avatarFileId,'',false,"openProfile('"+escapeJsString(member.userId)+"')")+'<div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(member.displayName||'User')+(member.isAppAdmin?'<span class="badge-admin">admin</span>':'')+'</div><div class="admin-row-sub">@'+escapeHtml(member.username||'')+(member.isBanned?' • banned':'')+(member.isDeleted?' • deleted':'')+' • '+escapeHtml(member.userId||'')+'</div></div><div class="admin-row-actions"><button class="secondary-btn" onclick="openProfile(\''+escapeJsString(member.userId)+'\')">Open</button><button class="danger-btn" onclick="adminRemoveUserFromGroupUI(\''+escapeJsString(profile.conversationId)+'\',\''+escapeJsString(member.userId)+'\')">'+t('removeFromGroup')+'</button></div></div>';
+    }).join('');
+
+    var html='<div class="p-hdr">'+buildAvatarHTML(profile.initials,profile.avatarFileId,'xl')+'<div class="p-name">'+escapeHtml(profile.title)+'</div><div class="p-un">'+escapeHtml((profile.memberCount||0)+' '+t('members'))+'</div></div>'+
+      '<div class="admin-box" style="margin-bottom:12px"><h3>'+t('addByUsername')+'</h3><div class="admin-inline"><input id="adminAddByUsername" type="text" placeholder="@username"><button class="primary-btn" onclick="adminAddByUsernameUI(\''+escapeJsString(profile.conversationId)+'\')">'+t('addToGroup')+'</button></div></div>'+
+      '<div class="admin-box" style="margin-bottom:12px"><h3>'+t('addToGroup')+' (by userId)</h3><div class="admin-inline"><input id="adminAddToGroupUserId" type="text" placeholder="userId"><button class="primary-btn" onclick="adminAddUserToGroupUI(\''+escapeJsString(profile.conversationId)+'\')">'+t('addToGroup')+'</button></div></div>'+
+      '<div class="admin-box" style="margin-bottom:12px"><h3>'+t('recentMessages')+'</h3><div class="admin-inline"><button class="secondary-btn" onclick="adminLoadRecentMessages(\''+escapeJsString(profile.conversationId)+'\')">'+t('recentMessages')+'</button></div><div id="adminRecentMessagesBox" class="admin-list" style="margin-top:10px"></div></div>'+
+      '<div class="admin-box"><h3>'+t('members')+'</h3><div class="admin-list">'+membersHtml+'</div></div>';
+    openModal({title:profile.title+' — '+t('adminPanel'),html:html,wide:true,buttons:[{text:t('close'),className:'secondary-btn',value:'close'}]});
+  }).withFailureHandler(function(){}).adminGetGroupProfile(sessionToken,conversationId);
+}
+
+function adminAddByUsernameUI(conversationId){
+  var input=document.getElementById('adminAddByUsername');
+  var username=input?String(input.value||'').trim().replace(/^@/,''):'';
+  if(!username)return;
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){alert((response&&response.error)||'Failed.');return}
+    adminOpenGroupProfile(conversationId);boostFastPolling(8000);
+  }).withFailureHandler(function(){alert('Failed.')}).adminAddUserToGroupByUsername(sessionToken,{conversationId:conversationId,username:username});
+}
+
+function adminAddUserToGroupUI(conversationId){
+  var input=document.getElementById('adminAddToGroupUserId');
+  var userId=input?String(input.value||'').trim():'';if(!userId)return;
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
+    adminOpenGroupProfile(conversationId);boostFastPolling(8000);
+  }).withFailureHandler(function(){alert('Failed.')}).adminAddUserToGroup(sessionToken,{conversationId:conversationId,targetUserId:userId});
+}
+
+function adminRemoveUserFromGroupUI(conversationId,userId){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
+    adminOpenGroupProfile(conversationId);boostFastPolling(8000);
+  }).withFailureHandler(function(){alert('Failed.')}).adminRemoveUserFromGroup(sessionToken,{conversationId:conversationId,targetUserId:userId});
+}
+
+function adminLoadRecentMessages(conversationId){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);return}
+    var box=document.getElementById('adminRecentMessagesBox');if(!box)return;
+    var messages=response.messages||[];
+    box.innerHTML=messages.map(function(msg){
+      return '<div class="admin-row"><div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(msg.displayName||'User')+' <span style="font-weight:400;color:var(--muted)">@'+escapeHtml(msg.username||'')+'</span></div><div class="admin-row-sub">'+escapeHtml(truncateString(msg.text||(msg.messageType==='group_invite'?'[group invite]':'[file]'),140))+'</div></div></div>';
+    }).join('')||'<div class="empty-st" style="margin:0;padding:12px">—</div>';
+  }).withFailureHandler(function(){}).adminGetRecentMessages(sessionToken,{conversationId:conversationId,limit:50});
+}
+
+function adminBanUserUI(userId){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
+    closeModal(null);openAdminPanel();boostFastPolling(8000);
+  }).withFailureHandler(function(){alert('Failed.')}).adminBanUser(sessionToken,userId);
+}
+
+function adminUnbanUserUI(userId){
+  google.script.run.withSuccessHandler(function(response){
+    if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
+    closeModal(null);openAdminPanel();boostFastPolling(8000);
+  }).withFailureHandler(function(){alert('Failed.')}).adminUnbanUser(sessionToken,userId);
+}
+
+/* ======================== Utility Functions ======================== */
+
+function autoGrowTextarea(element){if(!element)return;element.style.height='auto';element.style.height=Math.min(element.scrollHeight,180)+'px'}
+function findMessageCardElement(target){return target?target.closest('.mc[data-mid]'):null}
+function escapeHtml(value){return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function escapeAttr(value){return escapeHtml(value).replace(/\n/g,'&#10;')}
+function escapeJsString(value){return String(value||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/</g,'\\x3C')}
+function truncateString(value,maxLength){var text=String(value||'');return text.length<=maxLength?text:text.slice(0,maxLength-1)+'…'}
+function formatMessageTime(isoString){var date=new Date(isoString); if(isNaN(date.getTime()))return''; return date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+function formatSidebarTime(isoString){var date=new Date(isoString); if(isNaN(date.getTime()))return''; if(date.toDateString()===new Date().toDateString()) return date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); return date.toLocaleDateString([], {month:'short',day:'numeric'})}
+function formatFileSize(bytes){var value=Number(bytes); if(!Number.isFinite(value)||value<=0)return'0 B'; var units=['B','KB','MB','GB'], size=value, unitIndex=0; while(size>=1024&&unitIndex<units.length-1){size/=1024;unitIndex++} return (size>=10||unitIndex===0?size.toFixed(0):size.toFixed(1))+' '+units[unitIndex]}
+function detectFileCategory(mimeType){var type=String(mimeType||'').toLowerCase(); if(type.startsWith('image/'))return'image'; if(type.startsWith('video/'))return'video'; if(type.startsWith('audio/'))return'audio'; return'file'}
+function buildAttachmentMetaText(attachment){var parts=[], category=detectFileCategory(attachment.mimeType); if(category==='image')parts.push('Photo'); else if(category==='video')parts.push('Video'); else if(category==='audio')parts.push('Audio'); else parts.push('File'); if(attachment.size>0)parts.push(formatFileSize(attachment.size)); return parts.join(' • ')}
+function getFileIcon(attachment){var category=detectFileCategory(attachment&&attachment.mimeType); if(category==='image')return'🖼'; if(category==='video')return'🎬'; if(category==='audio')return'🎵'; var extension=(attachment&&attachment.name||'').split('.').pop().toLowerCase(); if(extension==='pdf')return'📕'; if(['doc','docx','txt','md'].indexOf(extension)!==-1)return'📄'; if(['zip','rar','7z'].indexOf(extension)!==-1)return'🗜'; return'📎'}
+
+/* ======================== Event Listeners ======================== */
+
+document.getElementById('composerInput').addEventListener('input',function(){autoGrowTextarea(this);boostFastPolling(3000)});
+document.getElementById('composerInput').addEventListener('keydown',function(event){if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handleSend()}});
+document.getElementById('fileInput').addEventListener('change',function(event){var files=event.target.files; if(files&&files[0])stageSelectedFile(files[0]); event.target.value=''});
+document.getElementById('searchInput').addEventListener('input',function(){clearTimeout(searchDebounceTimer);searchDebounceTimer=setTimeout(performUserSearch,180)});
+document.getElementById('modalOverlay').addEventListener('click',function(event){if(event.target===this&&modalResolveFunction)closeModal(null)});
+
+document.addEventListener('keydown',function(event){
+  if(event.key==='Escape'){
+    var imageOverlay=document.querySelector('.img-ov');
+    if(imageOverlay){imageOverlay.remove();return}
+    if(document.getElementById('modalOverlay').classList.contains('open')){closeModal(null);return}
+    if(isDropdownOpen){closeDropdown();return}
+  }
+  if(event.key==='Enter'&&document.getElementById('authScreen').classList.contains('active')){
+    event.preventDefault();
+    if(currentAuthMode==='login')doLogin(); else doRegister();
+  }
+});
+
+var messagesContainer=document.getElementById('messagesContainer');
+messagesContainer.addEventListener('contextmenu',function(event){
+  var messageCard=findMessageCardElement(event.target);
+  if(!messageCard)return;
+  event.preventDefault();
+  openDropdownAt(event.clientX,event.clientY,messageCard.getAttribute('data-mid'));
+});
+messagesContainer.addEventListener('touchstart',function(event){
+  var messageCard=findMessageCardElement(event.target);
+  if(!messageCard)return;
+  longPressFired=false;
+  var touch=event.touches&&event.touches[0];
+  if(!touch)return;
+  clearTimeout(longPressTimer);
+  longPressTimer=setTimeout(function(){
+    longPressFired=true;
+    openDropdownAt(touch.clientX,touch.clientY,messageCard.getAttribute('data-mid'));
+  },550);
+},{passive:true});
+messagesContainer.addEventListener('touchend',function(){clearTimeout(longPressTimer)},{passive:true});
+messagesContainer.addEventListener('touchcancel',function(){clearTimeout(longPressTimer)},{passive:true});
+messagesContainer.addEventListener('touchmove',function(){clearTimeout(longPressTimer)},{passive:true});
+messagesContainer.addEventListener('click',function(event){if(longPressFired){event.preventDefault();longPressFired=false}});
+
+document.addEventListener('click',function(event){
+  if(isDropdownOpen&&!document.getElementById('messageDropdown').contains(event.target)) closeDropdown();
+  var searchResults=document.getElementById('searchResults');
+  if(searchResults.classList.contains('open')&&!document.getElementById('searchInput').contains(event.target)&&!searchResults.contains(event.target)) clearSearchResults();
+});
+document.addEventListener('scroll',function(){closeDropdown()},true);
+window.addEventListener('resize',function(){closeDropdown(); if(window.innerWidth>900)closeMobileSidebar()});
+document.addEventListener('visibilitychange',function(){scheduleNextPoll()});
+
+/* ======================== Initialize ======================== */
+
+/* Save invite code from URL BEFORE anything else — survives login/register flow */
+(function savePendingInviteFromUrl(){
+  try{
+    var urlParams=new URLSearchParams(window.location.search);
+    var invite=urlParams.get('invite');
+    if(invite){
+      localStorage.setItem('heyo_pending_invite',invite);
+      window.history.replaceState(null,'',window.location.origin+window.location.pathname);
+    }
+  }catch(e){}
+})();
+
+/* Show correct screen immediately — no flash */
+if(sessionToken){
+  /* Token exists — show nothing (blank) until session verified, then show app */
+  document.getElementById('authScreen').classList.remove('active');
+  document.getElementById('appScreen').classList.remove('active');
+}else{
+  /* No token — show auth immediately */
+  document.getElementById('authScreen').classList.add('active');
+}
+
+verifyExistingSession();
+applyAllLabels();
+switchAuth('login');
+</script>
+</body>
+</html>
