@@ -486,6 +486,12 @@ const firebaseConfig = {
   appId: "1:543146647411:web:09b92509d7ae5fe92eaf06"
 };
 
+const GOOGLE_DRIVE_CLIENT_ID = '543146647411-heujah131cchare788sk2sfqffuqpfvh.apps.googleusercontent.com';
+const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+
+let driveAccessToken = '';
+let driveTokenClient = null;
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -748,6 +754,47 @@ function messageDocToClient(messageId, data, conversationId){
   };
 }
 
+  function initDriveOAuth(){
+  if(!window.google || !google.accounts || !google.accounts.oauth2) return;
+
+  driveTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_DRIVE_CLIENT_ID,
+    scope: GOOGLE_DRIVE_SCOPE,
+    callback: function(resp){
+      if(resp && resp.access_token){
+        driveAccessToken = resp.access_token;
+      }
+    }
+  });
+}
+
+function getDriveAccessToken(interactive){
+  return new Promise(function(resolve, reject){
+    if(driveAccessToken){
+      resolve(driveAccessToken);
+      return;
+    }
+
+    if(!driveTokenClient){
+      reject(new Error('Drive OAuth is not initialized.'));
+      return;
+    }
+
+    driveTokenClient.callback = function(resp){
+      if(resp && resp.access_token){
+        driveAccessToken = resp.access_token;
+        resolve(resp.access_token);
+        return;
+      }
+      reject(new Error((resp && resp.error) || 'Failed to get Drive token.'));
+    };
+
+    driveTokenClient.requestAccessToken({
+      prompt: interactive ? 'consent' : ''
+    });
+  });
+}
+
 /* ======================== Notifications ======================== */
 
 function requestNotificationPermission(){
@@ -787,6 +834,57 @@ function notifyIfNew_(msg){
   var convoTitle=convo?convo.title:'Heyo';
   var body=(msg.displayName||'User')+': '+(msg.text||'[file]');
   showBrowserNotification(convoTitle,body,msg.conversationId);
+}
+
+function uploadFileToDriveResumable(file, uploadUrl, onProgress){
+  return new Promise(function(resolve, reject){
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', uploadUrl, true);
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+    xhr.upload.onprogress = function(evt){
+      if(evt.lengthComputable && typeof onProgress === 'function'){
+        const pct = Math.floor((evt.loaded / evt.total) * 100);
+        onProgress(pct);
+      }
+    };
+
+    xhr.onload = function(){
+      if(xhr.status >= 200 && xhr.status < 300){
+        try{
+          resolve(JSON.parse(xhr.responseText || '{}'));
+        }catch(e){
+          reject(new Error('Drive upload completed but response JSON is invalid.'));
+        }
+        return;
+      }
+      reject(new Error('Drive upload failed: ' + xhr.status + ' ' + xhr.responseText));
+    };
+
+    xhr.onerror = function(){
+      reject(new Error('Drive upload network error.'));
+    };
+
+    xhr.onabort = function(){
+      reject(new Error('Drive upload canceled.'));
+    };
+
+    xhr.send(file);
+  });
+}
+
+function buildDriveAttachment(file, driveMeta){
+  return {
+    fileId: driveMeta.id || '',
+    name: driveMeta.name || file.name || 'file',
+    mimeType: driveMeta.mimeType || file.type || 'application/octet-stream',
+    size: Number(driveMeta.size || file.size || 0),
+    webViewLink: driveMeta.webViewLink || '',
+    webContentLink: driveMeta.webContentLink || '',
+    thumbnailLink: driveMeta.thumbnailLink || '',
+    iconLink: driveMeta.iconLink || '',
+    category: detectFileCategory(driveMeta.mimeType || file.type || '')
+  };
 }
 
 /* ======================== Avatar HTML Helper ======================== */
@@ -863,6 +961,35 @@ function switchRegMethod(method){
   document.getElementById('regPhoneWrap').style.display=(method!=='email')?'':'none';
 }
 
+async function createDriveResumableSession(file, accessToken){
+  const metadata = {
+    name: file.name
+  };
+
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,webViewLink,webContentLink,iconLink,thumbnailLink,mimeType,size', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json; charset=UTF-8',
+      'X-Upload-Content-Type': file.type || 'application/octet-stream',
+      'X-Upload-Content-Length': String(file.size)
+    },
+    body: JSON.stringify(metadata)
+  });
+
+  if(!res.ok){
+    const text = await res.text();
+    throw new Error('Drive resumable init failed: ' + res.status + ' ' + text);
+  }
+
+  const uploadUrl = res.headers.get('Location');
+  if(!uploadUrl){
+    throw new Error('Drive resumable init failed: no upload URL');
+  }
+
+  return uploadUrl;
+}
+  
 async function findUserByLoginIdentifier(identifier){
   var raw = String(identifier||'').trim();
   if(!raw) return null;
@@ -1100,6 +1227,8 @@ async function listenCurrentUserProfile(uid){
   });
 }
 
+  
+
 async function listenSidebar(){
   if(!auth.currentUser) return;
   if(typeof sidebarUnsubscribe === 'function'){ try{ sidebarUnsubscribe(); }catch(e){} }
@@ -1180,6 +1309,7 @@ async function startApplication(){
   await setPresence(true);
   requestNotificationPermission();
   checkPendingInvite();
+  initDriveOAuth();
 }
 
 /* ======================== Current User Sidebar ======================== */
@@ -1450,15 +1580,18 @@ function renderMessageAttachments(attachments){
 }
 
 function renderSingleAttachment(attachment){
-  var fileName=escapeHtml(attachment.name||'file');
-  var metaText=escapeHtml(buildAttachmentMetaText(attachment));
-  var fileId=attachment.downloadURL;
-  var category=detectFileCategory(attachment.mimeType);
-  var viewLink=escapeAttr(fileId||'#');
-  var downloadLink=escapeAttr(fileId||'#');
+  var fileName = escapeHtml(attachment.name || 'file');
+  var metaText = escapeHtml(buildAttachmentMetaText(attachment));
+  var category = detectFileCategory(attachment.mimeType);
+
+  var openUrl = attachment.webViewLink || attachment.webContentLink || attachment.downloadURL || '#';
+  var directUrl = attachment.webContentLink || attachment.downloadURL || attachment.webViewLink || '#';
+
+  var viewLink = escapeAttr(openUrl);
+  var downloadLink = escapeAttr(directUrl);
 
   if(category==='image'){
-    var imageSrc=escapeAttr(fileId||'');
+    var imageSrc = escapeAttr(attachment.webContentLink || attachment.downloadURL || attachment.thumbnailLink || '');
     return '<div class="att-card"><img class="att-img" src="'+imageSrc+'" alt="'+fileName+'" loading="lazy" onclick="previewFullImage(\''+escapeJsString(imageSrc)+'\')" onerror="this.style.display=\'none\'"><div class="att-cap"><div class="att-cap-n">'+fileName+'</div><div class="att-cap-m">'+metaText+'</div><div class="att-acts"><a class="att-lnk" href="'+viewLink+'" target="_blank">Open</a><a class="att-lnk" href="'+downloadLink+'" target="_blank">Download</a></div></div></div>';
   }
   if(category==='video'){
@@ -1611,26 +1744,23 @@ async function handleSend(){
 
 async function uploadAndSendFile(file, messageText){
   if(!auth.currentUser){
-    alert('Upload failed: not authenticated.');
+    alert('Upload failed: not authenticated');
     return;
   }
 
   if(!activeConversationId){
-    alert('Upload failed: no active conversation.');
+    alert('Upload failed: no active conversation');
     return;
   }
 
-  var conversationId = activeConversationId;
-  var safeName = String(file.name || 'file').replace(/[^\w.\-]+/g, '_');
-  var storagePath = 'uploads/' + auth.currentUser.uid + '/' + conversationId + '/' + Date.now() + '_' + safeName;
-  var storageRef = ref(storage, storagePath);
+  const conversationId = activeConversationId;
 
   uploadState = {
     active: true,
     file: file,
     task: null,
     downloadURL: '',
-    path: storagePath,
+    path: '',
     conversationId: conversationId,
     progress: 0
   };
@@ -1639,51 +1769,15 @@ async function uploadAndSendFile(file, messageText){
   document.getElementById('sendBtn').disabled = true;
 
   try{
-    const metadata = {
-      contentType: file.type || 'application/octet-stream',
-      customMetadata: {
-        uploaderUid: auth.currentUser.uid,
-        conversationId: conversationId,
-        originalName: file.name || 'file'
-      }
-    };
+    const accessToken = await getDriveAccessToken(true);
+    const uploadUrl = await createDriveResumableSession(file, accessToken);
 
-    await new Promise(function(resolve, reject){
-      var task = uploadBytesResumable(storageRef, file, metadata);
-      uploadState.task = task;
-
-      task.on(
-        'state_changed',
-        function(snapshot){
-          var pct = Math.floor((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          uploadState.progress = pct;
-          showUploadBanner('Uploading ' + file.name + ' — ' + pct + '%', pct, true);
-        },
-        function(error){
-          console.error('Storage upload error:', {
-            code: error && error.code,
-            message: error && error.message,
-            serverResponse: error && error.serverResponse,
-            name: error && error.name
-          });
-          reject(error);
-        },
-        function(){
-          resolve();
-        }
-      );
+    const driveMeta = await uploadFileToDriveResumable(file, uploadUrl, function(pct){
+      uploadState.progress = pct;
+      showUploadBanner('Uploading ' + file.name + ' — ' + pct + '%', pct, true);
     });
 
-    var downloadURL = await getDownloadURL(storageRef);
-    uploadState.downloadURL = downloadURL;
-
-    var attachment = {
-      name: file.name,
-      mimeType: file.type || 'application/octet-stream',
-      size: file.size,
-      storagePath: storagePath,
-      downloadURL: downloadURL
-    };
+    const attachment = buildDriveAttachment(file, driveMeta);
 
     await addDoc(collection(db, CONVERSATION_COLLECTION, conversationId, MESSAGE_SUBCOLLECTION), {
       conversationId: conversationId,
@@ -1717,13 +1811,8 @@ async function uploadAndSendFile(file, messageText){
     clearStagedFile();
     resetUploadState();
   }catch(error){
-    console.error('uploadAndSendFile failed:', error);
-
-    var msg = 'Upload failed.';
-    if(error && error.code) msg += '\n' + error.code;
-    if(error && error.message) msg += '\n' + error.message;
-
-    alert(msg);
+    console.error('Drive upload failed:', error);
+    alert(error && error.message ? error.message : 'Drive upload failed.');
     resetUploadState();
   }
 }
