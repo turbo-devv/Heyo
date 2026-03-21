@@ -430,56 +430,86 @@ body.dark .p-st.off{color:var(--muted);background:var(--panel-2)}
   </div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
 /* ============================================================
-   Heyo Frontend — Complete JavaScript (Version 11)
+   Heyo Frontend — Firebase Firestore Real-time Messenger Client
+   Message transport: Firestore
+   Everything else: existing GAS backend
    ============================================================ */
 
-const SCRIPT_URL=(function(){
+const firebaseConfig = {
+  apiKey: "AIzaSyA_h53SzZn3RvGKmRLSAnpU-_yXOlAZ60g", // Replace with your actual key
+  authDomain: "backend-heyo.firebaseapp.com",
+  projectId: "backend-heyo",
+  storageBucket: "backend-heyo.firebasestorage.app",
+  messagingSenderId: "543146647411",
+  appId: "1:543146647411:web:797372bb46b46c6b2eaf06"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
+const SCRIPT_URL = (function(){
   try{
-    var scripts=document.getElementsByTagName('script');
-    for(var i=0;i<scripts.length;i++){var s=scripts[i].src||'';if(s.indexOf('/macros/s/')!==-1)return s.replace(/\?.*/,'');}
+    var scripts = document.getElementsByTagName('script');
+    for(var i=0;i<scripts.length;i++){
+      var s = scripts[i].src || '';
+      if(s.indexOf('/macros/s/')!==-1) return s.replace(/\?.*/,'');
+    }
   }catch(e){}
-  var loc=window.location.href;
-  if(loc.indexOf('/macros/s/')!==-1)return loc.replace(/\?.*/,'');
+  var loc = window.location.href;
+  if(loc.indexOf('/macros/s/')!==-1) return loc.replace(/\?.*/,'');
   return 'https://script.google.com/macros/s/AKfycbwvpTe0h2rBw7jTj3XX-0SHGye08vzXYWLnCHzyhsX9v4OSGv1ZlAPUZwhrE62KmKUPSg/exec';
 })();
-const MAX_UPLOAD_BYTES=1024*1024*1024;
-const CHUNK_SIZE=8*1024*1024;
-const ACCENT_COLORS=['indigo','red','blue','orange','yellow','pink','purple','gray','green'];
-const FAST_POLL_MS=600;
-const NORMAL_POLL_MS=1000;
-const SLOW_POLL_MS=2000;
-const HIDDEN_POLL_MS=4000;
+
+const MAX_UPLOAD_BYTES = 1024*1024*1024;
+const CHUNK_SIZE = 8*1024*1024;
+const ACCENT_COLORS = ['indigo','red','blue','orange','yellow','pink','purple','gray','green'];
+const FAST_POLL_MS = 600;
+const NORMAL_POLL_MS = 1000;
+const SLOW_POLL_MS = 2000;
+const HIDDEN_POLL_MS = 4000;
 
 /* ======================== Device ID ======================== */
 
-var deviceId=(function(){
-  var stored=localStorage.getItem('heyo_device_id');
-  if(stored)return stored;
-  var id='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
+var deviceId = (function(){
+  var stored = localStorage.getItem('heyo_device_id');
+  if(stored) return stored;
+  var id = 'dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
   localStorage.setItem('heyo_device_id',id);
   return id;
 })();
 
-/* Build a better UA string using modern API when available */
-var friendlyUA=(function(){
+var friendlyUA = (function(){
   try{
     if(navigator.userAgentData){
-      var d=navigator.userAgentData;
-      var brands=(d.brands||[]).filter(function(b){return b.brand&&b.brand.indexOf('Not')!==0&&b.brand.indexOf('Chromium')===-1});
-      var browserName=brands.length?brands[0].brand+(brands[0].version?' '+brands[0].version:''):'Chrome';
-      var platform=d.platform||'';
-      var mobile=d.mobile?' Mobile':'';
+      var d = navigator.userAgentData;
+      var brands = (d.brands||[]).filter(function(b){
+        return b.brand && b.brand.indexOf('Not')!==0 && b.brand.indexOf('Chromium')===-1;
+      });
+      var browserName = brands.length ? brands[0].brand+(brands[0].version?' '+brands[0].version:'') : 'Chrome';
+      var platform = d.platform || '';
+      var mobile = d.mobile ? ' Mobile' : '';
       return browserName+' on '+platform+mobile;
     }
   }catch(e){}
-  return navigator.userAgent||'';
+  return navigator.userAgent || '';
 })();
 
 /* ======================== i18n ======================== */
 
-const I18N={
+const I18N = {
   en:{
     authSubLogin:'Welcome back. Log in to continue.',
     authSubReg:'Welcome to Heyo. Sign up to continue.',
@@ -556,8 +586,8 @@ const I18N={
   }
 };
 
-let currentLanguage=localStorage.getItem('heyo_lang')||'en';
-function t(key){return(I18N[currentLanguage]&&I18N[currentLanguage][key])||I18N.en[key]||key}
+let currentLanguage = localStorage.getItem('heyo_lang') || 'en';
+function t(key){ return (I18N[currentLanguage] && I18N[currentLanguage][key]) || I18N.en[key] || key; }
 
 function applyAllLabels(){
   document.getElementById('authSub').textContent=(currentAuthMode==='login')?t('authSubLogin'):t('authSubReg');
@@ -588,20 +618,30 @@ function applyAllLabels(){
       withSuccessHandler:function(callback){return createRunner(typeof callback==='function'?callback:null,failureHandler)},
       withFailureHandler:function(callback){return createRunner(successHandler,typeof callback==='function'?callback:null)}
     };
-    return new Proxy(chain,{get:function(target,property){
-      if(property in target)return target[property];
-      if(typeof property!=='string')return undefined;
-      return function(){var args=Array.from(arguments);callServerAction(property,args,successHandler,failureHandler)}
-    }});
+    return new Proxy(chain,{
+      get:function(target,property){
+        if(property in target) return target[property];
+        if(typeof property!=='string') return undefined;
+        return function(){
+          var args=Array.from(arguments);
+          callServerAction(property,args,successHandler,failureHandler);
+        };
+      }
+    });
   }
   async function callServerAction(action,args,successHandler,failureHandler){
     try{
-      var response=await fetch(SCRIPT_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:action,data:args})});
+      var response=await fetch(SCRIPT_URL,{
+        method:'POST',
+        redirect:'follow',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({action:action,data:args})
+      });
       var rawText=await response.text(), result;
-      try{result=rawText?JSON.parse(rawText):null}catch(parseError){throw new Error('Invalid JSON response from server.')}
-      if(typeof successHandler==='function')successHandler(result);
+      try{ result=rawText?JSON.parse(rawText):null; }catch(parseError){ throw new Error('Invalid JSON response from server.'); }
+      if(typeof successHandler==='function') successHandler(result);
     }catch(error){
-      if(typeof failureHandler==='function')failureHandler(error);
+      if(typeof failureHandler==='function') failureHandler(error);
       else console.error('API error:',error);
     }
   }
@@ -612,100 +652,99 @@ function applyAllLabels(){
 
 /* ======================== Application State ======================== */
 
-var sessionToken=localStorage.getItem('heyo_token')||'';
-var currentUser=null;
-var conversations=[];
-var activeConversationId='';
-var activeConversation=null;
-var currentAuthMode='login';
+let sessionToken = localStorage.getItem('heyo_token') || '';
+let currentUser = null;
+let conversations = [];
+let activeConversationId = '';
+let activeConversation = null;
+let currentAuthMode = 'login';
 
-var conversationVersions=new Map();
-var conversationMessages=new Map();
-var lastRenderedVersion=new Map();
-var globalConversationVersion=0;
-var globalMessageVersion=0;
+let conversationMessages = new Map();
+let globalConversationVersion = 0;
+let globalMessageVersion = 0;
 
-var pollIntervalHandle=null;
-var isPolling=false;
-var isLoadingMessages=false;
-var needsMessageReload=false;
-var searchDebounceTimer=null;
-var replyTarget=null;
-var modalResolveFunction=null;
-var currentModalConfig=null;
-var isProfileModalOpen=false;
+let pollIntervalHandle = null;
+let isPolling = false;
+let searchDebounceTimer = null;
+let replyTarget = null;
+let modalResolveFunction = null;
+let currentModalConfig = null;
+let isProfileModalOpen = false;
 
-var isDropdownOpen=false;
-var dropdownMessageId='';
-var longPressTimer=null;
-var longPressFired=false;
+let isDropdownOpen = false;
+let dropdownMessageId = '';
+let longPressTimer = null;
+let longPressFired = false;
 
-var onlineStatusMap={};
-var stagedFile=null;
-var localThemeOverride=null;
-var lastPollAt=0;
-var fastPollBoostUntil=0;
+let onlineStatusMap = {};
+let stagedFile = null;
+let localThemeOverride = null;
+let fastPollBoostUntil = 0;
 
-var notifiedMessageIds=new Set();
-var notificationsEnabled=false;
-var lastNotificationVersion=0;
+let notifiedMessageIds = new Set();
+let notificationsEnabled = false;
+let lastNotificationVersion = 0;
 
-var uploadState={active:false,file:null,xhr:null,uploadToken:'',uploadUrl:'',fileId:'',conversationId:'',progress:0};
+let uploadState = {active:false,file:null,xhr:null,uploadToken:'',uploadUrl:'',fileId:'',conversationId:'',progress:0};
+
+let activeMessagesUnsubscribe = null;
+let activeMessagesListenerConversationId = '';
+let hasLoadedInitialSnapshotForConversation = false;
+
+/* ======================== Global state sync for inline HTML ======================== */
+
+function syncWindowState(){
+  window.sessionToken = sessionToken;
+  window.currentUser = currentUser;
+  window.conversations = conversations;
+  window.activeConversationId = activeConversationId;
+  window.activeConversation = activeConversation;
+  window.replyTarget = replyTarget;
+}
+syncWindowState();
 
 /* ======================== URL Helpers ======================== */
 
-function driveImageUrl(fileId){return 'https://lh3.googleusercontent.com/d/'+encodeURIComponent(fileId)}
-function drivePreviewUrl(fileId){return 'https://drive.google.com/file/d/'+encodeURIComponent(fileId)+'/preview'}
-function driveViewUrl(fileId){return 'https://drive.google.com/file/d/'+encodeURIComponent(fileId)+'/view'}
-function driveDownloadUrl(fileId){return 'https://drive.google.com/uc?id='+encodeURIComponent(fileId)+'&export=download'}
+function driveImageUrl(fileId){ return 'https://lh3.googleusercontent.com/d/'+encodeURIComponent(fileId); }
+function drivePreviewUrl(fileId){ return 'https://drive.google.com/file/d/'+encodeURIComponent(fileId)+'/preview'; }
+function driveViewUrl(fileId){ return 'https://drive.google.com/file/d/'+encodeURIComponent(fileId)+'/view'; }
+function driveDownloadUrl(fileId){ return 'https://drive.google.com/uc?id='+encodeURIComponent(fileId)+'&export=download'; }
 
 /* ======================== Notifications ======================== */
 
 function requestNotificationPermission(){
-  if(!('Notification' in window))return;
-  if(Notification.permission==='granted'){notificationsEnabled=true;return}
-  if(Notification.permission==='denied')return;
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='granted'){ notificationsEnabled=true; return; }
+  if(Notification.permission==='denied') return;
   Notification.requestPermission().then(function(permission){
     notificationsEnabled=(permission==='granted');
   });
 }
 
 function showBrowserNotification(title,body,conversationId){
-  if(!notificationsEnabled||!('Notification' in window)||Notification.permission!=='granted')return;
-  if(document.hasFocus()&&activeConversationId===conversationId)return;
+  if(!notificationsEnabled||!('Notification' in window)||Notification.permission!=='granted') return;
+  if(document.hasFocus()&&activeConversationId===conversationId) return;
   try{
     var notification=new Notification(title,{body:body,icon:'/favicon.ico',tag:'heyo-'+conversationId,renotify:true,silent:false});
     notification.onclick=function(){
       window.focus();
-      if(conversationId)selectConversation(conversationId);
+      if(conversationId) selectConversation(conversationId);
       notification.close();
     };
-    setTimeout(function(){try{notification.close()}catch(e){}},8000);
+    setTimeout(function(){ try{notification.close();}catch(e){} },8000);
   }catch(e){}
 }
 
-function checkForNewNotifications(response){
-  if(!notificationsEnabled)return;
-  if(!response)return;
-  /* Check messages from current conversation poll */
-  if(response.messagesData&&response.messagesData.messages){
-    response.messagesData.messages.forEach(function(msg){
-      notifyIfNew_(msg);
-    });
-  }
-}
-
 function notifyIfNew_(msg){
-  if(!msg||msg.isDeletedEvent||msg.deletedAt)return;
-  if(msg.isMine)return;
-  if(notifiedMessageIds.has(msg.messageId))return;
+  if(!msg||msg.isDeletedEvent||msg.deletedAt) return;
+  if(msg.isMine) return;
+  if(notifiedMessageIds.has(msg.messageId)) return;
   notifiedMessageIds.add(msg.messageId);
   if(notifiedMessageIds.size>500){
     var arr=Array.from(notifiedMessageIds);
     notifiedMessageIds=new Set(arr.slice(arr.length-250));
   }
-  /* Skip notification if user is focused on this exact conversation */
-  if(document.hasFocus()&&activeConversationId===msg.conversationId)return;
+  if(document.hasFocus()&&activeConversationId===msg.conversationId) return;
   var convo=findConversationById(msg.conversationId);
   var convoTitle=convo?convo.title:'Heyo';
   var body=(msg.displayName||'User')+': '+(msg.text||'[file]');
@@ -713,19 +752,81 @@ function notifyIfNew_(msg){
 }
 
 function pollBackgroundNotifications_(){
-  if(!notificationsEnabled||!sessionToken)return;
+  if(!notificationsEnabled||!sessionToken) return;
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok)return;
+    if(!response||!response.ok) return;
     var notifications=response.notifications||[];
     notifications.forEach(function(n){
-      if(!n||!n.messageId)return;
-      if(notifiedMessageIds.has(n.messageId))return;
+      if(!n||!n.messageId) return;
+      if(notifiedMessageIds.has(n.messageId)) return;
       notifiedMessageIds.add(n.messageId);
-      if(document.hasFocus()&&activeConversationId===n.conversationId)return;
-      showBrowserNotification(n.conversationTitle||'Heyo',(n.senderName||'User')+': '+(n.text||'[file]'),n.conversationId);
+      if(document.hasFocus()&&activeConversationId===n.conversationId) return;
+      showBrowserNotification(
+        n.conversationTitle||'Heyo',
+        (n.senderName||'User')+': '+(n.text||'[file]'),
+        n.conversationId
+      );
     });
-    if(typeof response.globalMessageVersion==='number')lastNotificationVersion=response.globalMessageVersion;
+    if(typeof response.globalMessageVersion==='number') lastNotificationVersion=response.globalMessageVersion;
   }).withFailureHandler(function(){}).getNotificationPayload(sessionToken,lastNotificationVersion);
+}
+
+/* ======================== Firebase Message Mapping ======================== */
+
+function timestampToIso(value){
+  if(!value) return '';
+  if(typeof value === 'string') return value;
+  if(value instanceof Date) return value.toISOString();
+  if(typeof value.toDate === 'function') return value.toDate().toISOString();
+  if(typeof value.seconds === 'number') return new Date(value.seconds * 1000).toISOString();
+  return '';
+}
+
+function makeInitials(name){
+  var v = String(name || '').trim();
+  if(!v) return 'U';
+  var parts = v.split(/\s+/).filter(Boolean);
+  if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function normalizeFirestoreMessage(docSnap){
+  var data = docSnap.data() || {};
+  var createdAtIso = timestampToIso(data.createdAt);
+  var editedAtIso = timestampToIso(data.editedAt);
+
+  return {
+    messageId: docSnap.id,
+    conversationId: activeConversationId,
+    userId: data.userId || '',
+    displayName: data.displayName || data.senderDisplayName || 'User',
+    username: data.username || data.senderUsername || '',
+    initials: data.initials || makeInitials(data.displayName || data.senderDisplayName || 'User'),
+    avatarFileId: data.avatarFileId || data.senderAvatarFileId || '',
+    text: data.text || '',
+    createdAt: createdAtIso,
+    editedAt: editedAtIso,
+    deletedAt: timestampToIso(data.deletedAt),
+    isDeletedEvent: !!data.isDeletedEvent,
+    isMine: !!(currentUser && data.userId && data.userId === currentUser.userId),
+    messageType: data.messageType || 'text',
+    attachments: Array.isArray(data.attachments) ? data.attachments : [],
+    meta: data.meta || {},
+    replyToMessageId: data.replyToMessageId || '',
+    replyDisplayName: data.replyDisplayName || '',
+    replyPreview: data.replyPreview || '',
+    forwardedFromMessageId: data.forwardedFromMessageId || '',
+    forwardedFromTitle: data.forwardedFromTitle || ''
+  };
+}
+
+function stopConversationMessagesListener(){
+  if(typeof activeMessagesUnsubscribe === 'function'){
+    try{ activeMessagesUnsubscribe(); }catch(e){}
+  }
+  activeMessagesUnsubscribe = null;
+  activeMessagesListenerConversationId = '';
+  hasLoadedInitialSnapshotForConversation = false;
 }
 
 /* ======================== Avatar HTML Helper ======================== */
@@ -744,7 +845,7 @@ function buildAvatarHTML(initials,avatarFileId,extraClass,showOnline,onClickHand
 
 function applyThemeAndAccent(theme,accentColor){
   document.body.classList.remove('light','dark');
-  ACCENT_COLORS.forEach(function(color){document.body.classList.remove('ac-'+color)});
+  ACCENT_COLORS.forEach(function(color){document.body.classList.remove('ac-'+color);});
   document.body.classList.add(theme==='dark'?'dark':'light');
   document.body.classList.add('ac-'+(accentColor||'indigo'));
   var metaTheme=document.querySelector('meta[name="theme-color"]');
@@ -782,20 +883,29 @@ function switchRegMethod(method){
 function doLogin(){
   var identifier=document.getElementById('loginId').value.trim();
   var password=document.getElementById('loginPw').value;
-  if(!identifier||!password){setAuthStatus(t('emailPhoneUsername')+' & '+t('password')+' required.','error');return}
+  if(!identifier||!password){
+    setAuthStatus(t('emailPhoneUsername')+' & '+t('password')+' required.','error');
+    return;
+  }
   setAuthStatus(t('loggingIn'),'ok');
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){setAuthStatus((response&&response.error)||'Login failed.','error');return}
+    if(!response||!response.ok){
+      setAuthStatus((response&&response.error)||'Login failed.','error');
+      return;
+    }
     sessionToken=response.token;
     localStorage.setItem('heyo_token',sessionToken);
-    if(response.deviceId)localStorage.setItem('heyo_device_id',response.deviceId);
+    if(response.deviceId) localStorage.setItem('heyo_device_id',response.deviceId);
     currentUser=response.user;
     currentLanguage=currentUser.language||'en';
     localStorage.setItem('heyo_lang',currentLanguage);
     document.getElementById('loginPw').value='';
     setAuthStatus('','ok');
+    syncWindowState();
     startApplication();
-  }).withFailureHandler(function(){setAuthStatus('Login failed.','error')}).login(identifier,password,deviceId,friendlyUA);
+  }).withFailureHandler(function(){
+    setAuthStatus('Login failed.','error');
+  }).login(identifier,password,deviceId,friendlyUA);
 }
 
 function doRegister(){
@@ -807,37 +917,51 @@ function doRegister(){
     phoneCountry:document.getElementById('regPhoneWrap').style.display!=='none'?document.getElementById('regPhCo').value:'',
     phone:document.getElementById('regPhoneWrap').style.display!=='none'?document.getElementById('regPh').value.trim():'',
     bio:document.getElementById('regBio').value.trim(),
-    theme:'light',accentColor:'indigo',language:currentLanguage,
-    deviceId:deviceId,userAgent:friendlyUA
+    theme:'light',
+    accentColor:'indigo',
+    language:currentLanguage,
+    deviceId:deviceId,
+    userAgent:friendlyUA
   };
-  if(!payload.displayName||!payload.username||!payload.password){setAuthStatus('Required fields missing.','error');return}
+  if(!payload.displayName||!payload.username||!payload.password){
+    setAuthStatus('Required fields missing.','error');
+    return;
+  }
   setAuthStatus(t('creatingAccount'),'ok');
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){setAuthStatus((response&&response.error)||'Registration failed.','error');return}
+    if(!response||!response.ok){
+      setAuthStatus((response&&response.error)||'Registration failed.','error');
+      return;
+    }
     sessionToken=response.token;
     localStorage.setItem('heyo_token',sessionToken);
-    if(response.deviceId)localStorage.setItem('heyo_device_id',response.deviceId);
+    if(response.deviceId) localStorage.setItem('heyo_device_id',response.deviceId);
     currentUser=response.user;
     currentLanguage=currentUser.language||'en';
     localStorage.setItem('heyo_lang',currentLanguage);
     setAuthStatus('','ok');
+    syncWindowState();
     startApplication();
-  }).withFailureHandler(function(){setAuthStatus('Registration failed.','error')}).registerAccount(payload);
+  }).withFailureHandler(function(){
+    setAuthStatus('Registration failed.','error');
+  }).registerAccount(payload);
 }
 
 function verifyExistingSession(){
-  if(!sessionToken){showAuthScreen();return}
+  if(!sessionToken){ showAuthScreen(); return; }
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){forceLogoutToAuth();return}
+    if(!response||!response.ok){ forceLogoutToAuth(); return; }
     currentUser=response.user;
     currentLanguage=currentUser.language||'en';
     localStorage.setItem('heyo_lang',currentLanguage);
+    syncWindowState();
     startApplication();
-  }).withFailureHandler(function(){forceLogoutToAuth()}).getSession(sessionToken);
+  }).withFailureHandler(function(){ forceLogoutToAuth(); }).getSession(sessionToken);
 }
 
 function showAuthScreen(){
   stopPolling();
+  stopConversationMessagesListener();
   document.getElementById('authScreen').classList.add('active');
   document.getElementById('appScreen').classList.remove('active');
   applyAllLabels();
@@ -855,72 +979,76 @@ function startApplication(){
   conversations=[];
   activeConversationId='';
   activeConversation=null;
-  conversationVersions.clear();
   conversationMessages.clear();
-  lastRenderedVersion.clear();
   replyTarget=null;
   localThemeOverride=null;
   stagedFile=null;
   globalConversationVersion=0;
   globalMessageVersion=0;
   fastPollBoostUntil=Date.now()+10000;
+  stopConversationMessagesListener();
 
+  syncWindowState();
   showAppScreen();
   applyThemeAndAccent((currentUser&&currentUser.theme)||'light',(currentUser&&currentUser.accentColor)||'indigo');
   renderCurrentUserSidebar();
   applyAllLabels();
   autoGrowTextarea(document.getElementById('composerInput'));
   fetchApplicationData(true);
-  startPolling();
+  startPolling(); /* sidebar / online / metadata only */
   checkPendingInvite();
   requestNotificationPermission();
 }
 
 function renderCurrentUserSidebar(){
-  if(!currentUser)return;
+  if(!currentUser) return;
   document.getElementById('meDisplayName').textContent=currentUser.displayName||'User';
   document.getElementById('meUsername').textContent='@'+(currentUser.username||'');
   var avatar=document.getElementById('meAvatar'), avatarInner=avatar.querySelector('.av-inner');
-  avatar.onclick=function(){openProfile(currentUser&&currentUser.userId)};
+  avatar.onclick=function(){ openProfile(currentUser && currentUser.userId); };
   if(currentUser.avatarFileId) avatarInner.innerHTML='<img src="'+driveImageUrl(currentUser.avatarFileId)+'=s100" alt="" onerror="this.onerror=null;this.parentNode.textContent=\''+escapeHtml(currentUser.initials||'U')+'\'">';
   else avatarInner.textContent=currentUser.initials||'U';
   document.getElementById('adminBtn').style.display=currentUser&&currentUser.isAdmin?'':'none';
 }
 
 function fetchApplicationData(isInitialLoad){
-  if(!sessionToken)return;
+  if(!sessionToken) return;
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
+    if(!response||!response.ok){ handleApplicationError(response); return; }
     currentUser=response.user;
     currentLanguage=currentUser.language||'en';
     globalConversationVersion=Number(response.globalConversationVersion||0);
     globalMessageVersion=Number(response.globalMessageVersion||0);
     lastNotificationVersion=globalMessageVersion;
     conversations=Array.isArray(response.conversations)?response.conversations:[];
-    if(response.online)onlineStatusMap=response.online;
-    if(!localThemeOverride)applyThemeAndAccent(currentUser.theme||'light',currentUser.accentColor||'indigo');
+    if(response.online) onlineStatusMap=response.online;
+    if(!localThemeOverride) applyThemeAndAccent(currentUser.theme||'light',currentUser.accentColor||'indigo');
+    syncWindowState();
     renderCurrentUserSidebar();
     applyAllLabels();
     renderSidebar();
     if(isInitialLoad) showPlaceholder();
     else if(activeConversationId){
       activeConversation=findConversationById(activeConversationId);
+      syncWindowState();
       if(!activeConversation) showPlaceholder();
       else renderTopbar();
     }
-  }).withFailureHandler(function(error){console.error(error)}).getAppData(sessionToken);
+  }).withFailureHandler(function(error){
+    console.error(error);
+  }).getAppData(sessionToken);
 }
 
 function findConversationById(conversationId){
-  return conversations.find(function(conversation){return conversation.conversationId===conversationId})||null;
+  return conversations.find(function(conversation){ return conversation.conversationId===conversationId; }) || null;
 }
 
-/* ======================== Polling ======================== */
+/* ======================== Polling (sidebar / online only) ======================== */
 
 function computePollDelay(){
-  if(document.hidden)return HIDDEN_POLL_MS;
-  if(Date.now()<fastPollBoostUntil)return FAST_POLL_MS;
-  if(activeConversationId)return NORMAL_POLL_MS;
+  if(document.hidden) return HIDDEN_POLL_MS;
+  if(Date.now()<fastPollBoostUntil) return FAST_POLL_MS;
+  if(activeConversationId) return NORMAL_POLL_MS;
   return SLOW_POLL_MS;
 }
 
@@ -929,52 +1057,44 @@ function scheduleNextPoll(){
   pollIntervalHandle=setTimeout(executePoll,computePollDelay());
 }
 
-function startPolling(){scheduleNextPoll();executePoll()}
-function stopPolling(){if(pollIntervalHandle){clearTimeout(pollIntervalHandle);pollIntervalHandle=null}}
-
-function boostFastPolling(ms){fastPollBoostUntil=Math.max(fastPollBoostUntil,Date.now()+(ms||8000))}
+function startPolling(){ scheduleNextPoll(); executePoll(); }
+function stopPolling(){ if(pollIntervalHandle){ clearTimeout(pollIntervalHandle); pollIntervalHandle=null; } }
+function boostFastPolling(ms){ fastPollBoostUntil=Math.max(fastPollBoostUntil,Date.now()+(ms||8000)); }
 
 function executePoll(){
-  if(isPolling){scheduleNextPoll();return}
-  if(!sessionToken){scheduleNextPoll();return}
+  if(isPolling){ scheduleNextPoll(); return; }
+  if(!sessionToken){ scheduleNextPoll(); return; }
+
   isPolling=true;
-  lastPollAt=Date.now();
-
-  var currentConvoId=activeConversationId;
-  var sinceVersion=currentConvoId?Number(conversationVersions.get(currentConvoId)||0):0;
-  var sinceConversationVersion=Number(globalConversationVersion||0);
-
   google.script.run.withSuccessHandler(function(response){
     isPolling=false;
-    if(!response||!response.ok){handleApplicationError(response);scheduleNextPoll();return}
-    if(response.online)onlineStatusMap=response.online;
-    if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||0);
-    if(typeof response.globalMessageVersion!=='undefined')globalMessageVersion=Number(response.globalMessageVersion||0);
+    if(!response||!response.ok){
+      handleApplicationError(response);
+      scheduleNextPoll();
+      return;
+    }
+
+    if(response.online) onlineStatusMap=response.online;
+    if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||0);
+    if(typeof response.globalMessageVersion!=='undefined') globalMessageVersion=Number(response.globalMessageVersion||0);
+
+    if(response.user){
+      currentUser=response.user;
+      currentLanguage=currentUser.language||currentLanguage;
+      syncWindowState();
+      renderCurrentUserSidebar();
+    }
 
     if(response.conversations){
       conversations=response.conversations;
       activeConversation=findConversationById(activeConversationId);
+      syncWindowState();
       renderSidebar();
       renderTopbar();
       updateComposerVisibility();
     }
 
-    if(response.messagesData&&String(response.messagesData.conversationId)===activeConversationId){
-      var messagesData=response.messagesData;
-      if(typeof messagesData.version==='number') conversationVersions.set(activeConversationId,messagesData.version);
-      if(messagesData.reset||!conversationMessages.has(activeConversationId)) conversationMessages.set(activeConversationId,[]);
-      if(messagesData.messages&&messagesData.messages.length){
-        mergeIncomingMessages(activeConversationId,messagesData.messages,!!messagesData.reset);
-        smartRenderMessages();
-      }else if(messagesData.reset){
-        conversationMessages.set(activeConversationId,[]);
-        smartRenderMessages();
-      }
-      checkForNewNotifications(response);
-    }
-
-    /* Background notification poll for OTHER conversations */
-    if(notificationsEnabled&&response.globalMessageVersion&&response.globalMessageVersion>lastNotificationVersion){
+    if(notificationsEnabled && response.globalMessageVersion && response.globalMessageVersion>lastNotificationVersion){
       pollBackgroundNotifications_();
       lastNotificationVersion=response.globalMessageVersion;
     }
@@ -983,32 +1103,35 @@ function executePoll(){
   }).withFailureHandler(function(){
     isPolling=false;
     scheduleNextPoll();
-  }).pollUpdates(sessionToken,currentConvoId,sinceVersion,sinceConversationVersion);
+  }).getAppData(sessionToken);
 }
 
 function checkPendingInvite(){
   var pendingInvite=localStorage.getItem('heyo_pending_invite')||'';
-  if(!pendingInvite)return;
+  if(!pendingInvite) return;
   localStorage.removeItem('heyo_pending_invite');
-  if(!sessionToken)return; /* Must be logged in */
+  if(!sessionToken) return;
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){if(response&&response.error)console.warn('Invite join failed:',response.error);return}
+    if(!response||!response.ok){ if(response&&response.error) console.warn('Invite join failed:',response.error); return; }
     if(response.conversations){
       conversations=response.conversations;
-      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      syncWindowState();
       renderSidebar();
     }
-    if(response.conversationId)selectConversation(response.conversationId);
+    if(response.conversationId) selectConversation(response.conversationId);
     boostFastPolling(10000);
-  }).withFailureHandler(function(err){console.error('Invite join error:',err)}).joinGroupByInvite(sessionToken,pendingInvite);
+  }).withFailureHandler(function(err){
+    console.error('Invite join error:',err);
+  }).joinGroupByInvite(sessionToken,pendingInvite);
 }
 
 /* ======================== Sidebar ======================== */
 
 function renderSidebar(){
-  var channels=conversations.filter(function(c){return c.type==='channel'});
-  var groups=conversations.filter(function(c){return c.type==='group'});
-  var directs=conversations.filter(function(c){return c.type==='direct'});
+  var channels=conversations.filter(function(c){return c.type==='channel';});
+  var groups=conversations.filter(function(c){return c.type==='group';});
+  var directs=conversations.filter(function(c){return c.type==='direct';});
   document.getElementById('channelList').innerHTML=channels.map(renderConversationItem).join('');
   document.getElementById('groupList').innerHTML=groups.map(renderConversationItem).join('');
   document.getElementById('dmList').innerHTML=directs.length?directs.map(renderConversationItem).join(''):'<div class="empty-st" style="padding:14px;margin:0;font-size:13px">'+t('noMessages')+'</div>';
@@ -1030,6 +1153,8 @@ function selectConversation(conversationId){
   activeConversationId=conversationId;
   activeConversation=findConversationById(conversationId);
   replyTarget=null;
+
+  syncWindowState();
   renderReplyBanner();
   renderSidebar();
   renderTopbar();
@@ -1038,9 +1163,7 @@ function selectConversation(conversationId){
   resetUploadState(true);
   clearStagedFile();
 
-  if(!conversationVersions.has(conversationId)) conversationVersions.set(conversationId,0);
   if(!conversationMessages.has(conversationId)) conversationMessages.set(conversationId,[]);
-  lastRenderedVersion.delete(conversationId);
 
   updateComposerVisibility();
   boostFastPolling(12000);
@@ -1063,7 +1186,7 @@ function renderTopbar(){
 
   titleElement.textContent=activeConversation.title||'Chat';
   subtitleElement.textContent=activeConversation.subtitle||'';
-  avatar.onclick=function(){openConversationProfile()};
+  avatar.onclick=function(){ openConversationProfile(); };
 
   if(activeConversation.avatarFileId) avatarInner.innerHTML='<img src="'+driveImageUrl(activeConversation.avatarFileId)+'=s100" alt="" onerror="this.onerror=null;this.parentNode.textContent=\''+escapeHtml(activeConversation.initials||'C')+'\'">';
   else avatarInner.textContent=activeConversation.initials||'C';
@@ -1072,6 +1195,8 @@ function renderTopbar(){
 function showPlaceholder(){
   activeConversationId='';
   activeConversation=null;
+  stopConversationMessagesListener();
+  syncWindowState();
   renderTopbar();
   renderSidebar();
   document.getElementById('placeholderView').style.display='flex';
@@ -1086,58 +1211,66 @@ function showConversationView(){
 function updateComposerVisibility(){
   var composerWrap=document.getElementById('composerWrap');
   var groupInviteBtn=document.getElementById('groupInviteBtn');
-  if(!activeConversation){composerWrap.style.display='';groupInviteBtn.style.display='';return}
+  if(!activeConversation){ composerWrap.style.display=''; groupInviteBtn.style.display=''; return; }
   if(activeConversation.type==='channel'&&(!currentUser||currentUser.username!=='usonance')) composerWrap.style.display='none';
   else composerWrap.style.display='';
   groupInviteBtn.style.display=(activeConversation&&activeConversation.type!=='channel')?'':'none';
 }
 
-/* ======================== Message Loading ======================== */
+/* ======================== Firestore Real-time Messages ======================== */
 
 function loadConversationMessages(forceScroll){
-  if(!sessionToken||!activeConversationId)return;
-  if(isLoadingMessages){needsMessageReload=true;return}
-  isLoadingMessages=true;
-  var requestedConvoId=activeConversationId;
-  var sinceVersion=Number(conversationVersions.get(requestedConvoId)||0);
+  if(!activeConversationId) return;
 
-  google.script.run.withSuccessHandler(function(response){
-    isLoadingMessages=false;
-    if(!response||!response.ok){handleApplicationError(response);return}
-    var messagesData=response.messagesData;
-    if(!messagesData||String(messagesData.conversationId)!==requestedConvoId)return;
-    if(typeof messagesData.version==='number') conversationVersions.set(requestedConvoId,messagesData.version);
-    if(messagesData.reset||!conversationMessages.has(requestedConvoId)) conversationMessages.set(requestedConvoId,[]);
-    if(messagesData.messages&&messagesData.messages.length) mergeIncomingMessages(requestedConvoId,messagesData.messages,!!messagesData.reset);
-    else if(messagesData.reset) conversationMessages.set(requestedConvoId,[]);
-    if(activeConversationId===requestedConvoId) renderAllMessages(forceScroll);
-    if(needsMessageReload){needsMessageReload=false;loadConversationMessages(false)}
-  }).withFailureHandler(function(error){console.error(error);isLoadingMessages=false}).getConversationMessages(sessionToken,requestedConvoId,sinceVersion);
-}
+  if(activeMessagesListenerConversationId && activeMessagesListenerConversationId !== activeConversationId){
+    stopConversationMessagesListener();
+  }
 
-function mergeIncomingMessages(conversationId,incomingMessages,isReset){
-  var currentMessages=isReset?[]:(conversationMessages.get(conversationId)||[]);
-  var messagesById=new Map();
-  currentMessages.forEach(function(message){messagesById.set(message.messageId,message)});
-  incomingMessages.forEach(function(message){
-    if(message&&message.isDeletedEvent){messagesById.delete(message.messageId);return}
-    messagesById.set(message.messageId,message);
+  if(activeMessagesListenerConversationId === activeConversationId && typeof activeMessagesUnsubscribe === 'function'){
+    if(forceScroll) renderAllMessages(true);
+    return;
+  }
+
+  hasLoadedInitialSnapshotForConversation = false;
+  activeMessagesListenerConversationId = activeConversationId;
+  conversationMessages.set(activeConversationId,[]);
+  renderAllMessages(false);
+
+  var messagesRef = collection(db,'conversations',activeConversationId,'messages');
+  var messagesQuery = query(messagesRef,orderBy('createdAt','asc'));
+
+  activeMessagesUnsubscribe = onSnapshot(messagesQuery,function(snapshot){
+    if(activeConversationId !== activeMessagesListenerConversationId) return;
+
+    var nextMessages = [];
+    snapshot.forEach(function(docSnap){
+      var msg = normalizeFirestoreMessage(docSnap);
+      if(!msg.deletedAt && !msg.isDeletedEvent) nextMessages.push(msg);
+    });
+
+    nextMessages.sort(function(a,b){
+      var timeA=a.createdAt?new Date(a.createdAt).getTime():0;
+      var timeB=b.createdAt?new Date(b.createdAt).getTime():0;
+      if(timeA!==timeB) return timeA-timeB;
+      return String(a.messageId).localeCompare(String(b.messageId));
+    });
+
+    conversationMessages.set(activeConversationId,nextMessages);
+
+    if(hasLoadedInitialSnapshotForConversation){
+      snapshot.docChanges().forEach(function(change){
+        if(change.type==='added'){
+          var addedMsg = normalizeFirestoreMessage(change.doc);
+          notifyIfNew_(addedMsg);
+        }
+      });
+    }
+
+    renderAllMessages(forceScroll || !hasLoadedInitialSnapshotForConversation);
+    hasLoadedInitialSnapshotForConversation = true;
+  },function(error){
+    console.error('Firestore onSnapshot error:',error);
   });
-  var mergedMessages=[];
-  messagesById.forEach(function(message){if(!message.deletedAt) mergedMessages.push(message)});
-  mergedMessages.sort(function(a,b){
-    var timeA=a.createdAt?new Date(a.createdAt).getTime():0;
-    var timeB=b.createdAt?new Date(b.createdAt).getTime():0;
-    if(timeA!==timeB)return timeA-timeB;
-    return String(a.messageId).localeCompare(String(b.messageId));
-  });
-  conversationMessages.set(conversationId,mergedMessages);
-}
-
-function smartRenderMessages(){
-  var currentVersion=conversationVersions.get(activeConversationId)||0;
-  var lastVersion=lastRenderedVersion.get(activeConversationId)||0;
-  if(currentVersion!==lastVersion) renderAllMessages(false);
 }
 
 function renderAllMessages(forceScroll){
@@ -1145,10 +1278,10 @@ function renderAllMessages(forceScroll){
   var messageList=conversationMessages.get(activeConversationId)||[];
   var isNearBottom=Math.abs(messagesContainer.scrollHeight-messagesContainer.scrollTop-messagesContainer.clientHeight)<120;
 
-  var currentVersion=conversationVersions.get(activeConversationId)||0;
-  lastRenderedVersion.set(activeConversationId,currentVersion);
-
-  if(!messageList.length){messagesContainer.innerHTML='<div class="empty-st">'+t('noMessages')+'</div>';return}
+  if(!messageList.length){
+    messagesContainer.innerHTML='<div class="empty-st">'+t('noMessages')+'</div>';
+    return;
+  }
 
   var htmlParts=[], previousDateString='';
   for(var i=0;i<messageList.length;i++){
@@ -1166,15 +1299,15 @@ function renderAllMessages(forceScroll){
 }
 
 function getDateString(isoString){
-  if(!isoString)return'';
+  if(!isoString) return '';
   var date=new Date(isoString);
-  if(isNaN(date.getTime()))return'';
+  if(isNaN(date.getTime())) return '';
   return date.getFullYear()+'-'+(date.getMonth()+1)+'-'+date.getDate();
 }
 
 function formatDateSeparator(isoString){
   var date=new Date(isoString);
-  if(isNaN(date.getTime()))return'';
+  if(isNaN(date.getTime())) return '';
   var now=new Date();
   if(date.toDateString()===now.toDateString()) return t('today');
   var yesterday=new Date(now); yesterday.setDate(yesterday.getDate()-1);
@@ -1186,9 +1319,9 @@ function renderSingleMessage(message){
   var mineClass=message.isMine?'mine':'';
   var isOnline=onlineStatusMap[message.userId]||false;
   var avatarClickHandler="openProfile('"+escapeJsString(message.userId)+"')";
-  /* Use currentUser avatar for own messages if message doesn't have one */
   var msgAvatar=message.avatarFileId||'';
-  if(!msgAvatar&&message.isMine&&currentUser&&currentUser.avatarFileId)msgAvatar=currentUser.avatarFileId;
+  if(!msgAvatar&&message.isMine&&currentUser&&currentUser.avatarFileId) msgAvatar=currentUser.avatarFileId;
+
   var forwardedHtml='';
   if(message.forwardedFromMessageId){
     var sourceLabel=message.forwardedFromTitle?escapeHtml(message.forwardedFromTitle):'';
@@ -1206,7 +1339,7 @@ function renderSingleMessage(message){
   var metaParts=[];
   if(message.createdAt) metaParts.push(formatMessageTime(message.createdAt));
   if(message.editedAt) metaParts.push(t('edited'));
-  var metaHtml=metaParts.map(function(part){return '<span>'+escapeHtml(part)+'</span>'}).join('');
+  var metaHtml=metaParts.map(function(part){ return '<span>'+escapeHtml(part)+'</span>'; }).join('');
 
   return '<div class="mr '+mineClass+'">'+
     buildAvatarHTML(message.initials,msgAvatar,'',isOnline,avatarClickHandler)+
@@ -1237,7 +1370,7 @@ function renderSpecialMessageContent(message){
 /* ======================== Attachment Rendering ======================== */
 
 function renderMessageAttachments(attachments){
-  if(!attachments||!attachments.length)return'';
+  if(!attachments||!attachments.length) return '';
   return '<div class="m-atts">'+attachments.map(renderSingleAttachment).join('')+'</div>';
 }
 
@@ -1268,22 +1401,25 @@ function previewFullImage(imageSource){
   var overlay=document.createElement('div');
   overlay.className='img-ov';
   overlay.innerHTML='<img src="'+imageSource+'">';
-  overlay.onclick=function(){overlay.remove()};
+  overlay.onclick=function(){ overlay.remove(); };
   document.body.appendChild(overlay);
 }
 
 /* ======================== File Staging ======================== */
 
 function openFilePicker(){
-  if(!sessionToken||!activeConversationId||uploadState.active)return;
+  if(!sessionToken||!activeConversationId||uploadState.active) return;
   document.getElementById('fileInput').click();
 }
 
 function stageSelectedFile(file){
-  if(!file)return;
-  if(file.size>MAX_UPLOAD_BYTES){alert('File exceeds 1 GB limit.');return}
+  if(!file) return;
+  if(file.size>MAX_UPLOAD_BYTES){ alert('File exceeds 1 GB limit.'); return; }
   stagedFile=file;
-  var stagedWrap=document.getElementById('stagedFileWrap'), stagedNameEl=document.getElementById('stagedFileName'), stagedMetaEl=document.getElementById('stagedFileMeta'), stagedPreviewEl=document.getElementById('stagedPreview');
+  var stagedWrap=document.getElementById('stagedFileWrap'),
+      stagedNameEl=document.getElementById('stagedFileName'),
+      stagedMetaEl=document.getElementById('stagedFileMeta'),
+      stagedPreviewEl=document.getElementById('stagedPreview');
   stagedNameEl.textContent=file.name;
   stagedMetaEl.textContent=formatFileSize(file.size)+' • '+(file.type||'file');
   stagedPreviewEl.innerHTML='';
@@ -1292,7 +1428,9 @@ function stageSelectedFile(file){
     previewImage.className='staged-img';
     previewImage.src=URL.createObjectURL(file);
     stagedPreviewEl.appendChild(previewImage);
-  }else stagedPreviewEl.innerHTML='<div class="att-ico">'+getFileIcon({mimeType:file.type,name:file.name})+'</div>';
+  }else{
+    stagedPreviewEl.innerHTML='<div class="att-ico">'+getFileIcon({mimeType:file.type,name:file.name})+'</div>';
+  }
   stagedWrap.classList.add('active');
 }
 
@@ -1303,39 +1441,72 @@ function clearStagedFile(){
   document.getElementById('fileInput').value='';
 }
 
-/* ======================== Send Message ======================== */
+/* ======================== Send Message (Firestore) ======================== */
 
-function handleSend(){
-  if(!sessionToken||!activeConversationId||uploadState.active)return;
-  var composerInput=document.getElementById('composerInput'), messageText=composerInput.value.trim();
-  if(!messageText&&!stagedFile)return;
+async function handleSend(){
+  if(!sessionToken||!activeConversationId||uploadState.active) return;
 
-  if(stagedFile){uploadAndSendFile(stagedFile,messageText);return}
+  var composerInput=document.getElementById('composerInput');
+  var rawMessageText=composerInput.value;
+  var messageText=rawMessageText.trim();
+  if(!messageText&&!stagedFile) return;
+
+  if(stagedFile){
+    uploadAndSendFile(stagedFile,messageText);
+    return;
+  }
 
   var requestedConvoId=activeConversationId;
-  document.getElementById('sendBtn').disabled=true;
-  google.script.run.withSuccessHandler(function(response){
-    document.getElementById('sendBtn').disabled=false;
-    if(!response||!response.ok){handleApplicationError(response); if(response&&response.error) alert(response.error); return}
-    composerInput.value='';
-    autoGrowTextarea(composerInput);
-    clearReply();
+  var sendBtn=document.getElementById('sendBtn');
+  var previousReplyTarget=replyTarget;
+
+  composerInput.value='';
+  autoGrowTextarea(composerInput);
+  clearReply();
+
+  sendBtn.disabled=true;
+
+  try{
+    await addDoc(collection(db,'conversations',requestedConvoId,'messages'),{
+      conversationId: requestedConvoId,
+      userId: currentUser && currentUser.userId ? currentUser.userId : '',
+      displayName: currentUser && currentUser.displayName ? currentUser.displayName : 'User',
+      username: currentUser && currentUser.username ? currentUser.username : '',
+      initials: currentUser && currentUser.initials ? currentUser.initials : makeInitials(currentUser && currentUser.displayName ? currentUser.displayName : 'User'),
+      avatarFileId: currentUser && currentUser.avatarFileId ? currentUser.avatarFileId : '',
+      text: messageText,
+      messageType: 'text',
+      attachments: [],
+      replyToMessageId: previousReplyTarget ? previousReplyTarget.messageId : '',
+      replyDisplayName: previousReplyTarget ? (previousReplyTarget.displayName || '') : '',
+      replyPreview: previousReplyTarget ? truncateString(previousReplyTarget.text || '',140) : '',
+      createdAt: serverTimestamp(),
+      editedAt: null
+    });
+
     boostFastPolling(12000);
-    if(response.conversations){
-      conversations=response.conversations;
-      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
-      activeConversation=findConversationById(activeConversationId);
-      renderSidebar(); renderTopbar();
-    }
-    if(response.message&&String(response.conversationId)===requestedConvoId){
-      conversationVersions.set(requestedConvoId,response.version);
-      mergeIncomingMessages(requestedConvoId,[response.message],false);
-      renderAllMessages(true);
-    }
-  }).withFailureHandler(function(){
-    document.getElementById('sendBtn').disabled=false;
+
+    google.script.run.withSuccessHandler(function(response){
+      if(response&&response.conversations){
+        conversations=response.conversations;
+        if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+        activeConversation=findConversationById(activeConversationId);
+        syncWindowState();
+        renderSidebar();
+        renderTopbar();
+      }
+    }).withFailureHandler(function(){}).getAppData(sessionToken);
+  }catch(error){
+    console.error('Firestore send failed:',error);
+    composerInput.value=rawMessageText;
+    autoGrowTextarea(composerInput);
+    replyTarget=previousReplyTarget;
+    syncWindowState();
+    renderReplyBanner();
     alert('Send failed.');
-  }).sendMessage(sessionToken,requestedConvoId,messageText,replyTarget?replyTarget.messageId:'');
+  }finally{
+    sendBtn.disabled=false;
+  }
 }
 
 function uploadAndSendFile(file,messageText){
@@ -1345,8 +1516,12 @@ function uploadAndSendFile(file,messageText){
   document.getElementById('sendBtn').disabled=true;
 
   google.script.run.withSuccessHandler(function(sessionResponse){
-    if(!uploadState.active)return;
-    if(!sessionResponse||!sessionResponse.ok){alert((sessionResponse&&sessionResponse.error)||'Upload failed.');resetUploadState();return}
+    if(!uploadState.active) return;
+    if(!sessionResponse||!sessionResponse.ok){
+      alert((sessionResponse&&sessionResponse.error)||'Upload failed.');
+      resetUploadState();
+      return;
+    }
     uploadState.uploadToken=sessionResponse.uploadToken;
     uploadState.uploadUrl=sessionResponse.uploadUrl;
 
@@ -1354,32 +1529,45 @@ function uploadAndSendFile(file,messageText){
       uploadState.xhr=xhr;
       showUploadBanner('Uploading '+file.name+' — '+percent+'%',percent,true);
     }).then(function(fileId){
-      if(!uploadState.active)return;
+      if(!uploadState.active) return;
       uploadState.fileId=fileId||'';
       showUploadBanner('Finalizing...',100,false);
 
       var finalizeWithFileId=function(resolvedFileId){
         google.script.run.withSuccessHandler(function(finalizeResponse){
-          if(!finalizeResponse||!finalizeResponse.ok){handleApplicationError(finalizeResponse);alert((finalizeResponse&&finalizeResponse.error)||'Finalize failed.');resetUploadState();return}
+          if(!finalizeResponse||!finalizeResponse.ok){
+            handleApplicationError(finalizeResponse);
+            alert((finalizeResponse&&finalizeResponse.error)||'Finalize failed.');
+            resetUploadState();
+            return;
+          }
+
           document.getElementById('composerInput').value='';
           autoGrowTextarea(document.getElementById('composerInput'));
           clearReply();
           clearStagedFile();
           boostFastPolling(12000);
+
           if(finalizeResponse.conversations){
             conversations=finalizeResponse.conversations;
-            if(typeof finalizeResponse.globalConversationVersion!=='undefined')globalConversationVersion=Number(finalizeResponse.globalConversationVersion||globalConversationVersion);
+            if(typeof finalizeResponse.globalConversationVersion!=='undefined') globalConversationVersion=Number(finalizeResponse.globalConversationVersion||globalConversationVersion);
             activeConversation=findConversationById(activeConversationId);
-            renderSidebar(); renderTopbar();
-          }
-          if(finalizeResponse.message&&String(finalizeResponse.conversationId)===conversationId){
-            conversationVersions.set(conversationId,finalizeResponse.version);
-            mergeIncomingMessages(conversationId,[finalizeResponse.message],false);
-            renderAllMessages(true);
+            syncWindowState();
+            renderSidebar();
+            renderTopbar();
           }
           resetUploadState();
-        }).withFailureHandler(function(){alert('Finalize failed.');resetUploadState()}).finalizeUploadedMessage(sessionToken,{
-          uploadToken:uploadState.uploadToken,fileId:resolvedFileId,fileName:file.name,mimeType:file.type||'application/octet-stream',fileSize:file.size,text:messageText,replyToMessageId:replyTarget?replyTarget.messageId:''
+        }).withFailureHandler(function(){
+          alert('Finalize failed.');
+          resetUploadState();
+        }).finalizeUploadedMessage(sessionToken,{
+          uploadToken:uploadState.uploadToken,
+          fileId:resolvedFileId,
+          fileName:file.name,
+          mimeType:file.type||'application/octet-stream',
+          fileSize:file.size,
+          text:messageText,
+          replyToMessageId:replyTarget?replyTarget.messageId:''
         });
       };
 
@@ -1387,17 +1575,30 @@ function uploadAndSendFile(file,messageText){
       else google.script.run.withSuccessHandler(function(resolveResponse){
         if(resolveResponse&&resolveResponse.ok) finalizeWithFileId(resolveResponse.fileId);
         else resetUploadState();
-      }).withFailureHandler(function(){resetUploadState()}).resolveUploadedFileId(sessionToken,uploadState.uploadToken);
-    }).catch(function(){resetUploadState()});
-  }).withFailureHandler(function(){alert('Upload session failed.');resetUploadState()}).createDriveUploadSession(sessionToken,{
-    conversationId:conversationId,fileName:file.name,mimeType:file.type||'application/octet-stream',fileSize:file.size,text:messageText,replyToMessageId:replyTarget?replyTarget.messageId:''
+      }).withFailureHandler(function(){ resetUploadState(); }).resolveUploadedFileId(sessionToken,uploadState.uploadToken);
+    }).catch(function(){
+      resetUploadState();
+    });
+  }).withFailureHandler(function(){
+    alert('Upload session failed.');
+    resetUploadState();
+  }).createDriveUploadSession(sessionToken,{
+    conversationId:conversationId,
+    fileName:file.name,
+    mimeType:file.type||'application/octet-stream',
+    fileSize:file.size,
+    text:messageText,
+    replyToMessageId:replyTarget?replyTarget.messageId:''
   });
 }
 
 async function performResumableUpload(file,uploadUrl,onProgress){
   var startByte=0,resolvedFileId='';
   while(startByte<file.size){
-    var endByte=Math.min(startByte+CHUNK_SIZE,file.size), chunk=file.slice(startByte,endByte), contentRange='bytes '+startByte+'-'+(endByte-1)+'/'+file.size;
+    var endByte=Math.min(startByte+CHUNK_SIZE,file.size),
+        chunk=file.slice(startByte,endByte),
+        contentRange='bytes '+startByte+'-'+(endByte-1)+'/'+file.size;
+
     var chunkResult=await new Promise(function(resolve,reject){
       var xhr=new XMLHttpRequest();
       xhr.open('PUT',uploadUrl,true);
@@ -1409,9 +1610,9 @@ async function performResumableUpload(file,uploadUrl,onProgress){
           onProgress(Math.min(99,Math.floor((totalLoaded/file.size)*100)),xhr);
         }
       };
-      xhr.onreadystatechange=function(){if(xhr.readyState===4)resolve({status:xhr.status,xhr:xhr})};
-      xhr.onerror=function(){reject(new Error('Network error during upload.'))};
-      xhr.onabort=function(){reject(new Error('Upload cancelled.'))};
+      xhr.onreadystatechange=function(){ if(xhr.readyState===4) resolve({status:xhr.status,xhr:xhr}); };
+      xhr.onerror=function(){ reject(new Error('Network error during upload.')); };
+      xhr.onabort=function(){ reject(new Error('Upload cancelled.')); };
       xhr.send(chunk);
     });
 
@@ -1424,52 +1625,61 @@ async function performResumableUpload(file,uploadUrl,onProgress){
       continue;
     }
     if(chunkResult.status>=200&&chunkResult.status<300){
-      try{resolvedFileId=JSON.parse(chunkResult.xhr.responseText||'{}').id||''}catch(e){}
+      try{ resolvedFileId=JSON.parse(chunkResult.xhr.responseText||'{}').id||''; }catch(e){}
       onProgress(100,chunkResult.xhr);
       return resolvedFileId;
     }
-    if(chunkResult.status===0&&endByte>=file.size){onProgress(100,chunkResult.xhr);return''}
+    if(chunkResult.status===0&&endByte>=file.size){
+      onProgress(100,chunkResult.xhr);
+      return '';
+    }
     throw new Error('Upload failed with HTTP '+chunkResult.status);
   }
   return resolvedFileId;
 }
 
-function cancelCurrentUpload(){ if(uploadState.active&&uploadState.xhr){try{uploadState.xhr.abort()}catch(e){}} resetUploadState(); }
-function resetUploadState(alsoHideBanner){ if(alsoHideBanner!==false)hideUploadBanner(); uploadState={active:false,file:null,xhr:null,uploadToken:'',uploadUrl:'',fileId:'',conversationId:'',progress:0}; document.getElementById('fileInput').value=''; document.getElementById('sendBtn').disabled=false; }
+function cancelCurrentUpload(){ if(uploadState.active&&uploadState.xhr){ try{uploadState.xhr.abort();}catch(e){} } resetUploadState(); }
+function resetUploadState(alsoHideBanner){ if(alsoHideBanner!==false) hideUploadBanner(); uploadState={active:false,file:null,xhr:null,uploadToken:'',uploadUrl:'',fileId:'',conversationId:'',progress:0}; document.getElementById('fileInput').value=''; document.getElementById('sendBtn').disabled=false; }
 function showUploadBanner(text,percent,showCancelButton){
   document.getElementById('uploadBanner').classList.add('active');
   document.getElementById('uploadLabel').textContent='Upload';
   document.getElementById('uploadText').textContent=text;
-  if(typeof percent==='number'){document.getElementById('uploadProgressWrap').style.display='';document.getElementById('uploadProgress').value=Math.max(0,Math.min(100,percent))}
-  else document.getElementById('uploadProgressWrap').style.display='none';
+  if(typeof percent==='number'){
+    document.getElementById('uploadProgressWrap').style.display='';
+    document.getElementById('uploadProgress').value=Math.max(0,Math.min(100,percent));
+  }else{
+    document.getElementById('uploadProgressWrap').style.display='none';
+  }
   document.getElementById('uploadCancelBtn').style.display=showCancelButton?'':'none';
 }
-function hideUploadBanner(){document.getElementById('uploadBanner').classList.remove('active')}
+function hideUploadBanner(){ document.getElementById('uploadBanner').classList.remove('active'); }
 
 /* ======================== Reply ======================== */
 
-function clearReply(){replyTarget=null;renderReplyBanner()}
+function clearReply(){ replyTarget=null; syncWindowState(); renderReplyBanner(); }
 function renderReplyBanner(){
   var banner=document.getElementById('replyBanner');
-  if(!replyTarget){banner.classList.remove('active');return}
+  if(!replyTarget){ banner.classList.remove('active'); return; }
   banner.classList.add('active');
   document.getElementById('replyLabel').textContent=t('reply')+': '+(replyTarget.displayName||'');
   document.getElementById('replyText').textContent=truncateString(replyTarget.text||'',140);
 }
 function getMessageFromActiveConversation(messageId){
   var messages=conversationMessages.get(activeConversationId)||[];
-  return messages.find(function(m){return m.messageId===messageId})||null;
+  return messages.find(function(m){ return m.messageId===messageId; }) || null;
 }
 
 /* ======================== Message Context Menu ======================== */
 
 function openDropdownAt(x,y,messageId){
   var message=getMessageFromActiveConversation(messageId);
-  if(!message)return;
+  if(!message) return;
   closeDropdown();
   isDropdownOpen=true;
   dropdownMessageId=messageId;
-  var menu=document.getElementById('messageDropdown'), backdrop=document.getElementById('dropdownBackdrop'), items=[];
+  var menu=document.getElementById('messageDropdown'),
+      backdrop=document.getElementById('dropdownBackdrop'),
+      items=[];
   items.push('<button onclick="replyToMessage(\''+escapeJsString(messageId)+'\')">'+t('reply')+'</button>');
   items.push('<button onclick="copyMessageText(\''+escapeJsString(messageId)+'\')">'+t('copy')+'</button>');
   if(message.messageType!=='group_invite') items.push('<button onclick="forwardMessageUI(\''+escapeJsString(messageId)+'\')">'+t('forward')+'</button>');
@@ -1481,31 +1691,54 @@ function openDropdownAt(x,y,messageId){
   backdrop.classList.add('open');
   menu.style.left='0px'; menu.style.top='0px';
   var menuRect=menu.getBoundingClientRect();
-  var left=Math.min(x,window.innerWidth-menuRect.width-8), top=Math.min(y,window.innerHeight-menuRect.height-8);
-  if(left<8)left=8;
-  if(top<8)top=8;
+  var left=Math.min(x,window.innerWidth-menuRect.width-8),
+      top=Math.min(y,window.innerHeight-menuRect.height-8);
+  if(left<8) left=8;
+  if(top<8) top=8;
   menu.style.left=left+'px';
   menu.style.top=top+'px';
 }
 
-function closeDropdown(){isDropdownOpen=false;document.getElementById('messageDropdown').classList.remove('open');document.getElementById('dropdownBackdrop').classList.remove('open')}
-function replyToMessage(messageId){var message=getMessageFromActiveConversation(messageId);closeDropdown();if(!message)return;replyTarget=message;renderReplyBanner();document.getElementById('composerInput').focus()}
-function copyMessageText(messageId){var message=getMessageFromActiveConversation(messageId);closeDropdown();if(message&&message.text&&navigator.clipboard)navigator.clipboard.writeText(message.text)}
+function closeDropdown(){
+  isDropdownOpen=false;
+  document.getElementById('messageDropdown').classList.remove('open');
+  document.getElementById('dropdownBackdrop').classList.remove('open');
+}
+
+function replyToMessage(messageId){
+  var message=getMessageFromActiveConversation(messageId);
+  closeDropdown();
+  if(!message) return;
+  replyTarget=message;
+  syncWindowState();
+  renderReplyBanner();
+  document.getElementById('composerInput').focus();
+}
+
+function copyMessageText(messageId){
+  var message=getMessageFromActiveConversation(messageId);
+  closeDropdown();
+  if(message&&message.text&&navigator.clipboard) navigator.clipboard.writeText(message.text);
+}
 
 function editMessageUI(messageId){
   closeDropdown();
   google.script.run.withSuccessHandler(function(loadResponse){
-    if(!loadResponse||!loadResponse.ok){handleApplicationError(loadResponse);return}
+    if(!loadResponse||!loadResponse.ok){ handleApplicationError(loadResponse); return; }
     var currentText=(loadResponse.message&&loadResponse.message.text)||'';
     showPrompt(t('edit'),'',currentText).then(function(newText){
-      if(newText===null)return;
+      if(newText===null) return;
       var trimmedText=String(newText||'').trim();
-      if(!trimmedText)return;
+      if(!trimmedText) return;
       google.script.run.withSuccessHandler(function(response){
-        if(!response||!response.ok){handleApplicationError(response);return}
+        if(!response||!response.ok){ handleApplicationError(response); return; }
         boostFastPolling(8000);
-        if(response.message){mergeIncomingMessages(activeConversationId,[response.message],false);renderAllMessages(false)}
-        if(response.conversations){conversations=response.conversations; if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion); renderSidebar()}
+        if(response.conversations){
+          conversations=response.conversations;
+          if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+          syncWindowState();
+          renderSidebar();
+        }
       }).withFailureHandler(function(){}).editMessage(sessionToken,messageId,trimmedText);
     });
   }).withFailureHandler(function(){}).getMessageForEdit(sessionToken,messageId);
@@ -1514,23 +1747,23 @@ function editMessageUI(messageId){
 function deleteMessageUI(messageId){
   closeDropdown();
   showConfirm(t('deleteMsg'),t('deleteMsg')+'?',t('delete'),true).then(function(confirmed){
-    if(!confirmed)return;
+    if(!confirmed) return;
     google.script.run.withSuccessHandler(function(response){
-      if(!response||!response.ok){handleApplicationError(response);return}
+      if(!response||!response.ok){ handleApplicationError(response); return; }
       boostFastPolling(8000);
-      if(response.deletedMessageId){
-        var currentList=conversationMessages.get(activeConversationId)||[];
-        conversationMessages.set(activeConversationId,currentList.filter(function(m){return m.messageId!==response.deletedMessageId}));
-        renderAllMessages(false);
+      if(response.conversations){
+        conversations=response.conversations;
+        if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+        syncWindowState();
+        renderSidebar();
       }
-      if(response.conversations){conversations=response.conversations; if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion); renderSidebar()}
     }).withFailureHandler(function(){}).deleteMessage(sessionToken,messageId);
   });
 }
 
 function toggleAdminDropdown(dropId){
   var el=document.getElementById(dropId);
-  if(!el)return;
+  if(!el) return;
   el.classList.toggle('open');
 }
 
@@ -1538,8 +1771,8 @@ function toggleAdminDropdown(dropId){
 
 function forwardMessageUI(messageId){
   closeDropdown();
-  var targets=conversations.filter(function(c){return c.type!=='channel'});
-  if(!targets.length)return;
+  var targets=conversations.filter(function(c){ return c.type!=='channel'; });
+  if(!targets.length) return;
   var html='<div style="max-height:280px;overflow-y:auto">';
   targets.forEach(function(convo){
     html+='<div class="si" onclick="executeForward(\''+escapeJsString(messageId)+'\',\''+escapeJsString(convo.conversationId)+'\')">'+buildAvatarHTML(convo.initials,convo.avatarFileId)+'<div class="si-meta"><div class="si-title">'+escapeHtml(convo.title)+'</div></div></div>';
@@ -1551,16 +1784,21 @@ function forwardMessageUI(messageId){
 function executeForward(messageId,targetConversationId){
   closeModal(null);
   google.script.run.withSuccessHandler(function(response){
-    if(response&&response.conversations){conversations=response.conversations; if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion); renderSidebar()}
+    if(response&&response.conversations){
+      conversations=response.conversations;
+      if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      syncWindowState();
+      renderSidebar();
+    }
   }).withFailureHandler(function(){}).forwardMessage(sessionToken,{messageId:messageId,targetConversationId:targetConversationId});
 }
 
 /* ======================== Invite Card Message ======================== */
 
 function sendGroupInviteUI(){
-  if(!activeConversation||activeConversation.type==='channel')return;
-  var groups=conversations.filter(function(c){return c.type==='group'&&c.conversationId!==activeConversationId});
-  if(!groups.length){showAlert(t('inviteToChat'),'No other groups available.');return}
+  if(!activeConversation||activeConversation.type==='channel') return;
+  var groups=conversations.filter(function(c){ return c.type==='group'&&c.conversationId!==activeConversationId; });
+  if(!groups.length){ showAlert(t('inviteToChat'),'No other groups available.'); return; }
   var html='<div style="max-height:320px;overflow-y:auto">';
   groups.forEach(function(group){
     html+='<div class="si" onclick="executeSendGroupInvite(\''+escapeJsString(group.conversationId)+'\')">'+buildAvatarHTML(group.initials,group.avatarFileId)+'<div class="si-meta"><div class="si-title">'+escapeHtml(group.title)+'</div><div class="si-sub">'+escapeHtml(group.memberCount+' '+t('members'))+'</div></div></div>';
@@ -1571,46 +1809,52 @@ function sendGroupInviteUI(){
 
 function executeSendGroupInvite(groupConversationId){
   closeModal(null);
-  if(!activeConversationId)return;
+  if(!activeConversationId) return;
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response); if(response&&response.error) alert(response.error); return}
+    if(!response||!response.ok){
+      handleApplicationError(response);
+      if(response&&response.error) alert(response.error);
+      return;
+    }
     boostFastPolling(10000);
     if(response.conversations){
       conversations=response.conversations;
-      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
       activeConversation=findConversationById(activeConversationId);
-      renderSidebar(); renderTopbar();
+      syncWindowState();
+      renderSidebar();
+      renderTopbar();
     }
-    if(response.message&&String(response.conversationId)===activeConversationId){
-      conversationVersions.set(activeConversationId,response.version);
-      mergeIncomingMessages(activeConversationId,[response.message],false);
-      renderAllMessages(true);
-    }
-  }).withFailureHandler(function(){alert('Failed.')}).sendGroupInviteMessage(sessionToken,{targetConversationId:activeConversationId,groupConversationId:groupConversationId});
+  }).withFailureHandler(function(){ alert('Failed.'); }).sendGroupInviteMessage(sessionToken,{targetConversationId:activeConversationId,groupConversationId:groupConversationId});
 }
 
 function joinGroupFromMessage(inviteCode){
-  if(!inviteCode)return;
+  if(!inviteCode) return;
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response); if(response&&response.error) alert(response.error); return}
+    if(!response||!response.ok){
+      handleApplicationError(response);
+      if(response&&response.error) alert(response.error);
+      return;
+    }
     if(response.conversations){
       conversations=response.conversations;
-      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      syncWindowState();
       renderSidebar();
     }
     if(response.conversationId) selectConversation(response.conversationId);
     boostFastPolling(10000);
-  }).withFailureHandler(function(){alert('Failed.')}).joinGroupByInvite(sessionToken,inviteCode);
+  }).withFailureHandler(function(){ alert('Failed.'); }).joinGroupByInvite(sessionToken,inviteCode);
 }
 
 /* ======================== User Profile ======================== */
 
 function openProfile(userId){
-  if(!userId||isProfileModalOpen)return;
+  if(!userId||isProfileModalOpen) return;
   isProfileModalOpen=true;
   google.script.run.withSuccessHandler(function(response){
     isProfileModalOpen=false;
-    if(!response||!response.ok){handleApplicationError(response);return}
+    if(!response||!response.ok){ handleApplicationError(response); return; }
     var profile=response.profile;
     var html='<div class="p-hdr">'+buildAvatarHTML(profile.initials,profile.avatarFileId,'xl',profile.isOnline)+
       '<div class="p-name">'+escapeHtml(profile.displayName)+(profile.isAppAdmin?'<span class="badge-admin">admin</span>':'')+'</div>';
@@ -1636,25 +1880,25 @@ function openProfile(userId){
     }
     html+='</div></div>';
     openModal({title:t('userProfile'),html:html,buttons:[{text:t('close'),className:'secondary-btn',value:'close'}]});
-  }).withFailureHandler(function(){isProfileModalOpen=false}).getUserProfile(sessionToken,userId);
+  }).withFailureHandler(function(){ isProfileModalOpen=false; }).getUserProfile(sessionToken,userId);
 }
 
 /* ======================== Conversation/Group Profile ======================== */
 
 function openConversationProfile(){
-  if(!activeConversation)return;
-  if(activeConversation.type!=='group'&&activeConversation.type!=='channel')return;
+  if(!activeConversation) return;
+  if(activeConversation.type!=='group'&&activeConversation.type!=='channel') return;
   loadConversationProfile(activeConversationId);
 }
 
 function openConversationProfileById(conversationId){
-  if(!conversationId)return;
+  if(!conversationId) return;
   loadConversationProfile(conversationId);
 }
 
 function loadConversationProfile(conversationId){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
+    if(!response||!response.ok){ handleApplicationError(response); return; }
     var profile=response.profile;
     var html='<div class="p-hdr">'+buildAvatarHTML(profile.initials,profile.avatarFileId,'xl')+'<div class="p-name">'+escapeHtml(profile.title)+'</div>';
     if(profile.description) html+='<div class="p-bio">'+escapeHtml(profile.description)+'</div>';
@@ -1680,10 +1924,10 @@ function loadConversationProfile(conversationId){
       html:html,
       buttons:buttons,
       onAction:function(value){
-        if(value==='invite'){closeModal(null);showInviteLink(conversationId)}
-        else if(value==='edit'){closeModal(null);editGroupUI(conversationId)}
-        else if(value==='leave'){closeModal(null);doLeaveGroup(conversationId)}
-        else if(value==='deleteGroup'){closeModal(null);doDeleteGroup(conversationId)}
+        if(value==='invite'){ closeModal(null); showInviteLink(conversationId); }
+        else if(value==='edit'){ closeModal(null); editGroupUI(conversationId); }
+        else if(value==='leave'){ closeModal(null); doLeaveGroup(conversationId); }
+        else if(value==='deleteGroup'){ closeModal(null); doDeleteGroup(conversationId); }
         else closeModal(null);
       }
     });
@@ -1698,19 +1942,19 @@ function changeAvatarUI(targetType,targetId){
   fileInput.accept='image/*';
   fileInput.onchange=function(){
     var file=fileInput.files&&fileInput.files[0];
-    if(!file||file.size>10*1024*1024)return;
+    if(!file||file.size>10*1024*1024) return;
     var uploadConversationId=targetType==='group'&&targetId?targetId:(activeConversationId||'cnv_heyo_channel');
     google.script.run.withSuccessHandler(function(sessionResponse){
-      if(!sessionResponse||!sessionResponse.ok)return;
+      if(!sessionResponse||!sessionResponse.ok) return;
       var uploadToken=sessionResponse.uploadToken;
       var xhr=new XMLHttpRequest();
       xhr.open('PUT',sessionResponse.uploadUrl,true);
       xhr.setRequestHeader('Content-Type',file.type);
       xhr.setRequestHeader('Content-Range','bytes 0-'+(file.size-1)+'/'+file.size);
       xhr.onreadystatechange=function(){
-        if(xhr.readyState!==4)return;
+        if(xhr.readyState!==4) return;
         var resolvedFileId='';
-        try{resolvedFileId=JSON.parse(xhr.responseText||'{}').id||''}catch(e){}
+        try{ resolvedFileId=JSON.parse(xhr.responseText||'{}').id||''; }catch(e){}
         if(!resolvedFileId){
           google.script.run.withSuccessHandler(function(resolveResponse){
             if(resolveResponse&&resolveResponse.ok) saveAvatarFileId(resolveResponse.fileId,targetType,targetId);
@@ -1729,13 +1973,15 @@ function changeAvatarUI(targetType,targetId){
 
 function saveAvatarFileId(fileId,targetType,targetId){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
-    if(response.user){currentUser=response.user;renderCurrentUserSidebar()}
+    if(!response||!response.ok){ handleApplicationError(response); return; }
+    if(response.user){ currentUser=response.user; syncWindowState(); renderCurrentUserSidebar(); }
     if(response.conversations){
       conversations=response.conversations;
-      if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
       activeConversation=findConversationById(activeConversationId);
-      renderSidebar(); renderTopbar();
+      syncWindowState();
+      renderSidebar();
+      renderTopbar();
     }
     renderAllMessages(false);
     boostFastPolling(8000);
@@ -1750,49 +1996,93 @@ function createGroupUI(){
     title:t('createGroup'),html:html,
     buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('createGroup'),className:'primary-btn',value:'create'}],
     onAction:function(value){
-      if(value!=='create'){closeModal(null);return}
-      var title=document.getElementById('newGroupTitle').value.trim();if(!title)return;
+      if(value!=='create'){ closeModal(null); return; }
+      var title=document.getElementById('newGroupTitle').value.trim(); if(!title) return;
       var description=document.getElementById('newGroupDesc').value.trim();
       closeModal(null);
       google.script.run.withSuccessHandler(function(response){
-        if(response&&response.conversations){conversations=response.conversations; if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion); renderSidebar()}
-        if(response&&response.conversationId)selectConversation(response.conversationId);
+        if(response&&response.conversations){
+          conversations=response.conversations;
+          if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+          syncWindowState();
+          renderSidebar();
+        }
+        if(response&&response.conversationId) selectConversation(response.conversationId);
       }).withFailureHandler(function(){}).createGroup(sessionToken,{title:title,description:description});
     }
   });
 }
 
 function editGroupUI(conversationId){
-  var conversation=findConversationById(conversationId);if(!conversation)return;
+  var conversation=findConversationById(conversationId); if(!conversation) return;
   var html='<div class="field"><label>'+t('groupName')+'</label><input id="editGroupTitle" type="text" maxlength="60" value="'+escapeAttr(conversation.title||'')+'"></div><div class="field"><label>'+t('groupDesc')+'</label><textarea id="editGroupDesc" rows="2" maxlength="500">'+escapeHtml(conversation.description||'')+'</textarea></div>';
   openModal({
     title:t('editGroup'),html:html,
     buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('save'),className:'primary-btn',value:'save'}],
     onAction:function(value){
-      if(value!=='save'){closeModal(null);return}
-      var title=document.getElementById('editGroupTitle').value.trim();var description=document.getElementById('editGroupDesc').value.trim();
+      if(value!=='save'){ closeModal(null); return; }
+      var title=document.getElementById('editGroupTitle').value.trim();
+      var description=document.getElementById('editGroupDesc').value.trim();
       closeModal(null);
       google.script.run.withSuccessHandler(function(response){
-        if(response&&response.ok&&response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);activeConversation=findConversationById(activeConversationId);renderSidebar();renderTopbar()}else handleApplicationError(response);
+        if(response&&response.ok&&response.conversations){
+          conversations=response.conversations;
+          if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+          activeConversation=findConversationById(activeConversationId);
+          syncWindowState();
+          renderSidebar();
+          renderTopbar();
+        }else handleApplicationError(response);
       }).withFailureHandler(function(){}).updateGroup(sessionToken,{conversationId:conversationId,title:title,description:description});
     }
   });
 }
 
-function doLeaveGroup(conversationId){showConfirm(t('leaveGroup'),t('leaveGroup')+'?',t('confirm'),false).then(function(confirmed){if(!confirmed)return;google.script.run.withSuccessHandler(function(response){if(response&&response.ok&&response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);renderSidebar()}showPlaceholder()}).withFailureHandler(function(){}).leaveGroup(sessionToken,conversationId)})}
+function doLeaveGroup(conversationId){
+  showConfirm(t('leaveGroup'),t('leaveGroup')+'?',t('confirm'),false).then(function(confirmed){
+    if(!confirmed) return;
+    google.script.run.withSuccessHandler(function(response){
+      if(response&&response.ok&&response.conversations){
+        conversations=response.conversations;
+        if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+        syncWindowState();
+        renderSidebar();
+      }
+      showPlaceholder();
+    }).withFailureHandler(function(){}).leaveGroup(sessionToken,conversationId);
+  });
+}
 
-function doDeleteGroup(conversationId){showConfirm(t('deleteGroup'),t('deleteGroup')+'?',t('delete'),true).then(function(confirmed){if(!confirmed)return;google.script.run.withSuccessHandler(function(response){if(response&&response.ok&&response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);renderSidebar()}showPlaceholder()}).withFailureHandler(function(){}).deleteGroup(sessionToken,conversationId)})}
+function doDeleteGroup(conversationId){
+  showConfirm(t('deleteGroup'),t('deleteGroup')+'?',t('delete'),true).then(function(confirmed){
+    if(!confirmed) return;
+    google.script.run.withSuccessHandler(function(response){
+      if(response&&response.ok&&response.conversations){
+        conversations=response.conversations;
+        if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+        syncWindowState();
+        renderSidebar();
+      }
+      showPlaceholder();
+    }).withFailureHandler(function(){}).deleteGroup(sessionToken,conversationId);
+  });
+}
 
 function showInviteLink(conversationId){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
+    if(!response||!response.ok){ handleApplicationError(response); return; }
     var link=response.inviteLink||(window.location.origin+window.location.pathname+'?invite='+encodeURIComponent(response.inviteCode));
     openModal({
       title:t('inviteLink'),
       html:'<div class="field"><input id="inviteLinkInput" type="text" value="'+escapeAttr(link)+'" readonly onclick="this.select()"></div>',
       buttons:[{text:t('copyLink'),className:'primary-btn',value:'copy'},{text:t('close'),className:'secondary-btn',value:'close'}],
       onAction:function(value){
-        if(value==='copy'){var input=document.getElementById('inviteLinkInput');input.select();if(navigator.clipboard)navigator.clipboard.writeText(input.value);else document.execCommand('copy')}
+        if(value==='copy'){
+          var input=document.getElementById('inviteLinkInput');
+          input.select();
+          if(navigator.clipboard) navigator.clipboard.writeText(input.value);
+          else document.execCommand('copy');
+        }
         closeModal(null);
       }
     });
@@ -1801,31 +2091,31 @@ function showInviteLink(conversationId){
 
 /* ======================== Block / Unblock ======================== */
 
-function doBlockUser(userId){closeModal(null);google.script.run.withSuccessHandler(function(){}).blockUser(sessionToken,userId)}
-function doUnblockUser(userId){closeModal(null);google.script.run.withSuccessHandler(function(){}).unblockUser(sessionToken,userId)}
+function doBlockUser(userId){ closeModal(null); google.script.run.withSuccessHandler(function(){}).blockUser(sessionToken,userId); }
+function doUnblockUser(userId){ closeModal(null); google.script.run.withSuccessHandler(function(){}).unblockUser(sessionToken,userId); }
 
 /* ======================== Admin Grant/Revoke ======================== */
 
 function adminGrantAdminUI(userId){
   closeModal(null);
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){alert((response&&response.error)||'Failed.');return}
+    if(!response||!response.ok){ alert((response&&response.error)||'Failed.'); return; }
     boostFastPolling(5000);
-  }).withFailureHandler(function(){alert('Failed.')}).adminGrantAdmin(sessionToken,userId);
+  }).withFailureHandler(function(){ alert('Failed.'); }).adminGrantAdmin(sessionToken,userId);
 }
 
 function adminRevokeAdminUI(userId){
   closeModal(null);
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){alert((response&&response.error)||'Failed.');return}
+    if(!response||!response.ok){ alert((response&&response.error)||'Failed.'); return; }
     boostFastPolling(5000);
-  }).withFailureHandler(function(){alert('Failed.')}).adminRevokeAdmin(sessionToken,userId);
+  }).withFailureHandler(function(){ alert('Failed.'); }).adminRevokeAdmin(sessionToken,userId);
 }
 
 /* ======================== Settings ======================== */
 
 function openSettings(){
-  if(!currentUser)return;
+  if(!currentUser) return;
   var accentPickerHtml='<div class="ac-picker">';
   ACCENT_COLORS.forEach(function(color){
     var selectedClass=(currentUser.accentColor===color)?' sel':'';
@@ -1854,39 +2144,65 @@ function openSettings(){
       {text:t('save'),className:'primary-btn',value:'save'}
     ],
     onAction:function(value){
-      if(value==='deleteAccount'){closeModal(null);doDeleteAccount();return}
-      if(value==='logout'){closeModal(null);doLogout();return}
-      if(value==='changePassword'){closeModal(null);changePasswordUI();return}
-      if(value==='sessions'){closeModal(null);showSessionsUI();return}
-      if(value!=='save'){closeModal(null);return}
+      if(value==='deleteAccount'){ closeModal(null); doDeleteAccount(); return; }
+      if(value==='logout'){ closeModal(null); doLogout(); return; }
+      if(value==='changePassword'){ closeModal(null); changePasswordUI(); return; }
+      if(value==='sessions'){ closeModal(null); showSessionsUI(); return; }
+      if(value!=='save'){ closeModal(null); return; }
 
       var selectedAccent='indigo';
       var selectedDot=document.querySelector('.ac-dot.sel');
       if(selectedDot) selectedAccent=selectedDot.dataset.ac||'indigo';
 
-      var profilePayload={displayName:document.getElementById('settingsDisplayName').value.trim(),bio:document.getElementById('settingsBio').value.trim(),birthday:document.getElementById('settingsBirthday').value||'',theme:document.getElementById('settingsTheme').value,language:document.getElementById('settingsLanguage').value,accentColor:selectedAccent};
+      var profilePayload={
+        displayName:document.getElementById('settingsDisplayName').value.trim(),
+        bio:document.getElementById('settingsBio').value.trim(),
+        birthday:document.getElementById('settingsBirthday').value||'',
+        theme:document.getElementById('settingsTheme').value,
+        language:document.getElementById('settingsLanguage').value,
+        accentColor:selectedAccent
+      };
       localThemeOverride=profilePayload.theme;
       applyThemeAndAccent(profilePayload.theme,selectedAccent);
 
       google.script.run.withSuccessHandler(function(response){
-        if(!response||!response.ok){alert((response&&response.error)||'Save failed.');localThemeOverride=null;return}
+        if(!response||!response.ok){
+          alert((response&&response.error)||'Save failed.');
+          localThemeOverride=null;
+          return;
+        }
         closeModal(null);
         currentUser=response.user;
         currentLanguage=currentUser.language||'en';
         localStorage.setItem('heyo_lang',currentLanguage);
         localThemeOverride=null;
         applyThemeAndAccent(currentUser.theme,currentUser.accentColor);
+        syncWindowState();
         renderCurrentUserSidebar();
         applyAllLabels();
-        if(response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);activeConversation=findConversationById(activeConversationId);renderSidebar();renderTopbar()}
+        if(response.conversations){
+          conversations=response.conversations;
+          if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+          activeConversation=findConversationById(activeConversationId);
+          syncWindowState();
+          renderSidebar();
+          renderTopbar();
+        }
         renderAllMessages(false);
         boostFastPolling(8000);
-      }).withFailureHandler(function(){localThemeOverride=null;alert('Save failed.')}).updateProfile(sessionToken,profilePayload);
+      }).withFailureHandler(function(){
+        localThemeOverride=null;
+        alert('Save failed.');
+      }).updateProfile(sessionToken,profilePayload);
     }
   });
 }
 
-function selectAccentColor(color){document.querySelectorAll('.ac-dot').forEach(function(dot){dot.classList.toggle('sel',dot.dataset.ac===color)})}
+function selectAccentColor(color){
+  document.querySelectorAll('.ac-dot').forEach(function(dot){
+    dot.classList.toggle('sel',dot.dataset.ac===color);
+  });
+}
 
 function changePasswordUI(){
   var html='<div class="field"><label>'+t('currentPassword')+'</label><input id="oldPasswordInput" type="password"></div><div class="field"><label>'+t('newPassword')+'</label><input id="newPasswordInput" type="password"></div>';
@@ -1894,18 +2210,20 @@ function changePasswordUI(){
     title:t('changePassword'),html:html,
     buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('save'),className:'primary-btn',value:'save'}],
     onAction:function(value){
-      if(value!=='save'){closeModal(null);return}
-      var oldPassword=document.getElementById('oldPasswordInput').value;var newPassword=document.getElementById('newPasswordInput').value;if(!oldPassword||!newPassword)return;
+      if(value!=='save'){ closeModal(null); return; }
+      var oldPassword=document.getElementById('oldPasswordInput').value;
+      var newPassword=document.getElementById('newPasswordInput').value;
+      if(!oldPassword||!newPassword) return;
       google.script.run.withSuccessHandler(function(response){
-        if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
+        if(!response||!response.ok){ handleApplicationError(response); alert((response&&response.error)||'Failed.'); return; }
         closeModal(null); alert(t('passwordChanged'));
-      }).withFailureHandler(function(){alert('Failed.')}).changePassword(sessionToken,{oldPassword:oldPassword,newPassword:newPassword});
+      }).withFailureHandler(function(){ alert('Failed.'); }).changePassword(sessionToken,{oldPassword:oldPassword,newPassword:newPassword});
     }
   });
 }
 
 function parseUAFriendly_(ua){
-  ua=String(ua||'');if(!ua)return 'Unknown device';
+  ua=String(ua||''); if(!ua) return 'Unknown device';
   var browser='Browser',os='';
   if(/Edg[e\/]/i.test(ua))browser='Edge';
   else if(/OPR|Opera/i.test(ua))browser='Opera';
@@ -1927,7 +2245,7 @@ function parseUAFriendly_(ua){
 
 function showSessionsUI(){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
+    if(!response||!response.ok){ handleApplicationError(response); return; }
     var sessions=response.sessions||[];
     var html='<div class="admin-list">';
     sessions.forEach(function(s){
@@ -1946,12 +2264,20 @@ function showSessionsUI(){
 
 function doTerminateSession(targetDeviceId){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){alert((response&&response.error)||'Failed.');return}
-    closeModal(null);showSessionsUI();
-  }).withFailureHandler(function(){alert('Failed.')}).terminateSession(sessionToken,targetDeviceId);
+    if(!response||!response.ok){ alert((response&&response.error)||'Failed.'); return; }
+    closeModal(null);
+    showSessionsUI();
+  }).withFailureHandler(function(){ alert('Failed.'); }).terminateSession(sessionToken,targetDeviceId);
 }
 
-function doDeleteAccount(){showConfirm(t('deleteAccount'),t('deleteAccountMsg'),t('delete'),true).then(function(confirmed){if(!confirmed)return;google.script.run.withSuccessHandler(function(response){if(response&&response.ok)forceLogoutToAuth()}).withFailureHandler(function(){alert('Failed.')}).deleteAccount(sessionToken)})}
+function doDeleteAccount(){
+  showConfirm(t('deleteAccount'),t('deleteAccountMsg'),t('delete'),true).then(function(confirmed){
+    if(!confirmed) return;
+    google.script.run.withSuccessHandler(function(response){
+      if(response&&response.ok) forceLogoutToAuth();
+    }).withFailureHandler(function(){ alert('Failed.'); }).deleteAccount(sessionToken);
+  });
+}
 
 function doLogout(){
   var savedToken=sessionToken;
@@ -1961,15 +2287,21 @@ function doLogout(){
 
 function forceLogoutToAuth(){
   stopPolling();
+  stopConversationMessagesListener();
   localStorage.removeItem('heyo_token');
   sessionToken='';
   currentUser=null;
+  conversations=[];
+  activeConversationId='';
+  activeConversation=null;
+  conversationMessages.clear();
+  syncWindowState();
   showAuthScreen();
 }
 
 function handleApplicationError(response){
   var errorMessage=(response&&response.error)||'';
-  if(/banned/i.test(errorMessage)){alert(errorMessage||'Banned.');forceLogoutToAuth();return}
+  if(/banned/i.test(errorMessage)){ alert(errorMessage||'Banned.'); forceLogoutToAuth(); return; }
   if(/session|auth|expired|invalid|not authenticated|deleted/i.test(errorMessage)) forceLogoutToAuth();
 }
 
@@ -1977,46 +2309,74 @@ function handleApplicationError(response){
 
 function performUserSearch(){
   var query=document.getElementById('searchInput').value.trim();
-  if(!query){clearSearchResults();return}
+  if(!query){ clearSearchResults(); return; }
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){clearSearchResults();return}
+    if(!response||!response.ok){ clearSearchResults(); return; }
     var resultsContainer=document.getElementById('searchResults'), users=response.users||[];
-    if(!users.length){resultsContainer.innerHTML='<div class="si"><div class="si-meta"><div class="si-title">—</div></div></div>';resultsContainer.classList.add('open');return}
+    if(!users.length){
+      resultsContainer.innerHTML='<div class="si"><div class="si-meta"><div class="si-title">—</div></div></div>';
+      resultsContainer.classList.add('open');
+      return;
+    }
     resultsContainer.innerHTML=users.map(function(user){
       return '<div class="si" onclick="startDirectMessage(\''+escapeJsString(user.userId)+'\')">'+buildAvatarHTML(user.initials,user.avatarFileId,'',user.isOnline,"event.stopPropagation();openProfile('"+escapeJsString(user.userId)+"')")+'<div class="si-meta"><div class="si-title">'+escapeHtml(user.displayName)+'</div><div class="si-sub">@'+escapeHtml(user.username)+'</div></div></div>';
     }).join('');
     resultsContainer.classList.add('open');
-  }).withFailureHandler(function(){clearSearchResults()}).searchUsers(sessionToken,query);
+  }).withFailureHandler(function(){ clearSearchResults(); }).searchUsers(sessionToken,query);
 }
 
-function clearSearchResults(){var container=document.getElementById('searchResults');container.classList.remove('open');container.innerHTML=''}
+function clearSearchResults(){
+  var container=document.getElementById('searchResults');
+  container.classList.remove('open');
+  container.innerHTML='';
+}
+
 function startDirectMessage(userId){
-  clearSearchResults();document.getElementById('searchInput').value='';
+  clearSearchResults();
+  document.getElementById('searchInput').value='';
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
-    if(response.conversations){conversations=response.conversations;if(typeof response.globalConversationVersion!=='undefined')globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);renderSidebar()}
-    if(response.conversationId)selectConversation(response.conversationId);
+    if(!response||!response.ok){ handleApplicationError(response); return; }
+    if(response.conversations){
+      conversations=response.conversations;
+      if(typeof response.globalConversationVersion!=='undefined') globalConversationVersion=Number(response.globalConversationVersion||globalConversationVersion);
+      syncWindowState();
+      renderSidebar();
+    }
+    if(response.conversationId) selectConversation(response.conversationId);
   }).withFailureHandler(function(){}).openDirectConversation(sessionToken,userId);
 }
 
 /* ======================== Mobile Sidebar ======================== */
 
-function openMobileSidebar(){document.getElementById('sidebar').classList.add('mob-open');document.getElementById('mobBD').classList.add('open')}
-function closeMobileSidebar(){document.getElementById('sidebar').classList.remove('mob-open');document.getElementById('mobBD').classList.remove('open')}
+function openMobileSidebar(){
+  document.getElementById('sidebar').classList.add('mob-open');
+  document.getElementById('mobBD').classList.add('open');
+}
+function closeMobileSidebar(){
+  document.getElementById('sidebar').classList.remove('mob-open');
+  document.getElementById('mobBD').classList.remove('open');
+}
 
 /* ======================== Modal System ======================== */
 
 function openModal(config){
   return new Promise(function(resolve){
-    modalResolveFunction=resolve;currentModalConfig=config||{};
+    modalResolveFunction=resolve;
+    currentModalConfig=config||{};
     document.getElementById('modalTitle').textContent=config.title||'';
     document.getElementById('modalBody').textContent=config.message||'';
     document.getElementById('modalContent').innerHTML=config.html||'';
     document.getElementById('modalBox').className='modal'+(config.wide?' modal-wide':'');
-    var actionsContainer=document.getElementById('modalActions');actionsContainer.innerHTML='';
+    var actionsContainer=document.getElementById('modalActions');
+    actionsContainer.innerHTML='';
     (config.buttons||[]).forEach(function(buttonConfig){
-      var button=document.createElement('button');button.className=buttonConfig.className||'secondary-btn';button.textContent=buttonConfig.text||'OK';
-      button.onclick=function(){if(typeof config.onAction==='function')config.onAction(buttonConfig.value);else closeModal(buttonConfig.value)};
+      var button=document.createElement('button');
+      button.className=buttonConfig.className||'secondary-btn';
+      button.textContent=buttonConfig.text||'OK';
+      button.onclick=function(){
+        if(typeof config.onAction==='function') config.onAction(buttonConfig.value);
+        else closeModal(buttonConfig.value);
+      };
       actionsContainer.appendChild(button);
     });
     document.getElementById('modalOverlay').classList.add('open');
@@ -2024,31 +2384,43 @@ function openModal(config){
 }
 
 function closeModal(result){
-  document.getElementById('modalOverlay').classList.remove('open');document.getElementById('modalContent').innerHTML='';document.getElementById('modalActions').innerHTML='';document.getElementById('modalBox').className='modal';
-  var resolver=modalResolveFunction;modalResolveFunction=null;currentModalConfig=null;if(resolver)resolver(result);
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.getElementById('modalContent').innerHTML='';
+  document.getElementById('modalActions').innerHTML='';
+  document.getElementById('modalBox').className='modal';
+  var resolver=modalResolveFunction;
+  modalResolveFunction=null;
+  currentModalConfig=null;
+  if(resolver) resolver(result);
 }
 
-function showAlert(title,message){return openModal({title:title,message:message,buttons:[{text:'OK',className:'primary-btn',value:true}]})}
-function showConfirm(title,message,okText,isDanger){return openModal({title:title,message:message,buttons:[{text:t('cancel'),className:'secondary-btn',value:false},{text:okText||'OK',className:isDanger?'danger-btn':'primary-btn',value:true}]})}
+function showAlert(title,message){ return openModal({title:title,message:message,buttons:[{text:'OK',className:'primary-btn',value:true}]}); }
+function showConfirm(title,message,okText,isDanger){ return openModal({title:title,message:message,buttons:[{text:t('cancel'),className:'secondary-btn',value:false},{text:okText||'OK',className:isDanger?'danger-btn':'primary-btn',value:true}]}); }
 function showPrompt(title,message,defaultValue){
   return openModal({
-    title:title,message:message,html:'<div class="field"><textarea id="promptInput" rows="4">'+escapeHtml(defaultValue||'')+'</textarea></div>',
+    title:title,
+    message:message,
+    html:'<div class="field"><textarea id="promptInput" rows="4">'+escapeHtml(defaultValue||'')+'</textarea></div>',
     buttons:[{text:t('cancel'),className:'secondary-btn',value:'cancel'},{text:t('save'),className:'primary-btn',value:'save'}],
-    onAction:function(value){if(value!=='save'){closeModal(null);return}var input=document.getElementById('promptInput');closeModal(input?input.value:null)}
+    onAction:function(value){
+      if(value!=='save'){ closeModal(null); return; }
+      var input=document.getElementById('promptInput');
+      closeModal(input?input.value:null);
+    }
   });
 }
 
 /* ======================== Admin Panel ======================== */
 
-function isAdminUser(){return !!(currentUser&&currentUser.isAdmin)}
-function isSuperAdminUser(){return !!(currentUser&&currentUser.username==='usonance')}
+function isAdminUser(){ return !!(currentUser&&currentUser.isAdmin); }
+function isSuperAdminUser(){ return !!(currentUser&&currentUser.username==='usonance'); }
 
 function openAdminPanel(){
-  if(!isAdminUser())return;
+  if(!isAdminUser()) return;
   google.script.run.withSuccessHandler(function(statsResponse){
-    if(!statsResponse||!statsResponse.ok){handleApplicationError(statsResponse);return}
+    if(!statsResponse||!statsResponse.ok){ handleApplicationError(statsResponse); return; }
     google.script.run.withSuccessHandler(function(groupsResponse){
-      if(!groupsResponse||!groupsResponse.ok){handleApplicationError(groupsResponse);return}
+      if(!groupsResponse||!groupsResponse.ok){ handleApplicationError(groupsResponse); return; }
       renderAdminPanel(statsResponse.stats,groupsResponse.groups||[]);
     }).withFailureHandler(function(){}).adminGetAllGroups(sessionToken);
   }).withFailureHandler(function(){}).adminGetStats(sessionToken);
@@ -2093,23 +2465,24 @@ function renderAdminGroupRow(group){
 }
 
 function adminToggleGroupMembers(conversationId,dropId){
-  var box=document.getElementById(dropId);if(!box)return;
-  if(box.dataset.loaded==='1'){box.style.display=box.style.display==='none'?'block':'none';return}
+  var box=document.getElementById(dropId); if(!box) return;
+  if(box.dataset.loaded==='1'){ box.style.display=box.style.display==='none'?'block':'none'; return; }
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
+    if(!response||!response.ok){ handleApplicationError(response); return; }
     var profile=response.profile;
     var membersHtml=(profile.members||[]).map(function(member){
       return '<div class="admin-row">'+buildAvatarHTML(member.initials,member.avatarFileId,'',false,"openProfile('"+escapeJsString(member.userId)+"')")+'<div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(member.displayName||'User')+'</div><div class="admin-row-sub">@'+escapeHtml(member.username||'')+(member.isBanned?' • banned':'')+(member.isDeleted?' • deleted':'')+' • '+escapeHtml(member.userId||'')+'</div></div></div>';
     }).join('');
     box.innerHTML='<div class="admin-drop open" style="margin-top:10px"><div class="admin-list">'+membersHtml+'</div></div>';
-    box.dataset.loaded='1';box.style.display='block';
+    box.dataset.loaded='1';
+    box.style.display='block';
   }).withFailureHandler(function(){}).adminGetGroupProfile(sessionToken,conversationId);
 }
 
 function adminRunUserSearch(){
   var query=(document.getElementById('adminUserSearchInput')||{}).value||'';
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
+    if(!response||!response.ok){ handleApplicationError(response); return; }
     var users=response.users||[];
     document.getElementById('adminUsersList').innerHTML=users.map(function(user){
       var adminBadge=user.isAppAdmin?'<span class="badge-admin">admin</span>':'';
@@ -2120,7 +2493,7 @@ function adminRunUserSearch(){
 
 function adminOpenGroupProfile(conversationId){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
+    if(!response||!response.ok){ handleApplicationError(response); return; }
     var profile=response.profile;
     var membersHtml=profile.members.map(function(member){
       return '<div class="admin-row">'+buildAvatarHTML(member.initials,member.avatarFileId,'',false,"openProfile('"+escapeJsString(member.userId)+"')")+'<div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(member.displayName||'User')+(member.isAppAdmin?'<span class="badge-admin">admin</span>':'')+'</div><div class="admin-row-sub">@'+escapeHtml(member.username||'')+(member.isBanned?' • banned':'')+(member.isDeleted?' • deleted':'')+' • '+escapeHtml(member.userId||'')+'</div></div><div class="admin-row-actions"><button class="secondary-btn" onclick="openProfile(\''+escapeJsString(member.userId)+'\')">Open</button><button class="danger-btn" onclick="adminRemoveUserFromGroupUI(\''+escapeJsString(profile.conversationId)+'\',\''+escapeJsString(member.userId)+'\')">'+t('removeFromGroup')+'</button></div></div>';
@@ -2138,33 +2511,37 @@ function adminOpenGroupProfile(conversationId){
 function adminAddByUsernameUI(conversationId){
   var input=document.getElementById('adminAddByUsername');
   var username=input?String(input.value||'').trim().replace(/^@/,''):'';
-  if(!username)return;
+  if(!username) return;
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){alert((response&&response.error)||'Failed.');return}
-    adminOpenGroupProfile(conversationId);boostFastPolling(8000);
-  }).withFailureHandler(function(){alert('Failed.')}).adminAddUserToGroupByUsername(sessionToken,{conversationId:conversationId,username:username});
+    if(!response||!response.ok){ alert((response&&response.error)||'Failed.'); return; }
+    adminOpenGroupProfile(conversationId);
+    boostFastPolling(8000);
+  }).withFailureHandler(function(){ alert('Failed.'); }).adminAddUserToGroupByUsername(sessionToken,{conversationId:conversationId,username:username});
 }
 
 function adminAddUserToGroupUI(conversationId){
   var input=document.getElementById('adminAddToGroupUserId');
-  var userId=input?String(input.value||'').trim():'';if(!userId)return;
+  var userId=input?String(input.value||'').trim():'';
+  if(!userId) return;
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
-    adminOpenGroupProfile(conversationId);boostFastPolling(8000);
-  }).withFailureHandler(function(){alert('Failed.')}).adminAddUserToGroup(sessionToken,{conversationId:conversationId,targetUserId:userId});
+    if(!response||!response.ok){ handleApplicationError(response); alert((response&&response.error)||'Failed.'); return; }
+    adminOpenGroupProfile(conversationId);
+    boostFastPolling(8000);
+  }).withFailureHandler(function(){ alert('Failed.'); }).adminAddUserToGroup(sessionToken,{conversationId:conversationId,targetUserId:userId});
 }
 
 function adminRemoveUserFromGroupUI(conversationId,userId){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
-    adminOpenGroupProfile(conversationId);boostFastPolling(8000);
-  }).withFailureHandler(function(){alert('Failed.')}).adminRemoveUserFromGroup(sessionToken,{conversationId:conversationId,targetUserId:userId});
+    if(!response||!response.ok){ handleApplicationError(response); alert((response&&response.error)||'Failed.'); return; }
+    adminOpenGroupProfile(conversationId);
+    boostFastPolling(8000);
+  }).withFailureHandler(function(){ alert('Failed.'); }).adminRemoveUserFromGroup(sessionToken,{conversationId:conversationId,targetUserId:userId});
 }
 
 function adminLoadRecentMessages(conversationId){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);return}
-    var box=document.getElementById('adminRecentMessagesBox');if(!box)return;
+    if(!response||!response.ok){ handleApplicationError(response); return; }
+    var box=document.getElementById('adminRecentMessagesBox'); if(!box) return;
     var messages=response.messages||[];
     box.innerHTML=messages.map(function(msg){
       return '<div class="admin-row"><div class="admin-row-meta"><div class="admin-row-title">'+escapeHtml(msg.displayName||'User')+' <span style="font-weight:400;color:var(--muted)">@'+escapeHtml(msg.username||'')+'</span></div><div class="admin-row-sub">'+escapeHtml(truncateString(msg.text||(msg.messageType==='group_invite'?'[group invite]':'[file]'),140))+'</div></div></div>';
@@ -2174,90 +2551,94 @@ function adminLoadRecentMessages(conversationId){
 
 function adminBanUserUI(userId){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
-    closeModal(null);openAdminPanel();boostFastPolling(8000);
-  }).withFailureHandler(function(){alert('Failed.')}).adminBanUser(sessionToken,userId);
+    if(!response||!response.ok){ handleApplicationError(response); alert((response&&response.error)||'Failed.'); return; }
+    closeModal(null);
+    openAdminPanel();
+    boostFastPolling(8000);
+  }).withFailureHandler(function(){ alert('Failed.'); }).adminBanUser(sessionToken,userId);
 }
 
 function adminUnbanUserUI(userId){
   google.script.run.withSuccessHandler(function(response){
-    if(!response||!response.ok){handleApplicationError(response);alert((response&&response.error)||'Failed.');return}
-    closeModal(null);openAdminPanel();boostFastPolling(8000);
-  }).withFailureHandler(function(){alert('Failed.')}).adminUnbanUser(sessionToken,userId);
+    if(!response||!response.ok){ handleApplicationError(response); alert((response&&response.error)||'Failed.'); return; }
+    closeModal(null);
+    openAdminPanel();
+    boostFastPolling(8000);
+  }).withFailureHandler(function(){ alert('Failed.'); }).adminUnbanUser(sessionToken,userId);
 }
 
 /* ======================== Utility Functions ======================== */
 
-function autoGrowTextarea(element){if(!element)return;element.style.height='auto';element.style.height=Math.min(element.scrollHeight,180)+'px'}
-function findMessageCardElement(target){return target?target.closest('.mc[data-mid]'):null}
-function escapeHtml(value){return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
-function escapeAttr(value){return escapeHtml(value).replace(/\n/g,'&#10;')}
-function escapeJsString(value){return String(value||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/</g,'\\x3C')}
-function truncateString(value,maxLength){var text=String(value||'');return text.length<=maxLength?text:text.slice(0,maxLength-1)+'…'}
-function formatMessageTime(isoString){var date=new Date(isoString); if(isNaN(date.getTime()))return''; return date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
-function formatSidebarTime(isoString){var date=new Date(isoString); if(isNaN(date.getTime()))return''; if(date.toDateString()===new Date().toDateString()) return date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); return date.toLocaleDateString([], {month:'short',day:'numeric'})}
-function formatFileSize(bytes){var value=Number(bytes); if(!Number.isFinite(value)||value<=0)return'0 B'; var units=['B','KB','MB','GB'], size=value, unitIndex=0; while(size>=1024&&unitIndex<units.length-1){size/=1024;unitIndex++} return (size>=10||unitIndex===0?size.toFixed(0):size.toFixed(1))+' '+units[unitIndex]}
-function detectFileCategory(mimeType){var type=String(mimeType||'').toLowerCase(); if(type.startsWith('image/'))return'image'; if(type.startsWith('video/'))return'video'; if(type.startsWith('audio/'))return'audio'; return'file'}
-function buildAttachmentMetaText(attachment){var parts=[], category=detectFileCategory(attachment.mimeType); if(category==='image')parts.push('Photo'); else if(category==='video')parts.push('Video'); else if(category==='audio')parts.push('Audio'); else parts.push('File'); if(attachment.size>0)parts.push(formatFileSize(attachment.size)); return parts.join(' • ')}
-function getFileIcon(attachment){var category=detectFileCategory(attachment&&attachment.mimeType); if(category==='image')return'🖼'; if(category==='video')return'🎬'; if(category==='audio')return'🎵'; var extension=(attachment&&attachment.name||'').split('.').pop().toLowerCase(); if(extension==='pdf')return'📕'; if(['doc','docx','txt','md'].indexOf(extension)!==-1)return'📄'; if(['zip','rar','7z'].indexOf(extension)!==-1)return'🗜'; return'📎'}
+function autoGrowTextarea(element){ if(!element) return; element.style.height='auto'; element.style.height=Math.min(element.scrollHeight,180)+'px'; }
+function findMessageCardElement(target){ return target?target.closest('.mc[data-mid]'):null; }
+function escapeHtml(value){ return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function escapeAttr(value){ return escapeHtml(value).replace(/\n/g,'&#10;'); }
+function escapeJsString(value){ return String(value||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/</g,'\\x3C'); }
+function truncateString(value,maxLength){ var text=String(value||''); return text.length<=maxLength?text:text.slice(0,maxLength-1)+'…'; }
+function formatMessageTime(isoString){ var date=new Date(isoString); if(isNaN(date.getTime())) return ''; return date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }
+function formatSidebarTime(isoString){ var date=new Date(isoString); if(isNaN(date.getTime())) return ''; if(date.toDateString()===new Date().toDateString()) return date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); return date.toLocaleDateString([], {month:'short',day:'numeric'}); }
+function formatFileSize(bytes){ var value=Number(bytes); if(!Number.isFinite(value)||value<=0) return '0 B'; var units=['B','KB','MB','GB'], size=value, unitIndex=0; while(size>=1024&&unitIndex<units.length-1){ size/=1024; unitIndex++; } return (size>=10||unitIndex===0?size.toFixed(0):size.toFixed(1))+' '+units[unitIndex]; }
+function detectFileCategory(mimeType){ var type=String(mimeType||'').toLowerCase(); if(type.startsWith('image/')) return 'image'; if(type.startsWith('video/')) return 'video'; if(type.startsWith('audio/')) return 'audio'; return 'file'; }
+function buildAttachmentMetaText(attachment){ var parts=[], category=detectFileCategory(attachment.mimeType); if(category==='image')parts.push('Photo'); else if(category==='video')parts.push('Video'); else if(category==='audio')parts.push('Audio'); else parts.push('File'); if(attachment.size>0)parts.push(formatFileSize(attachment.size)); return parts.join(' • '); }
+function getFileIcon(attachment){ var category=detectFileCategory(attachment&&attachment.mimeType); if(category==='image')return'🖼'; if(category==='video')return'🎬'; if(category==='audio')return'🎵'; var extension=(attachment&&attachment.name||'').split('.').pop().toLowerCase(); if(extension==='pdf')return'📕'; if(['doc','docx','txt','md'].indexOf(extension)!==-1)return'📄'; if(['zip','rar','7z'].indexOf(extension)!==-1)return'🗜'; return'📎'; }
 
 /* ======================== Event Listeners ======================== */
 
-document.getElementById('composerInput').addEventListener('input',function(){autoGrowTextarea(this);boostFastPolling(3000)});
-document.getElementById('composerInput').addEventListener('keydown',function(event){if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();handleSend()}});
-document.getElementById('fileInput').addEventListener('change',function(event){var files=event.target.files; if(files&&files[0])stageSelectedFile(files[0]); event.target.value=''});
-document.getElementById('searchInput').addEventListener('input',function(){clearTimeout(searchDebounceTimer);searchDebounceTimer=setTimeout(performUserSearch,180)});
-document.getElementById('modalOverlay').addEventListener('click',function(event){if(event.target===this&&modalResolveFunction)closeModal(null)});
+document.getElementById('composerInput').addEventListener('input',function(){ autoGrowTextarea(this); boostFastPolling(3000); });
+document.getElementById('composerInput').addEventListener('keydown',function(event){ if(event.key==='Enter'&&!event.shiftKey){ event.preventDefault(); handleSend(); }});
+document.getElementById('fileInput').addEventListener('change',function(event){ var files=event.target.files; if(files&&files[0])stageSelectedFile(files[0]); event.target.value=''; });
+document.getElementById('searchInput').addEventListener('input',function(){ clearTimeout(searchDebounceTimer); searchDebounceTimer=setTimeout(performUserSearch,180); });
+document.getElementById('modalOverlay').addEventListener('click',function(event){ if(event.target===this&&modalResolveFunction) closeModal(null); });
 
 document.addEventListener('keydown',function(event){
   if(event.key==='Escape'){
     var imageOverlay=document.querySelector('.img-ov');
-    if(imageOverlay){imageOverlay.remove();return}
-    if(document.getElementById('modalOverlay').classList.contains('open')){closeModal(null);return}
-    if(isDropdownOpen){closeDropdown();return}
+    if(imageOverlay){ imageOverlay.remove(); return; }
+    if(document.getElementById('modalOverlay').classList.contains('open')){ closeModal(null); return; }
+    if(isDropdownOpen){ closeDropdown(); return; }
   }
   if(event.key==='Enter'&&document.getElementById('authScreen').classList.contains('active')){
     event.preventDefault();
-    if(currentAuthMode==='login')doLogin(); else doRegister();
+    if(currentAuthMode==='login') doLogin();
+    else doRegister();
   }
 });
 
 var messagesContainer=document.getElementById('messagesContainer');
 messagesContainer.addEventListener('contextmenu',function(event){
   var messageCard=findMessageCardElement(event.target);
-  if(!messageCard)return;
+  if(!messageCard) return;
   event.preventDefault();
   openDropdownAt(event.clientX,event.clientY,messageCard.getAttribute('data-mid'));
 });
 messagesContainer.addEventListener('touchstart',function(event){
   var messageCard=findMessageCardElement(event.target);
-  if(!messageCard)return;
+  if(!messageCard) return;
   longPressFired=false;
   var touch=event.touches&&event.touches[0];
-  if(!touch)return;
+  if(!touch) return;
   clearTimeout(longPressTimer);
   longPressTimer=setTimeout(function(){
     longPressFired=true;
     openDropdownAt(touch.clientX,touch.clientY,messageCard.getAttribute('data-mid'));
   },550);
 },{passive:true});
-messagesContainer.addEventListener('touchend',function(){clearTimeout(longPressTimer)},{passive:true});
-messagesContainer.addEventListener('touchcancel',function(){clearTimeout(longPressTimer)},{passive:true});
-messagesContainer.addEventListener('touchmove',function(){clearTimeout(longPressTimer)},{passive:true});
-messagesContainer.addEventListener('click',function(event){if(longPressFired){event.preventDefault();longPressFired=false}});
+messagesContainer.addEventListener('touchend',function(){ clearTimeout(longPressTimer); },{passive:true});
+messagesContainer.addEventListener('touchcancel',function(){ clearTimeout(longPressTimer); },{passive:true});
+messagesContainer.addEventListener('touchmove',function(){ clearTimeout(longPressTimer); },{passive:true});
+messagesContainer.addEventListener('click',function(event){ if(longPressFired){ event.preventDefault(); longPressFired=false; } });
 
 document.addEventListener('click',function(event){
   if(isDropdownOpen&&!document.getElementById('messageDropdown').contains(event.target)) closeDropdown();
   var searchResults=document.getElementById('searchResults');
   if(searchResults.classList.contains('open')&&!document.getElementById('searchInput').contains(event.target)&&!searchResults.contains(event.target)) clearSearchResults();
 });
-document.addEventListener('scroll',function(){closeDropdown()},true);
-window.addEventListener('resize',function(){closeDropdown(); if(window.innerWidth>900)closeMobileSidebar()});
-document.addEventListener('visibilitychange',function(){scheduleNextPoll()});
+document.addEventListener('scroll',function(){ closeDropdown(); },true);
+window.addEventListener('resize',function(){ closeDropdown(); if(window.innerWidth>900) closeMobileSidebar(); });
+document.addEventListener('visibilitychange',function(){ scheduleNextPoll(); });
 
 /* ======================== Initialize ======================== */
 
-/* Save invite code from URL BEFORE anything else — survives login/register flow */
 (function savePendingInviteFromUrl(){
   try{
     var urlParams=new URLSearchParams(window.location.search);
@@ -2269,16 +2650,75 @@ document.addEventListener('visibilitychange',function(){scheduleNextPoll()});
   }catch(e){}
 })();
 
-/* Show correct screen immediately — no flash */
 if(sessionToken){
-  /* Token exists — show nothing (blank) until session verified, then show app */
   document.getElementById('authScreen').classList.remove('active');
   document.getElementById('appScreen').classList.remove('active');
 }else{
-  /* No token — show auth immediately */
   document.getElementById('authScreen').classList.add('active');
 }
 
+/* ======================== Export module functions to window ======================== */
+
+Object.assign(window,{
+  switchAuth,
+  switchRegMethod,
+  doLogin,
+  doRegister,
+  openProfile,
+  openConversationProfile,
+  openConversationProfileById,
+  selectConversation,
+  handleSend,
+  clearReply,
+  cancelCurrentUpload,
+  clearStagedFile,
+  openFilePicker,
+  sendGroupInviteUI,
+  openSettings,
+  openAdminPanel,
+  closeDropdown,
+  replyToMessage,
+  copyMessageText,
+  forwardMessageUI,
+  executeForward,
+  editMessageUI,
+  deleteMessageUI,
+  joinGroupFromMessage,
+  createGroupUI,
+  editGroupUI,
+  doLeaveGroup,
+  doDeleteGroup,
+  doBlockUser,
+  doUnblockUser,
+  adminGrantAdminUI,
+  adminRevokeAdminUI,
+  requestNotificationPermission,
+  selectAccentColor,
+  doTerminateSession,
+  startDirectMessage,
+  openMobileSidebar,
+  closeMobileSidebar,
+  closeModal,
+  showAlert,
+  showConfirm,
+  showPrompt,
+  adminRunUserSearch,
+  adminOpenGroupProfile,
+  adminToggleGroupMembers,
+  adminAddByUsernameUI,
+  adminAddUserToGroupUI,
+  adminRemoveUserFromGroupUI,
+  adminLoadRecentMessages,
+  adminBanUserUI,
+  adminUnbanUserUI,
+  changeAvatarUI,
+  showInviteLink,
+  previewFullImage,
+  toggleAdminDropdown,
+  executeSendGroupInvite
+});
+
+syncWindowState();
 verifyExistingSession();
 applyAllLabels();
 switchAuth('login');
