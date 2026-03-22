@@ -379,6 +379,26 @@ body.app-booting::before{content:'Heyo';position:fixed;inset:0;display:flex;alig
   .mc{padding:6px 8px;border-radius:12px}
 }
 </style>
+<script>
+(function(){
+  function releaseBootScreen(){
+    if(document.body) document.body.classList.remove('app-booting');
+  }
+
+  if(document.readyState === 'interactive' || document.readyState === 'complete') {
+    window.setTimeout(releaseBootScreen, 0);
+  } else {
+    document.addEventListener('DOMContentLoaded', function(){
+      window.setTimeout(releaseBootScreen, 0);
+    }, { once: true });
+    window.addEventListener('load', function(){
+      window.setTimeout(releaseBootScreen, 0);
+    }, { once: true });
+  }
+
+  window.setTimeout(releaseBootScreen, 1800);
+})();
+</script>
 </head>
 <body class="light ac-indigo app-booting">
 
@@ -4577,7 +4597,7 @@ onAuthStateChanged(auth, async function(user){
 });
 
 window.addEventListener('load', function(){
-  window.setTimeout(finishInitialRender, 0);
+          window.setTimeout(finishInitialRender, 0);
 });
 
 /* ======================== Export module functions to window ======================== */
