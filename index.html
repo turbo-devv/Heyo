@@ -69,9 +69,6 @@ body.dark .p-st.off{color:var(--muted);background:var(--panel-2)}
 .warning-btn:hover:not([disabled]){filter:brightness(1.08)}
 .secondary-btn:hover:not([disabled]){background:var(--accent-soft)}
 body.dark .secondary-btn:hover:not([disabled]){background:var(--panel-2);border-color:var(--accent)}
-body.app-booting{background:var(--bg)!important}
-body.app-booting>*{visibility:hidden}
-body.app-booting::before{content:'Heyo';position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text);font:700 28px/1 'Ubuntu',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.04em;z-index:30000}
 
 .screen{display:none;height:100vh;height:100dvh;width:100%;overflow:hidden}.screen.active{display:flex}
 .auth-screen{align-items:center;justify-content:center;padding:20px;background:var(--bg)!important;overflow-y:auto}
@@ -379,28 +376,8 @@ body.app-booting::before{content:'Heyo';position:fixed;inset:0;display:flex;alig
   .mc{padding:6px 8px;border-radius:12px}
 }
 </style>
-<script>
-(function(){
-  function releaseBootScreen(){
-    if(document.body) document.body.classList.remove('app-booting');
-  }
-
-  if(document.readyState === 'interactive' || document.readyState === 'complete') {
-    window.setTimeout(releaseBootScreen, 0);
-  } else {
-    document.addEventListener('DOMContentLoaded', function(){
-      window.setTimeout(releaseBootScreen, 0);
-    }, { once: true });
-    window.addEventListener('load', function(){
-      window.setTimeout(releaseBootScreen, 0);
-    }, { once: true });
-  }
-
-  window.setTimeout(releaseBootScreen, 1800);
-})();
-</script>
 </head>
-<body class="light ac-indigo app-booting">
+<body class="light ac-indigo">
 
 <div id="inviteScreen" class="screen auth-screen">
   <div class="invite-screen-stack">
@@ -1427,7 +1404,6 @@ function renderInviteCard(){
 }
 
 function showInviteScreen(){
-  finishInitialRender();
   renderInviteCard();
   document.getElementById('inviteScreen').classList.add('active');
   document.getElementById('authScreen').classList.remove('active');
@@ -1784,7 +1760,6 @@ async function doRegister(){
 }
 
 function showAuthScreen(){
-  finishInitialRender();
   stopAllRealtimeListeners();
   document.getElementById('inviteScreen').classList.remove('active');
   document.getElementById('authScreen').classList.add('active');
@@ -1794,7 +1769,6 @@ function showAuthScreen(){
 }
 
 function showAppScreen(){
-  finishInitialRender();
   document.getElementById('inviteScreen').classList.remove('active');
   document.getElementById('authScreen').classList.remove('active');
   document.getElementById('appScreen').classList.add('active');
@@ -4326,10 +4300,6 @@ function showPrompt(title,message,defaultValue){
 
 /* ======================== Utility ======================== */
 
-function finishInitialRender(){
-  if(document.body) document.body.classList.remove('app-booting');
-}
-
 function autoGrowTextarea(element){
   if(!element) return;
   element.style.height='auto';
@@ -4594,10 +4564,6 @@ onAuthStateChanged(auth, async function(user){
     console.error(e);
     forceLogoutToAuth();
   }
-});
-
-window.addEventListener('load', function(){
-          window.setTimeout(finishInitialRender, 0);
 });
 
 /* ======================== Export module functions to window ======================== */
