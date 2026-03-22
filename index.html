@@ -509,11 +509,9 @@ body.dark .secondary-btn:hover:not([disabled]){background:var(--panel-2);border-
 </div>
 
 <!-- Script -->
+<script src="./config.js"></script>
 <script type="module">
-// 1. Импорт ключей из твоего скрытого файла
-import { DRIVE_KEYS } from './config.js';
-
-// 2. Все импорты Firebase (ОДИН РАЗ)
+// 1. Все импорты Firebase (ОДИН РАЗ)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
   getAuth,
@@ -551,6 +549,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 /* --- Настройка констант из конфига --- */
+const DRIVE_KEYS = window.DRIVE_KEYS || {};
 const DRIVE_CLIENT_ID     = DRIVE_KEYS.CLIENT_ID;
 const DRIVE_CLIENT_SECRET = DRIVE_KEYS.CLIENT_SECRET;
 const DRIVE_REFRESH_TOKEN = DRIVE_KEYS.REFRESH_TOKEN || DRIVE_KEYS.DRIVE_REFRESH_TOKEN || '';
@@ -606,11 +605,23 @@ const SUPPORTED_LANGUAGES = [
   {value:'be',label:'Беларуская'}
 ];
 
+function safeStorageGet(key){
+  try{ return localStorage.getItem(key); }catch(e){ return null; }
+}
+
+function safeStorageSet(key, value){
+  try{ localStorage.setItem(key, value); }catch(e){}
+}
+
+function safeStorageRemove(key){
+  try{ localStorage.removeItem(key); }catch(e){}
+}
+
 var deviceId = (function(){
-  var stored = localStorage.getItem('heyo_device_id');
+  var stored = safeStorageGet('heyo_device_id');
   if(stored) return stored;
   var id = 'dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10);
-  localStorage.setItem('heyo_device_id', id);
+  safeStorageSet('heyo_device_id', id);
   return id;
 })();
 
@@ -771,7 +782,7 @@ function getCurrentLocale(){
   return LANGUAGE_LOCALES[currentLanguage] || 'en-US';
 }
 
-let currentLanguage = normalizeLanguageValue(localStorage.getItem('heyo_lang'));
+let currentLanguage = normalizeLanguageValue(safeStorageGet('heyo_lang'));
 function t(key){ return (I18N[currentLanguage]&&I18N[currentLanguage][key])||I18N.en[key]||key; }
 
 function applyAllLabels(){
@@ -861,7 +872,7 @@ var notificationRegistrationPromise = null;
 var uploadState = {active:false,file:null,task:null,downloadURL:'',path:'',conversationId:'',progress:0};
 var pendingInviteState = null;
 var currentSessionUnsubscribe = null;
-var currentSessionStartedAt = localStorage.getItem('heyo_session_started_at') || '';
+var currentSessionStartedAt = safeStorageGet('heyo_session_started_at') || '';
 
 var sidebarUnsubscribe = null;
 var messageUnsubscribe = null;
@@ -918,7 +929,7 @@ function formatDeviceLabel(userAgent, rawDeviceId){
 }
 
 function getWebPushVapidKey(){
-  return String(window.HEYO_WEB_PUSH_VAPID_KEY || localStorage.getItem('heyo_web_push_vapid_key') || DEFAULT_WEB_PUSH_VAPID_KEY || '').trim();
+  return String(window.HEYO_WEB_PUSH_VAPID_KEY || safeStorageGet('heyo_web_push_vapid_key') || DEFAULT_WEB_PUSH_VAPID_KEY || '').trim();
 }
 
 function urlBase64ToUint8Array(base64String){
@@ -1427,13 +1438,13 @@ async function handleInvitePrimaryAction(){
     if(findConversationById(pendingInviteState.conversationId)){
       dismissInviteScreen();
       await selectConversation(pendingInviteState.conversationId);
-      localStorage.removeItem('heyo_pending_invite');
+      safeStorageRemove('heyo_pending_invite');
       return;
     }
     await joinConversationById(pendingInviteState.conversationId);
     dismissInviteScreen();
     await selectConversation(pendingInviteState.conversationId);
-    localStorage.removeItem('heyo_pending_invite');
+    safeStorageRemove('heyo_pending_invite');
   }catch(e){
     console.error(e);
     showAlert(t('inviteLink'),e && e.message ? e.message : t('failedToOpenInvite'));
@@ -1536,7 +1547,7 @@ async function doLogin(){
     await signInWithEmailAndPassword(auth, match.email, password);
     if(!currentSessionStartedAt){
       currentSessionStartedAt=new Date().toISOString();
-      localStorage.setItem('heyo_session_started_at', currentSessionStartedAt);
+      safeStorageSet('heyo_session_started_at', currentSessionStartedAt);
     }
     document.getElementById('loginPw').value='';
     setAuthStatus('','ok');
@@ -1750,7 +1761,7 @@ async function doRegister(){
     });
 
     currentSessionStartedAt=new Date().toISOString();
-    localStorage.setItem('heyo_session_started_at', currentSessionStartedAt);
+    safeStorageSet('heyo_session_started_at', currentSessionStartedAt);
 
     setAuthStatus('','ok');
   }catch(error){
@@ -1838,7 +1849,7 @@ async function listenCurrentUserProfile(uid){
       mutedUntil: p.mutedUntil || p.mutedUntilAt || ''
     };
     currentLanguage=normalizeLanguageValue(currentUser.language||'en');
-    localStorage.setItem('heyo_lang',currentLanguage);
+    safeStorageSet('heyo_lang',currentLanguage);
     syncWindowState();
     if(!localThemeOverride) applyThemeAndAccent(currentUser.theme,currentUser.accentColor);
     renderCurrentUserSidebar();
@@ -4392,20 +4403,20 @@ function clearComposerFormatting(){
 /* ======================== Invite URL ======================== */
 
 function checkPendingInvite(){
-  var pendingInvite=localStorage.getItem('heyo_pending_invite')||'';
+  var pendingInvite=safeStorageGet('heyo_pending_invite')||'';
   if(!pendingInvite) return Promise.resolve();
   return loadInviteState(pendingInvite).then(function(inviteState){
     pendingInviteState=inviteState;
     if(!inviteState) return;
     if(isSignedIn() && findConversationById(inviteState.conversationId)){
-      localStorage.removeItem('heyo_pending_invite');
+      safeStorageRemove('heyo_pending_invite');
       pendingInviteState=null;
       selectConversation(inviteState.conversationId);
       return;
     }
     if(isSignedIn()){
       joinConversationById(inviteState.conversationId).then(function(){
-        localStorage.removeItem('heyo_pending_invite');
+        safeStorageRemove('heyo_pending_invite');
         pendingInviteState=null;
         selectConversation(inviteState.conversationId);
       }).catch(function(){
@@ -4485,24 +4496,24 @@ window.addEventListener('resize',function(){ closeDropdown(); if(window.innerWid
     var urlParams=new URLSearchParams(window.location.search);
     var invite=urlParams.get('invite');
     if(invite){
-      localStorage.setItem('heyo_pending_invite',invite);
+      safeStorageSet('heyo_pending_invite',invite);
       window.history.replaceState(null,'',window.location.origin+window.location.pathname);
     }
   }catch(e){}
 })();
 
 (function bootstrapInvitePreview(){
-  var pendingInvite=localStorage.getItem('heyo_pending_invite')||'';
+  var pendingInvite=safeStorageGet('heyo_pending_invite')||'';
   if(!pendingInvite) return;
   loadInviteState(pendingInvite).then(function(inviteState){
     pendingInviteState=inviteState;
-    if(inviteState && !localStorage.getItem('heyo_token')) showInviteScreen();
+    if(inviteState && !safeStorageGet('heyo_token')) showInviteScreen();
   }).catch(function(error){
     console.error(error);
   });
 })();
 
-if(localStorage.getItem('heyo_token')){
+if(safeStorageGet('heyo_token')){
   document.getElementById('inviteScreen').classList.remove('active');
   document.getElementById('authScreen').classList.remove('active');
   document.getElementById('appScreen').classList.remove('active');
@@ -4513,12 +4524,12 @@ if(localStorage.getItem('heyo_token')){
 onAuthStateChanged(auth, async function(user){
   try{
     if(!user){
-      localStorage.removeItem('heyo_token');
+      safeStorageRemove('heyo_token');
       forceLogoutToAuth();
       return;
     }
 
-    localStorage.setItem('heyo_token', user.uid);
+    safeStorageSet('heyo_token', user.uid);
     var profileSnap = await getDoc(doc(db, PROFILE_COLLECTION, user.uid));
     if(!profileSnap.exists()){
       forceLogoutToAuth();
@@ -4557,7 +4568,7 @@ onAuthStateChanged(auth, async function(user){
     };
 
     currentLanguage=normalizeLanguageValue(currentUser.language||'en');
-    localStorage.setItem('heyo_lang',currentLanguage);
+    safeStorageSet('heyo_lang',currentLanguage);
     syncWindowState();
     await startApplication();
   }catch(e){
