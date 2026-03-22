@@ -69,6 +69,9 @@ body.dark .p-st.off{color:var(--muted);background:var(--panel-2)}
 .warning-btn:hover:not([disabled]){filter:brightness(1.08)}
 .secondary-btn:hover:not([disabled]){background:var(--accent-soft)}
 body.dark .secondary-btn:hover:not([disabled]){background:var(--panel-2);border-color:var(--accent)}
+body.app-booting{background:var(--bg)!important}
+body.app-booting>*{visibility:hidden}
+body.app-booting::before{content:'Heyo';position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text);font:700 28px/1 'Ubuntu',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;letter-spacing:.04em;z-index:30000}
 
 .screen{display:none;height:100vh;height:100dvh;width:100%;overflow:hidden}.screen.active{display:flex}
 .auth-screen{align-items:center;justify-content:center;padding:20px;background:var(--bg)!important;overflow-y:auto}
@@ -377,7 +380,7 @@ body.dark .secondary-btn:hover:not([disabled]){background:var(--panel-2);border-
 }
 </style>
 </head>
-<body class="light ac-indigo">
+<body class="light ac-indigo app-booting">
 
 <div id="inviteScreen" class="screen auth-screen">
   <div class="invite-screen-stack">
@@ -508,7 +511,7 @@ body.dark .secondary-btn:hover:not([disabled]){background:var(--panel-2);border-
   </div>
 </div>
 
-/* В самом низу твоего файла */
+<!-- Script -->
 <script type="module">
 // 1. Импорт ключей из твоего скрытого файла
 import { DRIVE_KEYS } from './config.js';
@@ -564,8 +567,6 @@ const firebaseConfig = {
   appId: "1:543146647411:web:09b92509d7ae5fe92eaf06"
 };
 
-const DEFAULT_WEB_PUSH_VAPID_KEY = '';
-
 // Дальше идет остальной твой код (const app = initializeApp(firebaseConfig) и т.д.)
 
 const app = initializeApp(firebaseConfig);
@@ -607,8 +608,6 @@ const SUPPORTED_LANGUAGES = [
   {value:'da',label:'Dansk'},
   {value:'be',label:'Беларуская'}
 ];
-
-/* ======================== Device ID ======================== */
 
 var deviceId = (function(){
   var stored = localStorage.getItem('heyo_device_id');
@@ -1408,6 +1407,7 @@ function renderInviteCard(){
 }
 
 function showInviteScreen(){
+  finishInitialRender();
   renderInviteCard();
   document.getElementById('inviteScreen').classList.add('active');
   document.getElementById('authScreen').classList.remove('active');
@@ -1764,6 +1764,7 @@ async function doRegister(){
 }
 
 function showAuthScreen(){
+  finishInitialRender();
   stopAllRealtimeListeners();
   document.getElementById('inviteScreen').classList.remove('active');
   document.getElementById('authScreen').classList.add('active');
@@ -1773,6 +1774,7 @@ function showAuthScreen(){
 }
 
 function showAppScreen(){
+  finishInitialRender();
   document.getElementById('inviteScreen').classList.remove('active');
   document.getElementById('authScreen').classList.remove('active');
   document.getElementById('appScreen').classList.add('active');
@@ -4304,6 +4306,10 @@ function showPrompt(title,message,defaultValue){
 
 /* ======================== Utility ======================== */
 
+function finishInitialRender(){
+  if(document.body) document.body.classList.remove('app-booting');
+}
+
 function autoGrowTextarea(element){
   if(!element) return;
   element.style.height='auto';
@@ -4568,6 +4574,10 @@ onAuthStateChanged(auth, async function(user){
     console.error(e);
     forceLogoutToAuth();
   }
+});
+
+window.addEventListener('load', function(){
+  window.setTimeout(finishInitialRender, 0);
 });
 
 /* ======================== Export module functions to window ======================== */
